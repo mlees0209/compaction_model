@@ -1,0 +1,80 @@
+\begin{thebibliography}{8}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Faunt(2009)]{faunt_groundwater_2009}
+Faunt.
+\newblock \emph{{GROUNDWATER} {RESOURCES} {PROGRAM} {Groundwater}
+  {Availability} of the {Central} {Valley} {Aquifer}, {California}
+  {Introduction}, {Overview} of {Hydrogeology}, and {Textural} {Model} of
+  {California}'s {Central} {Valley}}.
+\newblock 2009.
+\newblock ISBN 978-1-4113-2515-9.
+
+\bibitem[Helm(1975)]{helm_one-dimensional_1975}
+Donald~C. Helm.
+\newblock One-dimensional simulation of aquifer system compaction near
+  {Pixley}, {California}: 1. {Constant} parameters.
+\newblock \emph{Water Resources Research}, 11\penalty0 (3):\penalty0 465--478,
+  1975.
+\newblock ISSN 1944-7973.
+\newblock \doi{10.1029/WR011i003p00465}.
+\newblock URL
+  \url{http://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/WR011i003p00465}.
+\newblock \_eprint:
+  https://onlinelibrary.wiley.com/doi/pdf/10.1029/WR011i003p00465.
+
+\bibitem[Helm(1976)]{helm_one-dimensional_1976}
+Donald~C. Helm.
+\newblock One-dimensional simulation of aquifer system compaction near
+  {Pixley}, {California}: 2. {Stress}-{Dependent} {Parameters}.
+\newblock \emph{Water Resources Research}, 12\penalty0 (3):\penalty0 375--391,
+  1976.
+\newblock ISSN 1944-7973.
+\newblock \doi{10.1029/WR012i003p00375}.
+\newblock URL
+  \url{http://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/WR012i003p00375}.
+\newblock \_eprint:
+  https://onlinelibrary.wiley.com/doi/pdf/10.1029/WR012i003p00375.
+
+\bibitem[Poland et~al.(1975)Poland, Lofgren, Ireland, and
+  Pugh]{poland_land_1975}
+J~F Poland, B~E Lofgren, R~L Ireland, and R~G Pugh.
+\newblock Land {Subsidence} in the {San} {Joaquin} {Valley}, {California}, {As}
+  of 1972.
+\newblock page~87, 1975.
+
+\bibitem[Smith and Knight(2019)]{smith_modeling_2019}
+Smith and Knight.
+\newblock Modeling {Land} {Subsidence} {Using} {InSAR} and {Airborne}
+  {Electromagnetic} {Data}.
+\newblock \emph{Water Resources Research}, 55\penalty0 (4):\penalty0
+  2801--2819, 2019.
+\newblock ISSN 1944-7973.
+\newblock \doi{10.1029/2018WR024185}.
+\newblock URL
+  \url{https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2018WR024185}.
+
+\bibitem[Sneed(2001)]{sneed_hydraulic_2001}
+Sneed.
+\newblock Hydraulic and {Mechanical} {Properties} {Affecting} {Ground}-{Water}
+  {Flow} and {AquiferSystem} {Compaction}, {San} {Joaquin} {Valley},
+  {California}.
+\newblock Open-{File} {Report}, 2001.
+
+\bibitem[Sneed et~al.(2018)Sneed, Brandt, and Solt]{sneed_land_2018}
+M~Sneed, Justin~T. Brandt, and Mike Solt.
+\newblock Land {Subsidence} {Along} the {California} {Aqueduct} in
+  {West}-{Central} {San} {Joaquin} {Valley}, {California}, 2003–10.
+\newblock Scientific {Investigations} {Report}, 2018.
+\newblock Series: Scientific Investigations Report.
+
+\bibitem[Swanson(1998)]{swanson_land_1998}
+Arvey Swanson.
+\newblock Land {Subsidence} in the {San} {Joaquin} {Valley}, {Updated} to 1995,
+  1998.
+
+\end{thebibliography}

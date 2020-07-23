@@ -1,0 +1,43 @@
+### MODEL INPUT PARAMETER FILE ###
+# instructions here
+
+## Admin
+run_name=TESTRUNNAME # This is the name of the folder where model outputs will be stored.
+output_folder=/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_runs # This is the location where the folder containing model outputs will be placed.
+overwrite=True # If the output folder already exists, do you want to overwrite? NB you must confirm manually if this is the case.
+internal_time_delay=0.1 # This is the time delay in seconds between sections of the solver.
+
+## Hydrostratigraphy
+no_layers=3 # this is the number of layers in your model
+layer_names=Upper Aquifer,Corcoran Clay,Lower Aquifer # these are the names of the layers in your model
+layer_types=Upper Aquifer:Aquifer,Corcoran Clay:Aquitard,Lower Aquifer:Aquifer # for each named layer, give whether it is an aquifer or aquitard.
+layer_thicknesses=Upper Aquifer:100,Corcoran Clay:40,Lower Aquifer:100 # for each named layer, specify the thickness.
+layer_compaction_switch=Upper Aquifer: 0,Corcoran Clay: 1,Lower Aquifer: 0 # for each named layer, specify whether it can compact.
+
+## Deal with interbedded clays
+interbeds_switch=Upper Aquifer: 0,Lower Aquifer: 0 # for each aquifer layer, specify whether they will contain interbedded clays. 
+#interbeds_type=Upper Aquifer: Equivalent, Lower Aquifer: Equivalent # for each aquifer layer containing interbeds, specify whether they will have a single equivallent clay thickness.
+
+## Hydrologic parameters
+clay_Ssk=Corcoran Clay:5e-5 # Singlevalue Ssk for each compacting layer; only used if compaction or groundwater flow equations are solved using 'singlevalue').
+clay_Sske=Corcoran Clay:1e-6 # Sske for each compacting layer; only used if 'elastic-inelastic' specified for that layer for either groundwater flow solver or compaction solver.
+clay_Sskv=Corcoran Clay:5e-5 # Sskv for each compacting layer; only used if 'elastic-inelastic' specified for that layer for either groundwater flow solver or compaction solver.
+
+clay_porosity=Corcoran Clay:0.5
+sand_Ssk=Upper Aquifer:0,Lower Aquifer:0
+compressibility_of_water=4.4e-10 # REFERENCE: Freeze and Cherry p52
+vertical_conductivity=Corcoran Clay: 1e-6
+
+## Options for solving the groundwater flow equation
+dt_master=Corcoran Clay:1 # timestep to solve groundwater flow equation in clays. Units=days
+dz_clays = Corcoran Clay:2 # spatial discretization within all clay layers. Units=metres
+initial_condition = 45
+groundwater_flow_solver_type=Corcoran Clay:elastic-inelastic
+
+## Input head time series
+
+head_data_files=Upper Aquifer:/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Shallow_Timeseries_truncatedfrom1970.csv,Lower Aquifer:/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Deep_Timeseries.csv
+
+## Output options
+
+save_output_head_timeseries=True

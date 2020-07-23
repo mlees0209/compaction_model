@@ -1,0 +1,51 @@
+This is BibTeX, Version 0.99d (TeX Live 2018)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: doc2.aux
+The style file: plainnat.bst
+Database file #1: Manual2.bib
+Warning--empty publisher in faunt_groundwater_2009
+Warning--empty journal in poland_land_1975
+Warning--empty institution in sneed_hydraulic_2001
+Warning--empty institution in sneed_land_2018
+You've used 8 entries,
+            2773 wiz_defined-function locations,
+            643 strings with 6723 characters,
+and the built_in function-call counts, 3224 in all, are:
+= -- 305
+> -- 140
+< -- 7
++ -- 50
+- -- 42
+* -- 239
+:= -- 519
+add.period$ -- 36
+call.type$ -- 8
+change.case$ -- 39
+chr.to.int$ -- 8
+cite$ -- 20
+duplicate$ -- 152
+empty$ -- 270
+format.name$ -- 52
+if$ -- 664
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 6
+newline$ -- 60
+num.names$ -- 32
+pop$ -- 69
+preamble$ -- 1
+purify$ -- 30
+quote$ -- 0
+skip$ -- 114
+stack$ -- 0
+substring$ -- 101
+swap$ -- 10
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 83
+warning$ -- 4
+while$ -- 31
+width$ -- 0
+write$ -- 129
+(There were 4 warnings)

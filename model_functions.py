@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jun 23 16:42:49 2020
+
+Contains functions required for the compaction modelling. 
+
+@author: mlees
+"""
+print('Importing required modules and functions; please wait.')
+import sys
+import re
+import distutils.util as ut
+import os
+from shutil import copy2
+from distutils.dir_util import copy_tree
+import shutil
+import pandas as pd
+import time
+from time import process_time 
+from matplotlib.dates import date2num
+from matplotlib.dates import num2date
+from datetime import datetime as dt
+import copy
+import numpy as np
+import platform
+import matplotlib.pyplot as plt
+import seaborn as sns
+import subprocess
+import scipy
+
+### Define parameter default values. We will then read and overwrite any from the parameter file.
+
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True} # Define which variables have pre-defined defaults
+
+Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False}
+
+
+class Logger(object):
+    def __init__(self,output_folder,run_name):
+        self.terminal = sys.stdout
+        self.log = open("%s/%s/logfile.log" % (output_folder,run_name), "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass    
+
+
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
+
+def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):        
+    print ( '' )
+    print ( '\t\t\tFD1D_HEAT_EXPLICIT_SINGLEVALUE_Ssk:' )
+    print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
+    print ( '\t\t\t  Compute an approximate solution to the time-dependent' )
+    print ( '\t\t\t  one dimensional heat equation:' )
+    print ( '' )
+    print ( '\t\t\t    dH/dt - K * d2H/dx2 = f(x,t)' )
+    print ( '' )
+    
+    cfl = k * dt / dx / dx # This is the coefficient that determines convergence 
+
+    if ( 0.5 <= cfl ):
+        print ( '\t\t\tFD1D_HEAT_EXPLICIT_CFL - Fatal error!' )
+        print ( '\t\t\t  CFL condition failed.' )
+        print ( '\t\t\t  0.5 <= K * dT / dX / dX = %f' % ( cfl ) )
+        sys.exit(1)
+
+    
+    print ( '\t\t\t  Number of X nodes = %d' % ( len(x) ) )
+    print ( '\t\t\t  X interval is [%f,%f]' % ( min(x), max(x) ) )
+    print ( '\t\t\t  X spacing is %f' % ( dx ) )
+    print ( '\t\t\t  Number of T values = %d' % ( len(t) ) )
+    print ( '\t\t\t  T interval is [%f,%f]' % ( min(t), max(t) ) )
+    print ( '\t\t\t  T spacing is %f' % ( dt ) )
+    print ( '\t\t\t  Constant K = %g' % ( k ) )
+    print ( '\t\t\t  CFL coefficient = %g' % ( cfl ) )
+
+    hmat = np.zeros ( ( len(x), len(t) ) ) # running the code creates an output matrix of heads at each position and time
+
+    for j in range ( 0, len(t) ):
+        if j % (int(len(t)/20)) == 0:
+            printProgressBar(j,len(t))
+        if ( j == 0 ):
+            h = ic*np.ones(len(x))
+            h[0] = bc[0,0]
+            h[-1] = bc[1,0]
+        else:
+            h_new = np.zeros ( len(x) )
+
+            for c in range ( 1, len(x) - 1 ):
+                l = c - 1
+                r = c + 1
+                h_new[c] = h[c] + cfl * ( h[l] - 2.0 * h[c] + h[r] )
+            h_new[0] = bc[0,j]
+            h_new[-1] = bc[1,j]
+            h = h_new
+        for i in range ( 0, len(x) ):
+            hmat[i,j] = h[i]
+    print(' ')
+    print('\t\t\t SOLVER COMPLETE')
+    return hmat
+
+
+def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic):        
+    print ( '' )
+    print ( '\t\t\tFD1D_HEAT_EXPLICIT_ELASTICINELASTIC_Ssk:' )
+    print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
+    print ( '\t\t\t  Compute an approximate solution to the time-dependent' )
+    print ( '\t\t\t  one dimensional heat equation:' )
+    print ( '' )
+    print ( '\t\t\t    dH/dt - K * d2H/dx2 = f(x,t)' )
+    print ( '' )
+    
+    cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence 
+    cfl_inelastic = k_inelastic * dt / dx / dx # This is the coefficient that determines convergence 
+
+
+
+    
+    print ( '\t\t\t  Number of X nodes = %d' % ( len(x) ) )
+    print ( '\t\t\t  X interval is [%f,%f]' % ( min(x), max(x) ) )
+    print ( '\t\t\t  X spacing is %f' % ( dx ) )
+    print ( '\t\t\t  Number of T values = %d' % ( len(t) ) )
+    print ( '\t\t\t  T interval is [%f,%f]' % ( min(t), max(t) ) )
+    print ( '\t\t\t  T spacing is %f' % ( dt ) )
+    print ( '\t\t\t  Elastic K = %g' % ( k_elastic ) )
+    print ( '\t\t\t  Inelastic K = %g' % ( k_inelastic ) )
+    print ( '\t\t\t  CFL elastic coefficient = %g' % ( cfl_elastic ) )
+    print ( '\t\t\t  CFL inelastic coefficient = %g' % ( cfl_inelastic ) )
+    
+    if ( 0.5 <= cfl_elastic ):
+        print ( '\t\t\tFD1D_HEAT_EXPLICIT_CFL - Fatal error!' )
+        print ( '\t\t\t  CFL condition failed.' )
+        print ( '\t\t\t  0.5 <= K * dT / dX / dX = %f' % max(cfl_elastic,cfl_inelastic))
+        sys.exit(1)
+
+
+    hmat = np.zeros ( ( len(x), len(t) ) ) # running the code creates an output matrix of heads at each position and time
+    h_precons = np.zeros ( ( len(x), len(t) ) )
+    h_precons[:,0] = ic
+    inelastic_flag = np.zeros ( ( len(x), len(t) ) ) 
+
+    for j in range ( 0, len(t) ):
+        if j % (int(len(t)/20)) == 0:
+            printProgressBar(j,len(t))
+        if ( j == 0 ):
+            h = ic*np.ones(len(x))
+            h[0] = bc[0,0]
+            h[-1] = bc[1,0]
+        else:
+            h_new = np.zeros ( len(x) )
+
+            for c in range ( 1, len(x) - 1 ):
+                l = c - 1
+                r = c + 1
+                if inelastic_flag[c,j-1]:
+                    h_new[c] = h[c] + cfl_inelastic * ( h[l] - 2.0 * h[c] + h[r] )
+                elif not inelastic_flag[c,j-1]:
+                    h_new[c] = h[c] + cfl_elastic * ( h[l] - 2.0 * h[c] + h[r] )
+                else:
+                    print('Uh oh! Neither inelastic or elastic..something went wrong.')
+
+            h_new[0] = bc[0,j]
+            h_new[-1] = bc[1,j]
+            h = h_new
+        for i in range ( 0, len(x) ):
+            hmat[i,j] = h[i]
+            if h[i] < h_precons[i,j]:
+                if j <= len(t)-3:
+                    h_precons[i,j+1]=h[i]
+                    inelastic_flag[i,j] =1
+            else:
+                if j <= len(t)-3:
+                    h_precons[i,j+1] = h_precons[i,j]
+            if j == len(t)-3:
+                if h[i] < h_precons[i,j]:
+                    inelastic_flag[i,j] =1
+
+#        if j <= len(t)-3:
+#            h_precons[:,j+1] = np.min(hmat[:,:j+1],axis=1)
+
+    print(' ')
+    print('\t\t\t SOLVER COMPLETE')
+    return hmat, inelastic_flag
+
+
+
+def read_parameter(name,typ,length,paramfilelines):
+    '''Reads in a parameter from paramfilelines. 
+    name=parameter name
+    typ=parameter type (str,int,float). if length>1 this is the type that each entry in the list/dictionary will be.
+    length=how many comma separated entries are there for the parameter'''
+        
+    par_paramfile=[x for x in paramfilelines if x.replace(' ','').startswith('%s=' % name)]
+    if len(par_paramfile)==0:
+        if Defaults_Dictionary[name]==False:
+            print("\tReading parameters: NOTICE. No '%s' found in parameter file and no default set." % name)
+            return
+
+        else:
+            print("\t\tReading parameters error: WARNING. No '%s' found in parameter file. Using default value." % name)
+            par=Default_Values[name]
+            print('\t%s=%s' % (name,par))
+            return par
+        
+    par=par_paramfile[0].split('#')[0].split('=')[1]
+                     
+    if length==1:
+        par = par.strip()
+    else:
+        if ':' not in par:
+            par=par.split(',')
+            if len(par) != length:
+                print('\t\tReading parameters error: terminal. %s should have %i entries but only has %i.' % (name,length,len(par)))
+            par=[x.strip() for x in par]
+    
+    if ':' in par:
+        if typ!=dict:
+            par=re.split(':|,',par)
+            if len(par) != length*2:
+                print('\tERROR: %s=%s' % (name,par))          
+                print('\t\tReading parameters error: terminal. %s should have %i entries but has %i.' % (name,length,0.5*len(par)))
+                sys.exit(1)
+        else:
+            par = re.split('},',par)
+            b = [re.split(':{',p.replace('}','').strip()) for p in par]
+            return b
+        if typ!=bool:
+            par=dict([(par[2*i].strip(),typ(par[2*i+1].strip())) for i in range(length)])
+        else:
+            par=dict([(par[2*i].strip(),bool(ut.strtobool(par[2*i+1].strip()))) for i in range(length)])
+
+    if length==1:
+        if type(par) != dict:
+            if typ == bool:
+                par=bool(ut.strtobool(par)) 
+            else: 
+                par=typ(par)
+
+    print('\t%s=%s' % (name,par))
+    
+    if length==1:
+        if type(par) != dict:
+            if type(par) != typ:
+                print("\t\tReading parameters error: WARNING. %s is of class %s but may need to be %s. This may lead to errors later." % (name, type(par),typ))
+        else:
+            if type(par)!=dict:
+                iscorrect=[type(x)==typ for x in par]
+                if False in iscorrect:
+                    print("\t\tReading parameters error: WARNING. elements of %s should be %s but 1 or more is not. This may lead to errors later." % (name,typ))
+    
+    if len(par_paramfile)>1:
+        print("\t\tReading parameters error: WARNING. Multiple '%s's found in parameter file. using the first." % name)
+        
+    if type(par)==dict:
+        iscorrect=[type(x) ==typ for x in par.values()]
+        if False in iscorrect:
+            print("\t\tReading parameters error: WARNING. values of %s should be %s but 1 or more is not. This may lead to errors later." % (name,typ))
+
+    return par
+
+def subsidence_solver_aquitard_nooverburden_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz):
+    print('Aquitard solver is done at midpoints. Applying linear interpolation to hmat.')
+    hmat_interp = np.zeros((np.shape(hmat)[0]*2-1,np.shape(hmat)[1]))
+    for i in range(np.shape(hmat)[1]):
+        if i % (int(np.shape(hmat)[1]/20)) == 0:
+            printProgressBar(i,np.shape(hmat)[1])
+        a = scipy.interpolate.interp1d(np.arange(0,np.shape(hmat)[0]*dz,dz),hmat[:,i],kind='linear')
+        hmat_interp[:,i] = a(np.arange(0,np.shape(hmat_interp)[0]*(dz/2),(dz/2)))
+    hmat_midpoints = hmat_interp[1::2,:]
+    #hmat_midpoints_precons = np.array([np.min(hmat_midpoints[:,:i+1],axis=1) for i in range(np.shape(hmat_midpoints)[1])]).T
+    
+    hmat_midpoints_precons = np.zeros_like(hmat_midpoints)
+    inelastic_flag_midpoints = np.zeros_like(hmat_midpoints)
+    hmat_midpoints_precons[:,0] = hmat_midpoints[:,0]
+    for i in range(np.shape(hmat_midpoints)[1]-1):
+        if i % (int((np.shape(hmat_midpoints)[1]-1)/20)) == 0:
+            printProgressBar(i,np.shape(hmat_midpoints)[1])        
+        for j in range(np.shape(hmat_midpoints)[0]):
+            if hmat_midpoints[j,i] < hmat_midpoints_precons[j,i]:
+                hmat_midpoints_precons[j,i+1]=hmat_midpoints[j,i]
+                inelastic_flag_midpoints[j,i]=1
+            else:
+                hmat_midpoints_precons[j,i+1]=hmat_midpoints_precons[j,i]
+                inelastic_flag_midpoints[j,i]=0
+
+    
+#    inelastic_flag_midpoints = hmat_midpoints == hmat_midpoints_precons
+    
+    inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
+#    plt.figure()
+#    plt.imshow(inelastic_flag_midpoints,aspect='auto')
+#    plt.colorbar()
+#    plt.show()
+#    
+#    plt.figure()
+#    plt.imshow(hmat_midpoints,aspect='auto')
+#    plt.colorbar()
+#    plt.show()
+
+    print('doing db')
+    db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    print('doing ds')
+    ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, hmat_midpoints[:,i+1] - hmat_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    print('doing ds elastic')
+    ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    print('doing ds inelastic')
+    ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, hmat_midpoints[:,i+1] - hmat_midpoints[:,i]))  for i in range(np.shape(hmat_midpoints)[1]-1)]
+
+    s = np.zeros(np.shape(hmat)[1])
+    s_elastic = np.zeros(np.shape(hmat)[1])
+    s_inelastic = np.zeros(np.shape(hmat)[1])
+
+    print('\tIntegrating deformation over time.')
+    for i in range(1,np.shape(hmat)[1]):
+        if i % (int(np.shape(hmat)[1]/20)) == 0:
+            printProgressBar(i,np.shape(hmat)[1]-1)
+        s[i] = s[i-1]+ds[i-1]
+        s_elastic[i] = s_elastic[i-1]+ds_elastic[i-1]
+        s_inelastic[i] = s_inelastic[i-1]+ds_inelastic[i-1]
+
+    return db,s,s_elastic,s_inelastic
+
+def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100):
+        if not os.path.isdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_'))):
+            os.mkdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_')))
+        
+        # Make the video frames; use ffmpeg -f image2 -i %*.png vid.mp4 to make the vid itself
+        plt.ioff()
+        sns.set_context('talk')
+        print('\t\tCreating frames.')
+        plt.figure(figsize=(6,6))
+        plt.xlabel('Head in the clay (m)')
+        plt.ylabel('Z (m)')
+        plt.xlim([np.max(hmat)+1,np.min(hmat)-1])
+        plt.ylim([np.min(z)-0.1*(z[-1]-z[1]),np.max(z)+0.1*(z[-1]-z[1])])
+        plt.gca().invert_xaxis()
+        plt.gca().invert_yaxis()
+        t_tmp = date2num([dt.strptime(date, '%d-%b-%Y').date() for date in dates_str])
+        t_jumps = [t_tmp[i] - t_tmp[0] for i in range(len(t_tmp))]
+        if not delt in t_jumps:
+            print("\tERROR MAKING VIDEO! Selected dt not compatible with dates given.")
+            sys.exit(1)
+        
+        t1_start = process_time()  
+        ts_to_do = np.arange(t_tmp[0],t_tmp[-1]+0.0001,delt)
+        firsttime=0
+        for t in ts_to_do:
+            i=np.argwhere(t_tmp==t)[0][0] # If there are multiple frames on the same day, this line means we take the first of them
+            if firsttime==2: # This whole "firsttime" bit is just to help print every 5%, it's really not important.
+                if i % (int(len(t_tmp)/20)) <= di:
+                    printProgressBar(i,len(t_tmp))
+            else:
+                printProgressBar(i,len(t_tmp))
+
+            #plt.plot(hmat[:,0],np.linspace(0,40,20),'k--',label='t=0 position')
+            if firsttime==1:
+                firsttime=2
+                di = i
+            if i==0:
+                l1, = plt.plot(np.min(hmat[:,:i+1],axis=1),z,'b--',label='Preconsolidation head')
+                l2,= plt.plot(hmat[:,i],z,'r.')
+                l3, = plt.plot(hmat[:,i][~inelastic_flag[:,i]],z[~inelastic_flag[:,i]],'g.')
+                plt.legend()
+                firsttime=1
+            else:
+                l1.set_xdata(np.min(hmat[:,:i+1],axis=1))
+                l2.set_xdata(hmat[:,i])
+                l3.remove()
+                l3, = plt.plot(hmat[:,i][~inelastic_flag[:,i]],z[~inelastic_flag[:,i]],'g.')
+            plt.title('t=%s' % num2date(t_tmp[i]).strftime('%Y'))
+#            set_size(plt.gcf(), (12, 12))
+            plt.savefig('%s/headvideo_%s/frame%06d.jpg' % (outputfolder, layer.replace(' ','_'),i),dpi=60,bbox_inches='tight')
+        t1_stop = process_time() 
+        print("")     
+        print("\t\tElapsed time in seconds:",  t1_stop-t1_start)  
+        print('')
+        print('\t\tStitching frames together using ffmpeg.')
+        #cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %*.jpg vid.mp4'
+        cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %*.jpg -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" vid.mp4'
+
+        print('\t\t\t%s.' % cmd)
+        cd=os.getcwd()
+        os.chdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_')))
+        subprocess.call(cmd,shell=True)
+        os.chdir(cd)
+        
+        
+## Misc functions 
+        
+from matplotlib.image import imread
+from tempfile import NamedTemporaryFile
+
+def get_size(fig, dpi=100):
+    with NamedTemporaryFile(suffix='.png') as f:
+        fig.savefig(f.name, bbox_inches='tight', dpi=dpi)
+        height, width, _channels = imread(f.name).shape
+        return width / dpi, height / dpi
+
+def set_size(fig, size, dpi=100, eps=1e-2, give_up=2, min_size_px=10):
+    target_width, target_height = size
+    set_width, set_height = target_width, target_height # reasonable starting point
+    deltas = [] # how far we have
+    while True:
+        fig.set_size_inches([set_width, set_height])
+        actual_width, actual_height = get_size(fig, dpi=dpi)
+        set_width *= target_width / actual_width
+        set_height *= target_height / actual_height
+        deltas.append(abs(actual_width - target_width) + abs(actual_height - target_height))
+        if deltas[-1] < eps:
+            return True
+        if len(deltas) > give_up and sorted(deltas[-give_up:]) == deltas[-give_up:]:
+            return False
+        if set_width * dpi < min_size_px or set_height * dpi < min_size_px:
+            return False
+

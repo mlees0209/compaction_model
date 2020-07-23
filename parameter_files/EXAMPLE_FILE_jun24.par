@@ -1,0 +1,47 @@
+### MODEL INPUT PARAMETER FILE ###
+# instructions here
+
+## Admin
+run_name=reproducing_quals_C-clay_UpdatedSskv # This is the name of the folder where model outputs will be stored.
+output_folder=/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_runs # This is the location where the folder containing model outputs will be placed.
+overwrite=True # If the output folder already exists, do you want to overwrite? NB you must confirm manually if this is the case.
+internal_time_delay=0.1 # This is the time delay in seconds between sections of the solver.
+
+## Hydrostratigraphy
+no_layers=3 # this is the number of layers in your model
+layer_names=Upper Aquifer,Clay,Lower Aquifer # these are the names of the layers in your model
+layer_types=Upper Aquifer:Aquifer,Clay:Aquitard,Lower Aquifer:Aquifer # for each named layer, give whether it is an aquifer or aquitard.
+layer_thicknesses=Upper Aquifer:100,Clay:40,Lower Aquifer:100 # for each named layer, specify the thickness.
+layer_compaction_switch=Upper Aquifer: 0,Clay: 1,Lower Aquifer: 0 # for each named layer, specify whether it can compact.
+
+## Deal with interbedded clays
+interbeds_switch=Upper Aquifer: 0,Lower Aquifer: 0 # for each aquifer layer, specify whether they will contain interbedded clays. 
+#interbeds_type=Upper Aquifer: Equivalent, Lower Aquifer: Equivalent # for each aquifer layer containing interbeds, specify whether they will have a single equivallent clay thickness.
+
+## Hydrologic parameters
+#clay_Ssk=Corcoran Clay:5e-5 # Singlevalue Ssk for each compacting layer; only used if compaction or groundwater flow equations are solved using 'singlevalue').
+clay_Sske=Clay:1.5e-5 # Sske for each compacting layer; only used if 'elastic-inelastic' specified for that layer for either groundwater flow solver or compaction solver.
+clay_Sskv=Clay:4.6e-4 # Sskv for each compacting layer; only used if 'elastic-inelastic' specified for that layer for either groundwater flow solver or compaction solver.
+clay_porosity=Clay:0.5
+sand_Ssk=Lower Aquifer1:0,Lower Aquifer:0
+compressibility_of_water=4.6e-6 # REFERENCE: Faunt 2009 P175; Freeze and Cherry p52 (multiply by rho g)
+vertical_conductivity=Clay: 1e-6 # UNITS: meters per day
+
+## Options for solving the groundwater flow equation
+dt_master=Clay:1 # timestep to solve groundwater flow equation in clays. Units=days
+dz_clays = Clay:1 # spatial discretization within all clay layers. Units=metres
+initial_condition = 45
+groundwater_flow_solver_type=Clay:elastic-inelastic
+
+## Options for solving the compaction equations
+compaction_solver_compressibility_type=Clay:elastic-inelastic
+compaction_solver_overburden_type=Clay:ignore
+
+## Input head time series
+
+head_data_files=Upper Aquifer:/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Shallow_Timeseries_5yrmovingavg_truncated_extended.csv,Lower Aquifer:/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Deep_Timeseries_5yrmovingavg_extended.csv
+
+## Output options
+
+save_output_head_timeseries=True
+create_output_head_video=True
