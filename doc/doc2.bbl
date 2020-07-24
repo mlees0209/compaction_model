@@ -1,4 +1,4 @@
-\begin{thebibliography}{8}
+\begin{thebibliography}{9}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -39,6 +39,16 @@ Donald~C. Helm.
   \url{http://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/WR012i003p00375}.
 \newblock \_eprint:
   https://onlinelibrary.wiley.com/doi/pdf/10.1029/WR012i003p00375.
+
+\bibitem[Poland and Davis(1969)]{poland_land_1969}
+J.~F. Poland and G.~H. Davis.
+\newblock {LAND} {SUBSIDENCE} {DUE} {TO} {WITHDRAWAL} {OF} {FLUIDS}.
+\newblock In \emph{Reviews in {Engineering} {Geology}}, volume~2, pages
+  187--270. Geological Society of America, 1969.
+\newblock ISBN 978-0-8137-4102-4.
+\newblock \doi{10.1130/REG2-p187}.
+\newblock URL
+  \url{https://pubs.geoscienceworld.org/books/book/854/chapter/3919426/}.
 
 \bibitem[Poland et~al.(1975)Poland, Lofgren, Ireland, and
   Pugh]{poland_land_1975}

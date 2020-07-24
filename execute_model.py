@@ -410,7 +410,7 @@ for layer in layers_requiring_solving:
                 hmat_tmp = head_series[layer]
                 inelastic_flag_vid = inelastic_flag[layer]
                 inelastic_flag_vid = inelastic_flag_vid==1            
-                dates_str = [x.strftime('%d-%b-%Y') for x in groundwater_solution_dates[layer]]
+                dates_str = [x.strftime('%d-%b-%Y') for x in num2date(groundwater_solution_dates[layer])]
                 create_head_video_elasticinelastic(hmat_tmp,Z[layer],inelastic_flag_vid,dates_str,outdestination+'/figures',layer)
 
         if layer_types[layer]=='Aquifer':

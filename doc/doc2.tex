@@ -60,7 +60,7 @@ In order to calculate compaction, I first need to know the changing hydraulic he
 \frac{K_v}{S_s} \frac{\partial^2h}{\partial z^2} = \frac{\partial h}{\partial t} - \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}
 \label{eq:diffusion-eqn}
 \end{equation}
-$K_v$ is the vertical hydraulic conductivity, $S_s$ is the specific storage, $ h$ is hydraulic head, $z$ is the spatial dimension, $ t$ is time, $ \rho$ is the density of water, $ g $ is the gravitational constant and $\sigma$ is the overburden stress.
+$K_v$ is the vertical hydraulic conductivity, $S_s$ is the specific storage, $ h$ is hydraulic head, $z$ is the spatial dimension, $ t$ is time, $ \rho$ is the density of water, $ g $ is the gravitational constant and $\sigma$ is the overburden stress. Note that here, overburden stress refers to stress initiating \textit{above} that layer, so is not a function of the head in the layer itself. See \cite{helm_one-dimensional_1975} for discussion of this; it can be confusing because in the compaction equations, overburden stress does change with head within the layer.
 
 There are various elements to this equation and its solution (including initial conditions and boundary conditions) which I can have as options in my code. I summarize these in Table \ref{table:diffn-options}. Note that the options I actually code up may change over time as priorities shift.
 
@@ -178,12 +178,24 @@ Effective stress $\sigma'$ is the difference between overburden stress and pore 
 \end{cases}
 \end{equation}
 
+Note that here, consistent with the groundwater flow equation, the overburden stress $sigma$ is the stress originating above the layer in question. However, we now account for a pressure change due to the changing head in the layer itself; this is only significant in the unconfined aquifer, where it is included as the $(1-S_y)$ term. I neglect the equivalent term for a confined aquifer, which would be $(1-S_s)$, because $S_s << 1$. See \cite{poland_land_1969} for derivations of these. 
+
 Overburden stress varies in general due to any changing mass in layers above the aquifer. We only consider the significant overburden stress of changing saturation in the unconfined aquifer. Mathematically, we can write this as:
 
 \begin{equation}
 \label{eq:overburden}
-\sigma (t_{i+1}) - \sigma(t_i) = \rho g \big( h^{unconfined}_{i+1} - h^{unconfined}_i \big)
+\sigma (t_{i+1}) - \sigma(t_i) = \rho g S_y \big( h^{unconfined}_{i+1} - h^{unconfined}_i \big)
 \end{equation}
+
+Note that the code never requires the user to specify which aquifer is confined or unconfined. Instead, it assumes that if the topmost layer is an aquifer, it is unconfined.
+
+\paragraph{Expected effect of including overburden stress}
+
+This section is written prior to coding  up the impact of overburden stress, such that I have an intuition of how the code should respond to the inclusion of overburden stress. 
+
+First, including overburden stresses will alter the groundwater flow equation. It will not alter this equation in the unconfined aquifer, since there is no overburden stress above it. However, it will alter things in the confined aquifer. If I assume both aquifers have head levels changing in the same direction, but with the unconfined seeing changes about a third of those in the confined, then a head drop in the confined aquifer will have a corresponding head drop as third as large in the unconfined aquifer. The former drop will encourage water to flow out of confined clays, but the second change will reduce the pressure they experience and therefore somewhat reduce the tendency for water to flow from the clays. Hence, I expect overburden stresses to generally mute the drainage of clays in the confined layers; however, this will be a relatively small impact because the effect will be a third times by $(1-S_y)$, so something like $\frac{2}{9}$ reduction. 
+
+Second, including overburden stresses will alter the compaction equations. This will occur in both the unconfined and confined aquifer, as well as the aquitard. In the unconfined, compaction is simply reduced by a factor of $(1-S_y)$. In the confined and aquitard layers, things are rather more complicated. I use the same logic as before about head in the confined and unconfined showing the same trends but the former having 3x larger magnitude. In this case, a head drop in the confined will, by itself, lead to compaction; however, it will have a smaller head drop in the unconfined to go with it, which will reduce pressure and retard compaction. The size of this effect should be the same as in the above paragraph, so something like a $\frac{2}{9}$ reduction. In the aquitard, we will see similar reductions, although it is harder to think about this and probably not very important. 
 
 %In most applications, overburden stress is assumed constant so Equation \ref{eq:compaction-overall-governing-eqn} is solved with $\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) = \rho g \big( h(z_j,t_{i+1}) - h(z_j,t_i) \big)$.
 

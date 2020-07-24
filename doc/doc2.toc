@@ -4,11 +4,12 @@
 \contentsline {subsubsection}{\numberline {1.1.2}Convergence of Explicit Finite Difference Solvers}{2}{subsubsection.1.1.2}
 \contentsline {subsection}{\numberline {1.2}Compaction Equations}{2}{subsection.1.2}
 \contentsline {subsubsection}{\numberline {1.2.1}Effective stress}{3}{subsubsection.1.2.1}
-\contentsline {subsubsection}{\numberline {1.2.2}Compressibility}{3}{subsubsection.1.2.2}
+\contentsline {paragraph}{Expected effect of including overburden stress}{3}{section*.2}
+\contentsline {subsubsection}{\numberline {1.2.2}Compressibility}{4}{subsubsection.1.2.2}
 \contentsline {subsubsection}{\numberline {1.2.3}Comments on solution}{4}{subsubsection.1.2.3}
-\contentsline {section}{\numberline {2}Input Head Timeseries}{4}{section.2}
-\contentsline {section}{\numberline {3}Suggested Hydraulic Parameters}{4}{section.3}
-\contentsline {subsection}{\numberline {3.1}Specific Storage Values}{4}{subsection.3.1}
-\contentsline {section}{\numberline {4}Validating Results}{5}{section.4}
-\contentsline {subsection}{\numberline {4.1}Existing subsidence data}{5}{subsection.4.1}
-\contentsline {section}{\numberline {5}Random notes}{5}{section.5}
+\contentsline {section}{\numberline {2}Input Head Timeseries}{5}{section.2}
+\contentsline {section}{\numberline {3}Suggested Hydraulic Parameters}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}Specific Storage Values}{5}{subsection.3.1}
+\contentsline {section}{\numberline {4}Validating Results}{6}{section.4}
+\contentsline {subsection}{\numberline {4.1}Existing subsidence data}{6}{subsection.4.1}
+\contentsline {section}{\numberline {5}Random notes}{6}{section.5}
