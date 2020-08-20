@@ -31,9 +31,9 @@ import scipy
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True} # Define which variables have pre-defined defaults
 
-Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False}
+Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2}
 
 
 class Logger(object):
@@ -128,7 +128,7 @@ def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):
     return hmat
 
 
-def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic):        
+def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[]):        
     print ( '' )
     print ( '\t\t\tFD1D_HEAT_EXPLICIT_ELASTICINELASTIC_Ssk:' )
     print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
@@ -137,6 +137,12 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic):
     print ( '' )
     print ( '\t\t\t    dH/dt - K * d2H/dx2 = f(x,t)' )
     print ( '' )
+    if overburdenstress:
+        print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
+        print('\t\t\tOverburden data read in as ')
+        print(overburden_data)
+    else:
+        overburden_data = np.zeros_like(t)
     
     cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence 
     cfl_inelastic = k_inelastic * dt / dx / dx # This is the coefficient that determines convergence 
@@ -181,9 +187,14 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic):
                 l = c - 1
                 r = c + 1
                 if inelastic_flag[c,j-1]:
-                    h_new[c] = h[c] + cfl_inelastic * ( h[l] - 2.0 * h[c] + h[r] )
+                    h_new[c] = h[c] + cfl_inelastic * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
+                    #print(dt * overburden_data[j])
+#                    h_new[c] = h[c] + cfl * ( h[l] - 2.0 * h[c] + h[r] ) + dt * f[c] This is the forcing version
+
                 elif not inelastic_flag[c,j-1]:
-                    h_new[c] = h[c] + cfl_elastic * ( h[l] - 2.0 * h[c] + h[r] )
+                    h_new[c] = h[c] + cfl_elastic * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
+                    #print(dt * overburden_data[j])
+
                 else:
                     print('Uh oh! Neither inelastic or elastic..something went wrong.')
 
@@ -192,15 +203,15 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic):
             h = h_new
         for i in range ( 0, len(x) ):
             hmat[i,j] = h[i]
-            if h[i] < h_precons[i,j]:
+            if h[i] - overburden_data[j] < h_precons[i,j]:
                 if j <= len(t)-3:
-                    h_precons[i,j+1]=h[i]
+                    h_precons[i,j+1]=h[i] - overburden_data[j]
                     inelastic_flag[i,j] =1
             else:
                 if j <= len(t)-3:
                     h_precons[i,j+1] = h_precons[i,j]
             if j == len(t)-3:
-                if h[i] < h_precons[i,j]:
+                if h[i] - overburden_data[j] < h_precons[i,j]:
                     inelastic_flag[i,j] =1
 
 #        if j <= len(t)-3:
@@ -286,7 +297,13 @@ def read_parameter(name,typ,length,paramfilelines):
 
     return par
 
-def subsidence_solver_aquitard_nooverburden_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz):
+def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,overburden=False,unconfined=False,overburden_data=0):
+    print('Running subsidence solver. Overburden=%s, uncofined=%s.' % (overburden,unconfined))
+    if overburden:
+        print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
+        print('\t\t\tOverburden data read in as ')
+        print(overburden_data)
+
     print('Aquitard solver is done at midpoints. Applying linear interpolation to hmat.')
     hmat_interp = np.zeros((np.shape(hmat)[0]*2-1,np.shape(hmat)[1]))
     for i in range(np.shape(hmat)[1]):
