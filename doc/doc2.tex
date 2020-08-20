@@ -120,6 +120,51 @@ where $\Delta t$ is the timestep and $\Delta x$ is the discretisation in the spa
 
 This criterion may seem counter intuitive at first, as it means that a larger $\Delta x$ gives better convergence for a fixed $\Delta t$. The way to think of this is as a trade-off: it is hardest to have both good spatial and temporal resolution simultaneously.
 
+\subsubsection{Impact of allowing overburden stress to change}
+\label{sec:overburden-gwflow}
+
+Overburden stress is a term included in Equation \ref{eq:diffusion-eqn}, but most groundwater flow models assume this term to be zero. In the scenario seen in Kaweah, where the water table changes by several metres every year, there is a substantial resulting overburden stress on the confined aquifer and it is correct to include the impact of the changing water table in the unconfined on groundwater flow in the confined. (There is also an effect on the compaction in the confined; see Section \ref{sec:overburden-compaction} for discussion of that).
+
+The final term in Equation \ref{eq:diffusion-eqn} is in terms of stress. To convert the head (water table) in the unconfined aquifer to a stress, I use the relation $\Delta \sigma = \rho_w g S_y \Delta h$ where $\rho_w$ is the density of water, $g$ is gravitational acceleration and $S_y$ is specific yield. Since the term required in Equation \ref{eq:diffusion-eqn} is the temporal derivative of this stress, I approximate this derivative to be $\frac{d\sigma}{dt} \approx \frac{\sigma_{i+1} - \sigma_{i}}{\Delta t}$. In the numerical solver, this term is actually multiplied by $\Delta t$ anyway, so the derivative drops out. I arbitrarily set $\sigma_0 = 0$ since we only ever use changes in stress, rather than the absolute value. 
+
+A careful consideration of how we expect Equation \ref{eq:diffusion-eqn} to behave reveals that overburden stress (or, head in the unconfined) should alter head in the same direction as stress in the confined. That is, an increase in head in the confined aquifer will make $\frac{\partial{h}}{\partial{t}}$ increase, which is the same as an increase in overburden stress (equivalent to an increase in head in the unconfined aquifer). To understand this, focus on the right hand side of the equation, and consider an instantaneous point in time. If head is increasing at a point in the clay layer, so $\frac{\partial{h}}{\partial{t}}$ is positive, then a large value of $ \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}$ will mean that $\frac{\partial{h}}{\partial{t}}$ has to be even more positive for LHS = RHS to hold. Hence we see that increasing overburden stress exacerbates existing increases in head, and the reverse also holds. We can rationalise this by understanding that an increase in overburden stress compacts the aquifer, which reduces slightly the saturated volume, which compresses the water, which results in an increase in hydraulic head. I have not been able to estimate the size of this effect using back-of-envelope sums, despite significant efforts!
+
+As of 18th August 2020, I see minimal change in head histories for including/neglecting overburden stress when all deformation is elastic. See Figures \ref{fig:overburden1}, 
+\ref{fig:overburden2} and \ref{fig:overburden3}.
+
+\begin{figure}
+\includegraphics[width=\linewidth]{BasicIllustration.pdf}
+\caption{Evolution of head with time at node 21 with and without the impacts of overburden. Red and blue lines are essentially indistinguishable}
+\label{fig:overburden1}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\linewidth]{BasicIllustration_ZOOM.pdf}
+\caption{Evolution of head with time at node 21 with and without the impacts of overburden. Red and blue lines are now distinguishable as we've zoomed in on a decade}
+\label{fig:overburden2}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\linewidth]{BasicIllustration_Timeevolution.pdf}
+\caption{Evolution of head with time at node all nodes; 5 timesteps presented. At any given time, the difference (or residual) between the two cases vary with the node. This means that although the overburden stress is applied identically at each node, vertical flow makes the change in head differ spatially.}
+\label{fig:overburden3}
+\end{figure}
+
+There is a more complex affect which is that the changing overburden stress will alter the timing at which aquifer compaction becomes inelastic. The equations for effective stress (Eq \ref{eqn:effective-stress}) contain both the head and the overburden stress, and hence these two quantities decide whether we use an elastic or inelastic compressibility value (Eq \ref{eq:compressibility-clays}). It seems that this interplay can be somewhat important, and depends on the thickness of the clay lens. In a thin clay lens, the head changes and the overburden changes are approximately in phase, so the overburden stress and head both drop simultaneously. These changes cancel each other out and make it less likely to enter inelastic behaviour than if overburden was not included (Figure \ref{fig:overburden4}). However, for a thick clay lens, head and overburden may no longer be in phase, and in the case that they are substantially out of phase this makes elastic behaviour more common, and hence results in larger head drops (Figure \ref{fig:overburden5}).
+
+\begin{figure}
+\includegraphics[width=\linewidth]{BasicIllustration_ElasticInelastic_n5.pdf}
+\caption{At node 5, overburden and head are roughly in sync, so including overburden stresses makes only a small difference..}
+\label{fig:overburden4}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\linewidth]{BasicIllustration_ElasticInelastic_n21.pdf}
+\caption{At node 21, the overburden and head are largely out of sync, which means the overburden stress makes inelastic behaviour less common. Hence, we see a much larger drop in head in the overburden case, as rapid elastic changes are more common. Note the period during the 2000s, when they are in sync again. Here the amplitude of the oscillations in the overburden case is approximately $S_y$ times the oscillations in the upper aquifer head. This reassures me that my code is correctly solving the equations here.}
+\label{fig:overburden5}
+\end{figure}
+
+
 \subsection{Compaction Equations}
 
 When depth is discretised as $(z_0, z_1, ..., z_n)$ and time as $(t_0, t_1, ..., t_m)$, the governing equation for observed surface deformation $s$ is given in Equation \ref{eq:compaction-governing-eqn}.
@@ -190,12 +235,15 @@ Overburden stress varies in general due to any changing mass in layers above the
 Note that the code never requires the user to specify which aquifer is confined or unconfined. Instead, it assumes that if the topmost layer is an aquifer, it is unconfined.
 
 \paragraph{Expected effect of including overburden stress}
+\label{sec:overburden-compaction}
 
 This section is written prior to coding  up the impact of overburden stress, such that I have an intuition of how the code should respond to the inclusion of overburden stress. 
 
-First, including overburden stresses will alter the groundwater flow equation. It will not alter this equation in the unconfined aquifer, since there is no overburden stress above it. However, it will alter things in the confined aquifer. If I assume both aquifers have head levels changing in the same direction, but with the unconfined seeing changes about a third of those in the confined, then a head drop in the confined aquifer will have a corresponding head drop as third as large in the unconfined aquifer. The former drop will encourage water to flow out of confined clays, but the second change will reduce the pressure they experience and therefore somewhat reduce the tendency for water to flow from the clays. Hence, I expect overburden stresses to generally mute the drainage of clays in the confined layers; however, this will be a relatively small impact because the effect will be a third times by $(1-S_y)$, so something like $\frac{2}{9}$ reduction. 
+First, including overburden stresses will alter the groundwater flow equation. For discussion of this, see Section \ref{sec:overburden-gwflow}.
 
-Second, including overburden stresses will alter the compaction equations. This will occur in both the unconfined and confined aquifer, as well as the aquitard. In the unconfined, compaction is simply reduced by a factor of $(1-S_y)$. In the confined and aquitard layers, things are rather more complicated. I use the same logic as before about head in the confined and unconfined showing the same trends but the former having 3x larger magnitude. In this case, a head drop in the confined will, by itself, lead to compaction; however, it will have a smaller head drop in the unconfined to go with it, which will reduce pressure and retard compaction. The size of this effect should be the same as in the above paragraph, so something like a $\frac{2}{9}$ reduction. In the aquitard, we will see similar reductions, although it is harder to think about this and probably not very important. 
+%It will not alter this equation in the unconfined aquifer, since there is no overburden stress above it. However, it will alter things in the confined aquifer. If I assume both aquifers have head levels changing in the same direction, but with the unconfined seeing changes about a third of those in the confined, then a head drop in the confined aquifer will have a corresponding head drop as third as large in the unconfined aquifer. The former drop will encourage water to flow out of confined clays, but the second change will reduce the pressure they experience and therefore somewhat reduce the tendency for water to flow from the clays. Hence, I expect overburden stresses to generally mute the drainage of clays in the confined layers; however, this will be a relatively small impact because the effect will be a third times by $(1-S_y)$, so something like $\frac{2}{9}$ reduction. 
+
+Second, including overburden stresses will alter the compaction equations. This will occur in both the unconfined and confined aquifer, as well as the aquitard. In the unconfined, compaction is simply reduced by a factor of $(1-S_y)$. In the confined and aquitard layers, things are rather more complicated. I use the same logic as before about head in the confined and unconfined showing the same trends but the former having 3x larger magnitude. In this case, a head drop in the confined will, by itself, lead to compaction; however, it will have a smaller head drop in the unconfined to go with it, which will reduce pressure and retard compaction. The size of this effect should be the same as in the above paragraph, so something like a $\frac{2}{9}$ reduction. In the aquitard, we will see similar reductions, although it is harder to think about this and probably not very important. However, there is an additional complexity which arises because the elastic vs inelastic condition is also impacted by the overburden stress. My anticipation is that this won't change too much, but I am not sure. It is hard to get a sense of this. 
 
 %In most applications, overburden stress is assumed constant so Equation \ref{eq:compaction-overall-governing-eqn} is solved with $\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) = \rho g \big( h(z_j,t_{i+1}) - h(z_j,t_i) \big)$.
 
