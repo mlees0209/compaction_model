@@ -31,9 +31,9 @@ import scipy
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True} # Define which variables have pre-defined defaults
 
-Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2}
+Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False}
 
 
 class Logger(object):
@@ -297,8 +297,8 @@ def read_parameter(name,typ,length,paramfilelines):
 
     return par
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,overburden=False,unconfined=False,overburden_data=0):
-    print('Running subsidence solver. Overburden=%s, uncofined=%s.' % (overburden,unconfined))
+def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,overburden=False,unconfined=False,overburden_data=0,debuglevel=0):
+    print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
         print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
         print('\t\t\tOverburden data read in as ')
@@ -314,42 +314,55 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
     hmat_midpoints = hmat_interp[1::2,:]
     #hmat_midpoints_precons = np.array([np.min(hmat_midpoints[:,:i+1],axis=1) for i in range(np.shape(hmat_midpoints)[1])]).T
     
-    hmat_midpoints_precons = np.zeros_like(hmat_midpoints)
+    if overburden:
+        overburden_data_midpoints = np.tile(overburden_data, (np.shape(hmat_midpoints)[0],1))
+    else:
+        overburden_data_midpoints = np.zeros_like(hmat_midpoints)
+    
+    stress_midpoints = hmat_midpoints - overburden_data_midpoints
+    
+    stress_midpoints_precons = np.zeros_like(hmat_midpoints)
     inelastic_flag_midpoints = np.zeros_like(hmat_midpoints)
-    hmat_midpoints_precons[:,0] = hmat_midpoints[:,0]
-    for i in range(np.shape(hmat_midpoints)[1]-1):
-        if i % (int((np.shape(hmat_midpoints)[1]-1)/20)) == 0:
-            printProgressBar(i,np.shape(hmat_midpoints)[1])        
-        for j in range(np.shape(hmat_midpoints)[0]):
-            if hmat_midpoints[j,i] < hmat_midpoints_precons[j,i]:
-                hmat_midpoints_precons[j,i+1]=hmat_midpoints[j,i]
+    stress_midpoints_precons[:,0] = hmat_midpoints[:,0] - overburden_data_midpoints[:,0]
+    
+    for i in range(np.shape(stress_midpoints)[1]-1):
+        if i % (int((np.shape(stress_midpoints)[1]-1)/20)) == 0:
+            printProgressBar(i,np.shape(stress_midpoints)[1])        
+        for j in range(np.shape(stress_midpoints)[0]):
+            if stress_midpoints[j,i] < stress_midpoints_precons[j,i]:
+                stress_midpoints_precons[j,i+1]=stress_midpoints[j,i]
                 inelastic_flag_midpoints[j,i]=1
             else:
-                hmat_midpoints_precons[j,i+1]=hmat_midpoints_precons[j,i]
+                stress_midpoints_precons[j,i+1]=stress_midpoints_precons[j,i]
                 inelastic_flag_midpoints[j,i]=0
 
-    
-#    inelastic_flag_midpoints = hmat_midpoints == hmat_midpoints_precons
+    if debuglevel==1:
+        plt.figure()
+        plt.imshow(stress_midpoints,aspect='auto')
+        plt.colorbar()
+        plt.figure()
+        plt.imshow(inelastic_flag_midpoints,aspect='auto')
+        plt.colorbar()
+        
+        plt.figure()
+        plt.plot(stress_midpoints[10,:],'-',label='stress')
+        plt.plot(hmat_midpoints[10,:],'-',label='head')
+        plt.legend()
+        ax2 = plt.twinx(plt.gca())
+        ax2.plot(inelastic_flag_midpoints[10,:],'k--',label='inelastic flag')
+        plt.show()
     
     inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
-#    plt.figure()
-#    plt.imshow(inelastic_flag_midpoints,aspect='auto')
-#    plt.colorbar()
-#    plt.show()
-#    
-#    plt.figure()
-#    plt.imshow(hmat_midpoints,aspect='auto')
-#    plt.colorbar()
-#    plt.show()
+
 
     print('doing db')
-    db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
     print('doing ds')
-    ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, hmat_midpoints[:,i+1] - hmat_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
     print('doing ds elastic')
-    ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, hmat_midpoints[:,i+1] - hmat_midpoints[:,i])) for i in range(np.shape(hmat_midpoints)[1]-1)]
+    ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
     print('doing ds inelastic')
-    ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, hmat_midpoints[:,i+1] - hmat_midpoints[:,i]))  for i in range(np.shape(hmat_midpoints)[1]-1)]
+    ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]))  for i in range(np.shape(stress_midpoints)[1]-1)]
 
     s = np.zeros(np.shape(hmat)[1])
     s_elastic = np.zeros(np.shape(hmat)[1])
