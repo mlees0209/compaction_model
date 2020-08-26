@@ -1,9 +1,20 @@
-\begin{thebibliography}{9}
+\begin{thebibliography}{11}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Burgess et~al.(2017)Burgess, Shamsudduha, Taylor, Zahid, Ahmed,
+  Mukherjee, Lapworth, and Bense]{burgess_terrestrial_2017}
+W.~G. Burgess, M.~Shamsudduha, R.~G. Taylor, A.~Zahid, K.~M. Ahmed,
+  A.~Mukherjee, D.~J. Lapworth, and V.~F. Bense.
+\newblock Terrestrial water load and groundwater fluctuation in the {Bengal}
+  {Basin}.
+\newblock \emph{Scientific Reports}, 7\penalty0 (1):\penalty0 3872--3872,
+  December 2017.
+\newblock \doi{10.1038/s41598-017-04159-w}.
+\newblock URL \url{http://www.nature.com/articles/s41598-017-04159-w}.
 
 \bibitem[Faunt(2009)]{faunt_groundwater_2009}
 Faunt.
@@ -56,6 +67,20 @@ J~F Poland, B~E Lofgren, R~L Ireland, and R~G Pugh.
 \newblock Land {Subsidence} in the {San} {Joaquin} {Valley}, {California}, {As}
   of 1972.
 \newblock page~87, 1975.
+
+\bibitem[Reeves et~al.(2000)Reeves, Thibodeau, Underwood, and
+  Gardner]{reeves_incorporation_2000}
+Howard~W. Reeves, Peter~M. Thibodeau, Robert~G. Underwood, and Leonard~R.
+  Gardner.
+\newblock Incorporation of {Total} {Stress} {Changes} into the {Ground} {Water}
+  {Model} {SUTRA}.
+\newblock \emph{Groundwater}, 38\penalty0 (1):\penalty0 89--98, 2000.
+\newblock ISSN 1745-6584.
+\newblock \doi{10.1111/j.1745-6584.2000.tb00205.x}.
+\newblock URL
+  \url{http://ngwa.onlinelibrary.wiley.com/doi/abs/10.1111/j.1745-6584.2000.tb00205.x}.
+\newblock \_eprint:
+  https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1745-6584.2000.tb00205.x.
 
 \bibitem[Smith and Knight(2019)]{smith_modeling_2019}
 Smith and Knight.

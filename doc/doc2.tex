@@ -127,10 +127,10 @@ Overburden stress is a term included in Equation \ref{eq:diffusion-eqn}, but mos
 
 The final term in Equation \ref{eq:diffusion-eqn} is in terms of stress. To convert the head (water table) in the unconfined aquifer to a stress, I use the relation $\Delta \sigma = \rho_w g S_y \Delta h$ where $\rho_w$ is the density of water, $g$ is gravitational acceleration and $S_y$ is specific yield. Since the term required in Equation \ref{eq:diffusion-eqn} is the temporal derivative of this stress, I approximate this derivative to be $\frac{d\sigma}{dt} \approx \frac{\sigma_{i+1} - \sigma_{i}}{\Delta t}$. In the numerical solver, this term is actually multiplied by $\Delta t$ anyway, so the derivative drops out. I arbitrarily set $\sigma_0 = 0$ since we only ever use changes in stress, rather than the absolute value. 
 
-A careful consideration of how we expect Equation \ref{eq:diffusion-eqn} to behave reveals that overburden stress (or, head in the unconfined) should alter head in the same direction as stress in the confined. That is, an increase in head in the confined aquifer will make $\frac{\partial{h}}{\partial{t}}$ increase, which is the same as an increase in overburden stress (equivalent to an increase in head in the unconfined aquifer). To understand this, focus on the right hand side of the equation, and consider an instantaneous point in time. If head is increasing at a point in the clay layer, so $\frac{\partial{h}}{\partial{t}}$ is positive, then a large value of $ \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}$ will mean that $\frac{\partial{h}}{\partial{t}}$ has to be even more positive for LHS = RHS to hold. Hence we see that increasing overburden stress exacerbates existing increases in head, and the reverse also holds. We can rationalise this by understanding that an increase in overburden stress compacts the aquifer, which reduces slightly the saturated volume, which compresses the water, which results in an increase in hydraulic head. I have not been able to estimate the size of this effect using back-of-envelope sums, despite significant efforts!
+A careful consideration of how we expect Equation \ref{eq:diffusion-eqn} to behave reveals that overburden stress (or, head in the unconfined) should alter head in the same direction as stress in the confined. That is, an increase in head in the confined aquifer will make $\frac{\partial{h}}{\partial{t}}$ increase, which is the same as an increase in overburden stress (equivalent to an increase in head in the unconfined aquifer). To understand this, focus on the right hand side of the equation, and consider an instantaneous point in time. If head is increasing at a point in the clay layer, so $\frac{\partial{h}}{\partial{t}}$ is positive, then a large value of $ \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}$ will mean that $\frac{\partial{h}}{\partial{t}}$ has to be even more positive for LHS = RHS to hold. Hence we see that increasing overburden stress exacerbates existing increases in head, and the reverse also holds. We can rationalise this by understanding that an increase in overburden stress compacts the aquifer, which reduces slightly the saturated volume, which compresses the water, which results in an increase in hydraulic head. Although I have not been able to estimate the size of this effect using back-of-envelope sums regarding the compaction and change in head (not withstanding significant efforts), I am able to estimate its magnitude based on studying Equation \ref{eq:diffusion-eqn}. In the centre of thick clay layers, it can be assumed that the first term of that Equation is almost zero as there is little curvature in the head field. Here, we can therefore assume that $  \frac{\partial h}{\partial t} \approx \frac{1}{\rho g} \frac{\partial \sigma}{\partial t} $. Integrating these terms and substituting $ \Delta \sigma = \rho g \Delta h_{unconfined} $, I can plug in values for the typical seasonal change in head in the unconfined (5m) to see that we expect about 1 m of seasonal head change due to overburden effects, which is indeed what we see in Figure \ref{fig:overburden3}.
 
-As of 18th August 2020, I see minimal change in head histories for including/neglecting overburden stress when all deformation is elastic. See Figures \ref{fig:overburden1}, 
-\ref{fig:overburden2} and \ref{fig:overburden3}.
+In general, it can be said that I see only small changes in head histories for including/neglecting overburden stress when all deformation is elastic. See Figures \ref{fig:overburden1}, 
+\ref{fig:overburden2} and \ref{fig:overburden3}. 
 
 \begin{figure}
 \includegraphics[width=\linewidth]{BasicIllustration.pdf}
@@ -163,6 +163,10 @@ There is a more complex affect which is that the changing overburden stress will
 \caption{At node 21, the overburden and head are largely out of sync, which means the overburden stress makes inelastic behaviour less common. Hence, we see a much larger drop in head in the overburden case, as rapid elastic changes are more common. Note the period during the 2000s, when they are in sync again. Here the amplitude of the oscillations in the overburden case is approximately $S_y$ times the oscillations in the upper aquifer head. This reassures me that my code is correctly solving the equations here.}
 \label{fig:overburden5}
 \end{figure}
+
+\paragraph{Loading efficiency and other details of using overburden in the groundwater flow equation}
+
+The formulation given above assumes that the entirety of the overburden stresses are taken up by the solid matrix, and none by the water itself. In past work, usually focusing on the impact of tidal loading, authors have used a loading efficiency parameter to account for how much stress is carried by the water and the solid matrix. For my purposes, I will note that this is a possibility, but will acknowledge that my model will not account for this. See references: \cite{burgess_terrestrial_2017} and \cite{reeves_incorporation_2000}.
 
 
 \subsection{Compaction Equations}
@@ -358,5 +362,5 @@ CLAUDIA FAUNT SAID IN A MEETING WITH MEREDITH THAT WHEN THEY STARTED PUMPING CV 
 
 
 \bibliographystyle{plainnat}
-\bibliography{Manual2}
+\bibliography{Manual3}
 \end{document}

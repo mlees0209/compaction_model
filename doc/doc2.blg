@@ -2,50 +2,50 @@ This is BibTeX, Version 0.99d (TeX Live 2018)
 Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
 The top-level auxiliary file: doc2.aux
 The style file: plainnat.bst
-Database file #1: Manual2.bib
+Database file #1: Manual3.bib
 Warning--empty publisher in faunt_groundwater_2009
 Warning--empty journal in poland_land_1975
 Warning--empty institution in sneed_hydraulic_2001
 Warning--empty institution in sneed_land_2018
-You've used 9 entries,
+You've used 11 entries,
             2773 wiz_defined-function locations,
-            653 strings with 6999 characters,
-and the built_in function-call counts, 3863 in all, are:
-= -- 376
-> -- 161
+            673 strings with 7771 characters,
+and the built_in function-call counts, 5255 in all, are:
+= -- 503
+> -- 275
 < -- 10
-+ -- 57
-- -- 48
-* -- 283
-:= -- 607
-add.period$ -- 43
-call.type$ -- 9
-change.case$ -- 44
-chr.to.int$ -- 9
-cite$ -- 22
-duplicate$ -- 185
-empty$ -- 323
-format.name$ -- 61
-if$ -- 813
++ -- 95
+- -- 84
+* -- 426
+:= -- 832
+add.period$ -- 55
+call.type$ -- 11
+change.case$ -- 62
+chr.to.int$ -- 11
+cite$ -- 26
+duplicate$ -- 227
+empty$ -- 405
+format.name$ -- 99
+if$ -- 1092
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 7
-newline$ -- 68
-num.names$ -- 36
-pop$ -- 78
+missing$ -- 9
+newline$ -- 84
+num.names$ -- 44
+pop$ -- 104
 preamble$ -- 1
-purify$ -- 34
+purify$ -- 50
 quote$ -- 0
-skip$ -- 142
+skip$ -- 177
 stack$ -- 0
-substring$ -- 135
-swap$ -- 21
+substring$ -- 189
+swap$ -- 24
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 94
+type$ -- 116
 warning$ -- 4
-while$ -- 37
+while$ -- 47
 width$ -- 0
-write$ -- 150
+write$ -- 188
 (There were 4 warnings)
