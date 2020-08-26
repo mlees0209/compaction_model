@@ -88,8 +88,11 @@ shutil.move('logfile.log','%s/logfile.log' % outdestination)
 copy2(param_filename,"%s/paramfile.par" % outdestination)
 
 save_output_head_timeseries = read_parameter('save_output_head_timeseries',bool,1,paramfilelines)
+save_effective_stress = read_parameter('save_effective_stress',bool,1,paramfilelines)
 no_layers = read_parameter('no_layers',int,1,paramfilelines)
 layer_names=read_parameter('layer_names',str,no_layers,paramfilelines)
+if no_layers==1:
+    layer_names = np.array([layer_names])
 layer_types=read_parameter('layer_types',str,no_layers,paramfilelines)
 no_aquifers = list(layer_types.values()).count('Aquifer')
 no_aquitards = list(layer_types.values()).count('Aquitard')
@@ -126,10 +129,11 @@ if False in [x == 'singlevalue' or x == 'elastic-inelastic' for x in groundwater
     print("\t\tReading parameters error: terminal. Only groundwater_flow_solver_type of 'singlevalue' or 'elastic-inelastic' currently supported.")
     sys.exit(1)
 overburden_stress_gwflow = read_parameter('overburden_stress_gwflow',bool,1,paramfilelines)
+compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
 
 clay_Ssk = read_parameter('clay_Ssk',float,sum(value == 'singlevalue' for value in groundwater_flow_solver_type.values()),paramfilelines)
-clay_Sse = read_parameter('clay_Sse',float,sum(value == 'elastic-inelastic' for value in groundwater_flow_solver_type.values()),paramfilelines)
-clay_Ssv = read_parameter('clay_Ssv',float,sum(value == 'elastic-inelastic' for value in groundwater_flow_solver_type.values()),paramfilelines)
+clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
+clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
 sand_Sse = read_parameter('sand_Sse',float,no_aquifers,paramfilelines)
 
 
@@ -142,8 +146,6 @@ g = read_parameter('g',float,1,paramfilelines)
 dt_master = read_parameter('dt_master',float,no_layers_containing_clay,paramfilelines)
 dz_clays = read_parameter('dz_clays',float,no_layers_containing_clay,paramfilelines)
 vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
-initial_condition = read_parameter('initial_condition',float,1,paramfilelines)
-compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
 overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
 #overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
 if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
@@ -237,6 +239,7 @@ if overburden_stress_gwflow or overburden_stress_compaction:
     plt.plot_date(overburden_dates,overburden_data)
     plt.savefig('%s/input_head_data/overburden_stress_series.png' % outdestination)
     print('\tOverburden stress calculated and saved in input_head_data.')                    
+effective_stress={}
 
 
 plt.figure(figsize=(18,12))
@@ -273,10 +276,12 @@ inelastic_flag = {}
 Z={}
 
 head_series=copy.deepcopy(head_data)
-    
+
+
 if len(layers_requiring_solving)>=0:
     groundwater_solution_dates={}
     for layer in layers_requiring_solving:
+        print('')
         print('\tBeginning solving process for layer %s.' % layer)
         if layer_types[layer]=='Aquitard':
             print('\t\t%s is an aquitard.' % layer)
@@ -343,26 +348,55 @@ if len(layers_requiring_solving)>=0:
                         f_tmp = scipy.interpolate.interp1d(overburden_dates,overburden_data)
                         overburden_data_tmp = f_tmp(t_in)
                         overburden_dates_tmp = t_in
+                    else:
+                        overburden_data_tmp = overburden_data
+                else: 
+                    overburden_data_tmp = np.zeros_like(t_in)
             else:
                 overburden_data_tmp = [0]
-                    
+            
+            initial_condition_tmp = (head_data[top_boundary][0,1] + head_data[bot_boundary][0,1]) / 2
+            
             if groundwater_flow_solver_type[layer] == 'singlevalue':
-                hmat=solve_head_equation_singlevalue(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition,vertical_conductivity[layer]/(clay_Ssk[layer]+compressibility_of_water))
+                hmat=solve_head_equation_singlevalue(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/(clay_Ssk[layer]+compressibility_of_water))
             elif groundwater_flow_solver_type[layer] == 'elastic-inelastic':
                 t1_start = process_time() 
-                hmat,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
+                hmat,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
                 t1_stop = process_time() 
                 print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
 
-
             head_series[layer]=hmat
             inelastic_flag[layer] = inelastic_flag_tmp
-            
+            effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat)[0],1)) -  rho_w*g*hmat 
+
             with open('%s/%s_inelastic_flag_DEBUG.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
                 csvWriter = csv.writer(myCsv, delimiter=',')
                 csvWriter.writerows(inelastic_flag_tmp)
             #dateslist = [x.strftime('%d-%b-%Y') for x in num2date(t_in)]
             groundwater_solution_dates[layer]=t_in
+
+            if overburden_stress_gwflow:
+                effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat)[0],1)) -  rho_w*g*hmat 
+            else:
+                effective_stress[layer] = np.zeros_like(hmat) -  rho_w*g*hmat                             
+
+
+            if save_effective_stress:
+                print('\t\tSaving effective stress and overburden stress outputs.')
+                if overburden_stress_gwflow:
+                    with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                        csvWriter = csv.writer(myCsv, delimiter=',')
+                        csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
+                else:
+                    with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                        csvWriter = csv.writer(myCsv, delimiter=',')
+                        csvWriter.writerows(np.zeros_like(hmat))
+
+                with open('%s/%s_effective_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                    csvWriter = csv.writer(myCsv, delimiter=',')
+                    csvWriter.writerows(effective_stress[layer])
+
+
 
         else:
             if layer_types[layer]=='Aquifer':
@@ -370,12 +404,14 @@ if len(layers_requiring_solving)>=0:
                 inelastic_flag[layer]={}
                 groundwater_solution_dates[layer]={}
                 Z[layer]={}
+                effective_stress[layer]={}
                 print('\t\t%s is an aquifer.' % layer)
                 if interbeds_switch[layer]:
                     interbeds_tmp=interbeds_distributions[layer]
                     bed_thicknesses_tmp=list(interbeds_tmp.keys())
                     print('\t\t%s is an aquifer with interbedded clays. Thicknesses of clays to be solved are %s' % (layer,bed_thicknesses_tmp))
                     for thickness in bed_thicknesses_tmp:
+                        print('')
                         print('\t\tSolving for thickness %.2f.' % thickness)
                         # This bit interpolated if dt_master < dt_boundarycondition 
                         t_aquifer_tmp=head_data[layer][:,0]
@@ -388,13 +424,17 @@ if len(layers_requiring_solving)>=0:
                         initial_condition_tmp=h_aquifer_tmp[0]
                         
                         if overburden_stress_gwflow:
-                            if len(overburden_dates) != len(t_interp_new):
-                                print('\t\t\tInterpolating overburden stress.')
-                                f_tmp = scipy.interpolate.interp1d(overburden_dates,overburden_data)
-                                overburden_data_tmp = f_tmp(t_interp_new)
-                                overburden_dates_tmp = t_interp_new
+                            if layer != unconfined_aquifer_name:
+                                if len(overburden_dates) != len(t_interp_new):
+                                    print('\t\t\tInterpolating overburden stress.')
+                                    f_tmp = scipy.interpolate.interp1d(overburden_dates,overburden_data)
+                                    overburden_data_tmp = f_tmp(t_interp_new)
+                                    overburden_dates_tmp = t_interp_new
+                                else:
+                                    overburden_data_tmp = overburden_data
                             else:
-                                overburden_data_tmp = overburden_data
+                                print('\t\t\tThis is the unconfined aquifer; overburden=0.')
+                                overburden_data_tmp = np.zeros_like(t_interp_new)
                         else:
                             overburden_data_tmp=[0]
 
@@ -404,7 +444,7 @@ if len(layers_requiring_solving)>=0:
                         print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
                         head_series[layer]['%.2f clays' % thickness]=hmat_tmp
                         inelastic_flag[layer]['%.2f clays' % thickness] = inelastic_flag_tmp
-                        with open('%s/%s_inelastic_flag_DEBUG.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                        with open('%s/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                             csvWriter = csv.writer(myCsv, delimiter=',')
                             csvWriter.writerows(inelastic_flag_tmp)
 
@@ -413,17 +453,24 @@ if len(layers_requiring_solving)>=0:
                         Z[layer]['%.2f clays' % thickness]=z_tmp
                         
                         if overburden_stress_gwflow:
-                            head_pressure_tmp = hmat_tmp
-                            effective_stress_tmp = np.tile(overburden_data_tmp, (len(z_tmp),1)) -  rho_w*g*hmat_tmp 
-                            with open('%s/%s_%sclay_head_pressure.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                                csvWriter = csv.writer(myCsv, delimiter=',')
-                                csvWriter.writerows(head_pressure_tmp)
-                            with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                                csvWriter = csv.writer(myCsv, delimiter=',')
-                                csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
+                            effective_stress[layer]['%.2f clays' % thickness] = np.tile(overburden_data_tmp, (np.shape(hmat_tmp)[0],1)) -  rho_w*g*hmat_tmp 
+                        else:
+                            effective_stress[layer]['%.2f clays' % thickness] = np.zeros_like(hmat_tmp) -  rho_w*g*hmat_tmp                             
+
+                        if save_effective_stress:
+                            print('\t\tSaving effective stress and overburden stress outputs.')
+                            if overburden_stress_gwflow:
+                                with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                    csvWriter = csv.writer(myCsv, delimiter=',')
+                                    csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
+                            else:
+                                with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                    csvWriter = csv.writer(myCsv, delimiter=',')
+                                    csvWriter.writerows(np.zeros_like(hmat_tmp))
+
                             with open('%s/%s_%sclay_effective_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                                 csvWriter = csv.writer(myCsv, delimiter=',')
-                                csvWriter.writerows(effective_stress_tmp)
+                                csvWriter.writerows(effective_stress[layer]['%.2f clays' % thickness])
 
                             
                 else:
@@ -457,6 +504,10 @@ if save_output_head_timeseries:
                     with open('%s/head_outputs/%s_%sclay_head_data.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                         csvWriter = csv.writer(myCsv, delimiter=',')
                         csvWriter.writerows(head_series[layer]['%.2f clays' % thickness])
+            with open('%s/head_outputs/%s_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_')), 'w') as myfile:
+                wr = csv.writer(myfile)
+                res = list(groundwater_solution_dates[layer].keys())[0] 
+                wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer][res])])
 
             
         if layer_types[layer]=='Aquitard':
@@ -572,10 +623,29 @@ for layer in layer_names:
             if compaction_solver_compressibility_type[layer]=='elastic-inelastic':
                 deformation[layer]={}
                 
-                if overburden_stress_compaction==False:
-                    print(np.shape(head_series[layer]))
+                if overburden_stress_compaction:
+                    unconfined_tmp = unconfined_aquifer_name==layer
+                    if len(overburden_dates) != len(groundwater_solution_dates[layer]):
+                        print('\t\t\tOverburden series is %i long whereas head series is %i long. Interpolating overburden stress.' % (len(overburden_dates),len(groundwater_solution_dates[layer])))
+                        f_tmp = scipy.interpolate.interp1d(overburden_dates,overburden_data)
+                        overburden_data_tmp = f_tmp(groundwater_solution_dates[layer])
+                        overburden_dates_tmp = groundwater_solution_dates[layer]
+                    else:
+                        overburden_data_tmp = overburden_data
+
+                    db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic']=subsidence_solver_aquitard_elasticinelastic(head_series[layer],inelastic_flag[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
+                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
+
+                else:
                     db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic']=subsidence_solver_aquitard_elasticinelastic(head_series[layer],inelastic_flag[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
+
+                
+                
+#                if overburden_stress_compaction==False:
+#                    print(np.shape(head_series[layer]))
+#                    db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic']=subsidence_solver_aquitard_elasticinelastic(head_series[layer],inelastic_flag[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer])
+#                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
 
     
 
