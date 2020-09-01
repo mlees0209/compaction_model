@@ -84,6 +84,7 @@ else:
             sys.exit(1)
     #    OVERWRITE = input("\t\tOutput directory %s already exists. Do you want to overwrite this directory? WARNING: may delete existing data." % (outdestination))
 
+
 shutil.move('logfile.log','%s/logfile.log' % outdestination)
 copy2(param_filename,"%s/paramfile.par" % outdestination)
 
@@ -130,13 +131,16 @@ if False in [x == 'singlevalue' or x == 'elastic-inelastic' for x in groundwater
     sys.exit(1)
 overburden_stress_gwflow = read_parameter('overburden_stress_gwflow',bool,1,paramfilelines)
 compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
+compaction_solver_debug_include_endnodes = read_parameter('compaction_solver_debug_include_endnodes',bool,1,paramfilelines)
+
+
 
 clay_Ssk = read_parameter('clay_Ssk',float,sum(value == 'singlevalue' for value in groundwater_flow_solver_type.values()),paramfilelines)
 clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
 clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
 sand_Sse = read_parameter('sand_Sse',float,no_aquifers,paramfilelines)
 
-
+time_unit = read_parameter('time_unit',str,1,paramfilelines)
 
 #clay_porosity = read_parameter('clay_porosity',float,no_layers_containing_clay,paramfilelines)
 sand_Ssk = read_parameter('sand_Ssk',float,no_aquifers,paramfilelines)
@@ -191,7 +195,15 @@ if len(all_aquifers_needing_head_data) >=0:
             except Exception:
                 print('\t\tReading head data error: terminal. Input file does not seem to be valid csv format. Format expected is two columns, date then measurement. Date should be "dd-MMM-YYYY".')
                 sys.exit(1)
-            dates=date2num(data.iloc[:,0].values)
+            
+            try:
+                dates=date2num(data.iloc[:,0].values)
+            except Exception:
+                print("\t\tPandas couldn't parse the date head. Going to try treating the date as a float. If it's not, things may fail from hereon.")
+                dates=np.array([float(ting) for ting in data.iloc[:,0].values])
+                if time_unit=='years':
+                    dates=365*dates
+                    
             data=data.iloc[:,1].values
             head_data[aquifer]=np.array([dates,data]).T
             print('\t\tSuccessfully read in. Head data for %s printing now.' % aquifer)
@@ -392,9 +404,15 @@ if len(layers_requiring_solving)>=0:
                         csvWriter = csv.writer(myCsv, delimiter=',')
                         csvWriter.writerows(np.zeros_like(hmat))
 
-                with open('%s/%s_effective_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                    csvWriter = csv.writer(myCsv, delimiter=',')
-                    csvWriter.writerows(effective_stress[layer])
+                if np.size(effective_stress[layer]) >= 5e6:
+                    print('\t\t\tEffective stress has more than 5 million entries; saving as binary floats.')
+                    effective_stress[layer].astype('f16').tofile('%s/%s_effective_stress' % (outdestination, layer.replace(' ','_')))
+
+                else:
+                    
+                    with open('%s/%s_effective_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                        csvWriter = csv.writer(myCsv, delimiter=',')
+                        csvWriter.writerows(effective_stress[layer])
 
 
 
@@ -468,9 +486,15 @@ if len(layers_requiring_solving)>=0:
                                     csvWriter = csv.writer(myCsv, delimiter=',')
                                     csvWriter.writerows(np.zeros_like(hmat_tmp))
 
-                            with open('%s/%s_%sclay_effective_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                                csvWriter = csv.writer(myCsv, delimiter=',')
-                                csvWriter.writerows(effective_stress[layer]['%.2f clays' % thickness])
+                            if np.size(effective_stress[layer]['%.2f clays' % thickness]) >= 5e6:
+                                print('\t\t\tEffective stress has more than 5 million entries; saving as binary floats.')
+                                effective_stress[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/%s_effective_stress' % (outdestination, layer.replace(' ','_')))
+            
+                            else:
+                                with open('%s/%s_%sclay_effective_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                    csvWriter = csv.writer(myCsv, delimiter=',')
+                                    csvWriter.writerows(effective_stress[layer]['%.2f clays' % thickness])
+
 
                             
                 else:
@@ -501,9 +525,13 @@ if save_output_head_timeseries:
             if interbeds_switch[layer]:
                 interbeds_tmp=interbeds_distributions[layer]
                 for thickness in list(interbeds_tmp.keys()):
-                    with open('%s/head_outputs/%s_%sclay_head_data.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                        csvWriter = csv.writer(myCsv, delimiter=',')
-                        csvWriter.writerows(head_series[layer]['%.2f clays' % thickness])
+                    if np.size(head_series[layer]['%.2f clays' % thickness]) >= 5e6:
+                        print('\t\t\tHead has more than 5 million entries; saving as 32 bit floats.')
+                        head_series[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
+                    else:
+                        with open('%s/head_outputs/%s_%sclay_head_data.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                            csvWriter = csv.writer(myCsv, delimiter=',')
+                            csvWriter.writerows(head_series[layer]['%.2f clays' % thickness])
             with open('%s/head_outputs/%s_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_')), 'w') as myfile:
                 wr = csv.writer(myfile)
                 res = list(groundwater_solution_dates[layer].keys())[0] 
@@ -588,9 +616,9 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],inelastic_flag[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
+                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],inelastic_flag[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes)
                 else:
-                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],inelastic_flag[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer])
+                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],inelastic_flag[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],endnodes=compaction_solver_debug_include_endnodes)
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
                 deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
                 deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
@@ -598,14 +626,16 @@ for layer in layer_names:
             dt_sand_tmp=np.diff(head_data[layer][:,0])[0]
             print('\tSumming deformation for layer %s. dts are %.2f and %.2f.' % (layer, dt_sand_tmp,dt_master[layer]))
             dt_max_tmp = np.max([dt_sand_tmp,dt_master[layer]])
-            t_total_tmp = np.arange(np.min(head_data[layer][:,0]),np.max(head_data[layer][:,0]+0.001),dt_max_tmp) # this is the master dt which will apply for all the sublayers within layer
+
+            t_total_tmp = 0.001 * np.arange(1000*np.min(head_data[layer][:,0]),1000*np.max(head_data[layer][:,0]+0.000001),1000*dt_max_tmp) # this is the master dt which will apply for all the sublayers within layer
 
 
             deformation_OUTPUT_tmp={}
             deformation_OUTPUT_tmp['dates'] = [x.strftime('%d-%b-%Y') for x in num2date(t_total_tmp)]
 
             deformation_OUTPUT_tmp['Interconnected Matrix'] = np.array(deformation[layer]['Interconnected matrix'])[np.where(np.isin(head_data[layer][:,0],t_total_tmp))]
-            def_tot_tmp = np.zeros_like(t_total_tmp,dtype='float')
+            def_tot_tmp = np.zeros_like(t_total_tmp,dtype='float')               
+            
             def_tot_tmp += np.array(deformation[layer]['Interconnected matrix'])[np.where(np.isin(head_data[layer][:,0],t_total_tmp))]
             for thickness in bed_thicknesses_tmp:
                 def_tot_tmp += np.array(deformation[layer]['total_%.2f clays' % thickness])[np.isin(0.0001*np.arange(10000*np.min(head_data[layer][:,0]),10000*(np.max(head_data[layer][:,0])+0.0001),10000*dt_master[layer]),t_total_tmp)]
@@ -959,13 +989,13 @@ plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
 for line in l_aqt:
     line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
 
-for line in l_aqf:
-    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-
-l3.set_ydata(np.array(l3.get_ydata()) - np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2015,1,1))])
-
-plt.ylim([2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))],-0.2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))]])
-plt.savefig('%s/figures/total_deformation_figure_20152020zoom.png' % outdestination,bbox_inches='tight')
+#for line in l_aqf:
+#    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
+#
+#l3.set_ydata(np.array(l3.get_ydata()) - np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2015,1,1))])
+#
+#plt.ylim([2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))],-0.2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))]])
+#plt.savefig('%s/figures/total_deformation_figure_20152020zoom.png' % outdestination,bbox_inches='tight')
 
 
 #print("Creating overall compaction % plot")
