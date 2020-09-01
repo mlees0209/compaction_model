@@ -1,4 +1,4 @@
-\begin{thebibliography}{11}
+\begin{thebibliography}{13}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -51,6 +51,16 @@ Donald~C. Helm.
 \newblock \_eprint:
   https://onlinelibrary.wiley.com/doi/pdf/10.1029/WR012i003p00375.
 
+\bibitem[Hoffmann et~al.(2003)Hoffmann, Galloway, and
+  Zebker]{hoffmann_inverse_2003}
+Jörn Hoffmann, D.~Galloway, and Howard~A. Zebker.
+\newblock Inverse modeling of interbed storage parameters using land subsidence
+  observations, {Antelope} {Valley}, {California}.
+\newblock \emph{Water Resources Research}, 39\penalty0 (2):\penalty0 1--13,
+  2003.
+\newblock ISSN 0043-1397.
+\newblock \doi{10.1029/2001WR001252}.
+
 \bibitem[Poland and Davis(1969)]{poland_land_1969}
 J.~F. Poland and G.~H. Davis.
 \newblock {LAND} {SUBSIDENCE} {DUE} {TO} {WITHDRAWAL} {OF} {FLUIDS}.
@@ -81,6 +91,19 @@ Howard~W. Reeves, Peter~M. Thibodeau, Robert~G. Underwood, and Leonard~R.
   \url{http://ngwa.onlinelibrary.wiley.com/doi/abs/10.1111/j.1745-6584.2000.tb00205.x}.
 \newblock \_eprint:
   https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1745-6584.2000.tb00205.x.
+
+\bibitem[Rojstaczer and Agnew(1989)]{rojstaczer_influence_1989}
+Stuart Rojstaczer and Duncan~Carr Agnew.
+\newblock The influence of formation material properties on the response of
+  water levels in wells to {Earth} tides and atmospheric loading.
+\newblock \emph{Journal of Geophysical Research: Solid Earth}, 94\penalty0
+  (B9):\penalty0 12403--12411, 1989.
+\newblock ISSN 2156-2202.
+\newblock \doi{10.1029/JB094iB09p12403}.
+\newblock URL
+  \url{https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/JB094iB09p12403}.
+\newblock \_eprint:
+  https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/JB094iB09p12403.
 
 \bibitem[Smith and Knight(2019)]{smith_modeling_2019}
 Smith and Knight.

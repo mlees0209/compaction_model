@@ -104,6 +104,7 @@ Initial Condition & Constant head / other & Constant head \\
 \end{table}
 
 \subsubsection{Convergence of Explicit Finite Difference Solvers}
+\label{sec:Convergence_gwflow}
 
 The simplest method to solve Equation \ref{eq:diffusion-eqn} numerically will be by an explicit finite different approximation. In this case, there are requirements on the temporal and spatial discretisation, as well as the value of the diffusivity parameter, for the solution to be convergent. Although this problem does not seem to have been extensively studied in the case of heterogeneous diffusivity, I found one example giving a guide for the stability criteria. In the example, the diffusion equation is written general as in Equation \ref{eq:diffusion-eqn-general}. Then, the criteria for convergence is given in Equation \ref{eq:convergence-criterium}.
 
@@ -168,6 +169,19 @@ There is a more complex affect which is that the changing overburden stress will
 
 The formulation given above assumes that the entirety of the overburden stresses are taken up by the solid matrix, and none by the water itself. In past work, usually focusing on the impact of tidal loading, authors have used a loading efficiency parameter to account for how much stress is carried by the water and the solid matrix. For my purposes, I will note that this is a possibility, but will acknowledge that my model will not account for this. See references: \cite{burgess_terrestrial_2017} and \cite{reeves_incorporation_2000}.
 
+Using equation 13 in \cite{rojstaczer_influence_1989}, I can actually derive how the loading efficiency parameter can be estimated in terms of properties of the liquid and solid.
+
+\begin{equation}
+\label{eq:loading-efficiency}
+\gamma = \frac{1 + \nu_u}{3 (1 + \phi \frac{\alpha_w}{\alpha_s}) (1 - \nu_u)}
+\end{equation}
+
+I can use a simple approximation to rewrite this as:
+\begin{equation}
+\label{eq:loading-efficiency-approx}
+\gamma \approx A \bigg( 1 - \phi \frac{\alpha_w}{\alpha_s} \bigg)
+\end{equation}
+where A is a constant (or almost a constant) given by $A = \frac{1+\nu_u}{3(1-\nu_u)}$. The Poisson's ratio is different for clay and sand, but this will do. The A term comes out as between 0.6 and 1. I can therefore see that, for a clay where the ratio of compresibilities is 1/500, $\gamma$ is going to be almost 1, whereas for a sand where the ratio of compressibilities is now 1/2, $\gamma$ will be nearer 0.5. If I actually plug some numbers in, I can get $\gamma_{clay} = 0.87$ and $\gamma_{sand} = 0.58$. This is consistent to \cite{burgess_terrestrial_2017} who used an empirical method to estimate $\gamma = 0.75$ in the Bengal aquifer system. 
 
 \subsection{Compaction Equations}
 
@@ -278,13 +292,34 @@ S_{skv} = \rho g \alpha_{kv} & \text{Inelastic} \\
 
 \textbf{Solving at midpoints}
 
-In the case of aquitards and interbedded clays, head and therefore effective stress will vary at every node throughout the clay. In Section \ref{sec:diffusion}, the details of how head is calculated at these nodes are reported. However, in these solutions, the topmost and bottommost nodes are boundary conditions with predetermined head values representing the adjacent interconnected aquifer(s). The head at these nodes does not represent the head in the clay layers, and hence should not be used for compaction calculations. I have `solved' this problem by solving the compaction equation \ref{eq:compaction-overall-governing-eqn} at midpoints between the nodes from the head equation. Hence, the first step in solving the compaction equation in aquitards and interbedded clays is the interpolate (linearly) between nodes in the head equation. This problem does not arise in interconnected coarse layers because these have constant head throughout.
+In the case of aquitards and interbedded clays, head and therefore effective stress will vary at every node throughout the clay. In Section \ref{sec:diffusion}, the details of how head is calculated at these nodes are reported. However, in these solutions, the topmost and bottommost nodes are boundary conditions with predetermined head values representing the adjacent interconnected aquifer(s). The head at these nodes does not represent the head in the clay layers, and hence should not be used for compaction calculations. I have `solved' this problem by solving the compaction equation \ref{eq:compaction-overall-governing-eqn} at midpoints between the nodes from the head equation. Hence, the first step in solving the compaction equation in aquitards and interbedded clays is the interpolate (linearly) between nodes in the head equation. This means that I solve the compaction equations over twice as many nodes as I solve the groundwater flow equation. This problem does not arise in interconnected coarse layers because these have constant head throughout.
 
 In the aquitards and interbedded clays, Equation \ref{eq:compaction-overall-governing-eqn} is solved as stated in Table \ref{table:compaction-options}, with the proviso as mentioned above that the nodes are the midpoints of the head solution. 
 
 \textbf{How many nodes?}
 
+The number of nodes required for convergence of the groundwater flow equation is detailed in Section \label{sec:Convergence_gwflow}; here I discuss convergence of the compaction equation.
+
+When solving the compaction equation, I integrate over the entire clay layer to convert $ db $ into a single $ s $ value of subsidence. This 'integration' is not fancy and my code simply uses the Rectangle Rule (or more specifically, the Left Riemann sum; see Wikipedia: \href{https://en.wikipedia.org/wiki/Riemann_sum#Left_Riemann_sum}{Riemann sum}). This method gives an error which scales as the inverse of the number of nodes squared, stated mathematically in Equation \ref{eq:intergral-convergence}.
+
+\begin{equation}
+E \leq  \frac{M_1 t^2}{2n}
+\label{eq:intergral-convergence}
+\end{equation}
+where $E$ is the sum of the error across all nodes, $M_1$ is the maximum value of the absolute value of the gradient over the interval, $t$ is the interval size and $n$ is the number of nodes. 
+
+I would clearly see a substantial and cheap improvement in performance by switching to a more advanced method, such as the trapezium rule. However, for now I note that agreement with the analytic solution for a 10 m clay experiencing a 50 m head drop is not seen until 16 head nodes (and therefore 32 midpoint nodes) are used.
+
+\begin{figure}
+\includegraphics[width=\linewidth]{Benchmark_Output_Comparisons_StepDrop.pdf}
+\caption{1 cm agreement with the analytic solution is not seen until 16 head nodes are used. This equated to a node spacing dz of 0.666.}
+\label{fig:overburden1}
+\end{figure}
+
+OLD COMMENTS:
 Experimenting with a 1m thick clay lens led me to believe that you need at least 5 nodes in the groundwater solver equation to get a convergent solution for the compaction equation. If I have time, I will put some images here to that effect.
+
+A more detailed investigation compares my solution with the analytic solution in the situation of a step head drop over a single clay layer; see \cite{hoffmann_inverse_2003} for derivation of the analytic solution. The 
 
 \section{Input Head Timeseries}
 
