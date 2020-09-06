@@ -462,9 +462,16 @@ if len(layers_requiring_solving)>=0:
                         print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
                         head_series[layer]['%.2f clays' % thickness]=hmat_tmp
                         inelastic_flag[layer]['%.2f clays' % thickness] = inelastic_flag_tmp
-                        with open('%s/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                            csvWriter = csv.writer(myCsv, delimiter=',')
-                            csvWriter.writerows(inelastic_flag_tmp)
+                        
+                        if np.size(inelastic_flag_tmp) >= 3e6:
+                            print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as binary integers.')
+                            inelastic_flag_tmp.astype(np.int8).tofile('%s/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
+
+
+                        else:
+                            with open('%s/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                csvWriter = csv.writer(myCsv, delimiter=',')
+                                csvWriter.writerows(inelastic_flag_tmp)
 
                         #dateslist = [x.strftime('%d-%b-%Y') for x in num2date(t_interp_new)]
                         groundwater_solution_dates[layer]['%.2f clays' % thickness]=t_interp_new
@@ -525,8 +532,8 @@ if save_output_head_timeseries:
             if interbeds_switch[layer]:
                 interbeds_tmp=interbeds_distributions[layer]
                 for thickness in list(interbeds_tmp.keys()):
-                    if np.size(head_series[layer]['%.2f clays' % thickness]) >= 5e6:
-                        print('\t\t\tHead has more than 5 million entries; saving as 32 bit floats.')
+                    if np.size(head_series[layer]['%.2f clays' % thickness]) >= 3e6:
+                        print('\t\t\tHead has more than 3 million entries; saving as 32 bit floats.')
                         head_series[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
                     else:
                         with open('%s/head_outputs/%s_%sclay_head_data.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
