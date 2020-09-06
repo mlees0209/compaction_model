@@ -310,6 +310,10 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
         for i in range(np.shape(hmat)[1]):
             if i % (int(np.shape(hmat)[1]/20)) == 0:
                 printProgressBar(i,np.shape(hmat)[1])
+            if len(hmat[:,i]) != len( 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz)):
+                print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
+                print(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz))
+                sys.exit(1)
             a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),hmat[:,i],kind='linear')
 #            print(np.arange(0,np.shape(hmat)[0]*dz,dz))
 ##            print(np.shape(hmat_interp)[0])
