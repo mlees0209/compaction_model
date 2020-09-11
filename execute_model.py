@@ -20,6 +20,8 @@ import matplotlib.colors as colors
 import operator
 from astropy.convolution import convolve
 
+t_total_start = process_time()
+
 gmt=True # If this is true, head outputs can be saved as .netCDF grid files which are tiny. It uses gmt xyz2grd command, hence requires gmt to be installed.
 
 output_folder='.'
@@ -39,6 +41,7 @@ print(''.center(80, '*'))
 print('  READING PARAMETERS  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+param_read_start = process_time()
 time.sleep(0.5)
 
 
@@ -157,14 +160,17 @@ overburden_stress_compaction = read_parameter('overburden_stress_compaction',boo
 if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
     specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
 
-### Next section will be a "READING IN HEAD MODULE"
 
+param_read_stop = process_time()
+param_read_time = param_read_start - param_read_stop
+### Next section is "READING IN HEAD MODULE"
 print()
 print()
 print(''.center(80, '*'))
 print('  READING HEAD DATA  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+reading_head_start = process_time()
 time.sleep(internal_time_delay)
 
 aquifer_layer_names = [name for name, layer_type in layer_types.items() if layer_type=='Aquifer']
@@ -266,6 +272,8 @@ plt.savefig('%s/input_head_data/inputtimeseries.png' % outdestination)
 plt.close()
 sns.set_style('white')
 
+reading_head_stop = process_time()
+reading_head_time = reading_head_stop - reading_head_start
 
 print()
 print()
@@ -273,6 +281,7 @@ print(''.center(80, '*'))
 print('  SOLVING FOR HEAD TIME SERIES IN CLAY LAYERS  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+solving_head_start = process_time()
 time.sleep(internal_time_delay)
 
 print('Hydrostratigraphy:')
@@ -526,7 +535,8 @@ if len(layers_requiring_solving)>=0:
 else:
     print('No layers require head time series solutions; skipping solving for head time series in clay layers.')
     
-
+solving_head_stop = process_time()
+solving_head_time = solving_head_stop - solving_head_start
 
 print()
 print()
@@ -534,6 +544,7 @@ print(''.center(80, '*'))
 print('  SAVING HEAD TIMESERIES OUTPUTS  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+saving_head_start = process_time()
 time.sleep(internal_time_delay)
 
 
@@ -604,7 +615,8 @@ for layer in layers_requiring_solving:
                 dates_str = [x.strftime('%d-%b-%Y') for x in num2date(groundwater_solution_dates[layer]['%.2f clays' % thickness])]
                 create_head_video_elasticinelastic(hmat_tmp,Z[layer]['%.2f clays' % thickness],inelastic_flag_vid,dates_str,outdestination+'/figures','%s_%.2f_clays' % (layer, thickness),delt=30)
 
-
+saving_head_stop = process_time()
+saving_head_time = saving_head_stop - saving_head_start
 
 print()
 print()
@@ -612,6 +624,7 @@ print(''.center(80, '*'))
 print('  SOLVING COMPACTION EQUATION  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+solving_compaction_start = process_time()
 time.sleep(internal_time_delay)
 
 #deformation_series={}
@@ -701,16 +714,10 @@ for layer in layer_names:
 
                 else:
                     db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic']=subsidence_solver_aquitard_elasticinelastic(head_series[layer],inelastic_flag[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer])
-                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
-
-                
-                
-#                if overburden_stress_compaction==False:
-#                    print(np.shape(head_series[layer]))
-#                    db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic']=subsidence_solver_aquitard_elasticinelastic(head_series[layer],inelastic_flag[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer])
-#                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
-
-    
+                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
+  
+solving_compaction_stop = process_time()
+solving_compaction_time = solving_compaction_stop - solving_compaction_start
 
 print()
 print()
@@ -718,6 +725,7 @@ print(''.center(80, '*'))
 print('  SAVING COMPACTION SOLVER OUTPUTS  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
+saving_compaction_start = process_time()
 time.sleep(internal_time_delay)
 
 
@@ -1022,6 +1030,18 @@ plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
 for line in l_aqt:
     line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
 plt.savefig('%s/figures/total_deformation_figure_20152020.png' % outdestination,bbox_inches='tight')
+plt.close()
+
+saving_compaction_stop = process_time()
+saving_compaction_time = saving_compaction_stop - saving_compaction_start
+
+t_total_stop = process_time()
+t_total = t_total_stop - t_total_start
+
+plt.figure(figsize=(18,18))
+plt.pie(np.abs([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time,t_total - np.sum([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time])]),labels=['param_read_time', 'solving_compaction_time', 'saving_head_time', 'reading_head_time', 'solving_head_time', 'saving_compaction_time','misc'],autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * t_total/100))
+plt.title('Total runtime = %i seconds' % t_total)
+plt.savefig('%s/figures/runtime_breakdown.png' % outdestination,bbox_inches='tight')
 plt.close()
 #for line in l_aqf:
 #    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
