@@ -31,9 +31,9 @@ import scipy
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True} # Define which variables have pre-defined defaults
 
-Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False}
+Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False,'save_internal_compaction':False}
 
 
 class Logger(object):
@@ -297,7 +297,8 @@ def read_parameter(name,typ,length,paramfilelines):
 
     return par
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False):
+def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False):
+    ### TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum.
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
         print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
@@ -306,13 +307,13 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
 
     print('Aquitard solver is done at midpoints. Applying linear interpolation to hmat.')
     if not endnodes:
-        hmat_interp = np.zeros((np.shape(hmat)[0]*2-1,np.shape(hmat)[1]))
+        hmat_interp = np.zeros((np.shape(hmat)[0]*(2*TESTn)-(2*TESTn-1),np.shape(hmat)[1]))
         for i in range(np.shape(hmat)[1]):
             if i % (int(np.shape(hmat)[1]/20)) == 0:
                 printProgressBar(i,np.shape(hmat)[1])
             if len(hmat[:,i]) != len( 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz)):
                 print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
-                print(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz))
+                print(0.001*np.arange(0,1000* (np.shape(hmat_interp)[0]+1)*(dz/(2*TESTn))-0.00001,1000*dz/(2*TESTn)))
                 sys.exit(1)
             a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),hmat[:,i],kind='linear')
 #            print(np.arange(0,np.shape(hmat)[0]*dz,dz))
@@ -320,8 +321,11 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
 ##            print(dz)
 ##            print(np.shape(a))
 #            print(np.arange(0,np.shape(hmat_interp)[0]*(dz/2),(dz/2)))
-            hmat_interp[:,i] = a(0.001* np.arange(0,1000* np.shape(hmat_interp)[0]*(dz/2),1000*dz/2)) # again the 1000 and 0.001 is to ensure against np.arange's bad rounding with non integers
-        hmat_midpoints = hmat_interp[1::2,:]
+            hmat_interp[:,i] = a(0.001* np.arange(0,1000* ((np.shape(hmat)[0] - 1)*dz)+1,1000*dz/(2*TESTn))) # again the 1000 and 0.001 is to ensure against np.arange's bad rounding with non integers
+        if TESTn != 1:
+            hmat_midpoints = hmat_interp[1:-1,:]
+        else:
+            hmat_midpoints = hmat_interp[1::2,:]
     else:
         print('DEBUG: not using midpoints for head solver.')
         hmat_midpoints = hmat
@@ -353,9 +357,12 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
         plt.figure()
         plt.imshow(stress_midpoints,aspect='auto')
         plt.colorbar()
+        plt.title('Stress at midpoints')
+
         plt.figure()
         plt.imshow(inelastic_flag_midpoints,aspect='auto')
         plt.colorbar()
+        plt.title('Inelastic flag at midpoints')
         
         plt.figure()
         plt.plot(stress_midpoints[10,:],'-',label='stress')
@@ -363,10 +370,13 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
         plt.legend()
         ax2 = plt.twinx(plt.gca())
         ax2.plot(inelastic_flag_midpoints[10,:],'k--',label='inelastic flag')
+        plt.title('stress head and inelastic flag at node 10')
         plt.show()
     
     inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
 
+    if TESTn != 1:
+        dz = dz/(2*TESTn)
 
     print('doing db')
     db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
