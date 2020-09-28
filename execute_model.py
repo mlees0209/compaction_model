@@ -95,6 +95,7 @@ copy2(param_filename,"%s/paramfile.par" % outdestination)
 
 save_output_head_timeseries = read_parameter('save_output_head_timeseries',bool,1,paramfilelines)
 save_effective_stress = read_parameter('save_effective_stress',bool,1,paramfilelines)
+save_internal_compaction = read_parameter('save_internal_compaction',bool,1,paramfilelines)
 no_layers = read_parameter('no_layers',int,1,paramfilelines)
 layer_names=read_parameter('layer_names',str,no_layers,paramfilelines)
 if no_layers==1:
@@ -509,24 +510,39 @@ if len(layers_requiring_solving)>=0:
 
                         if save_effective_stress:
                             print('\t\tSaving effective stress and overburden stress outputs.')
-                            if overburden_stress_gwflow:
-                                with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                                    csvWriter = csv.writer(myCsv, delimiter=',')
-                                    csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
+                            if np.size(effective_stress[layer]['%.2f clays' % thickness]) >= 1e6:
+                                print('\t\t\tEffective stress has more than 1 million entries; saving as 32 bit floats.')
+                                effective_stress[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/%s_%sclayeffective_stress' % (outdestination, layer.replace(' ','_'), thickness)) 
+                                if gmt:
+                                    print('\t\t\t\tConverting to netCDF format. Command is:')
+                                    cmd_tmp="gmt xyz2grd %s/%s_%sclayeffective_stress -G%s/%s_%sclayeffective_stress.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            
+                                    print(cmd_tmp)
+                                    subprocess.call(cmd_tmp,shell=True)
+                                    os.remove('%s/%s_%sclayeffective_stress' % (outdestination, layer.replace(' ','_'),thickness))                                                         
                             else:
-                                with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
-                                    csvWriter = csv.writer(myCsv, delimiter=',')
-                                    csvWriter.writerows(np.zeros_like(hmat_tmp))
-
-                            if np.size(effective_stress[layer]['%.2f clays' % thickness]) >= 5e6:
-                                print('\t\t\tEffective stress has more than 5 million entries; saving as 16 bit floats.')
-                                effective_stress[layer]['%.2f clays' % thickness].astype(np.half).tofile('%s/%s_effective_stress' % (outdestination, layer.replace(' ','_')))
-            
-                            else:
-                                with open('%s/%s_%sclay_effective_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                with open('%s/%s_%sclayeffective_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                                     csvWriter = csv.writer(myCsv, delimiter=',')
                                     csvWriter.writerows(effective_stress[layer]['%.2f clays' % thickness])
 
+                            if overburden_stress_gwflow:
+                                if len(overburden_data_tmp) * len(z_tmp) >= 1e6:
+                                    print('\t\t\tOverburden stress has more than 1 million entries; saving as 32 bit floats.')
+                                    overburden_tmp_tosave = np.tile(overburden_data_tmp, (len(z_tmp),1))
+                                    overburden_tmp_tosave.astype(np.single).tofile('%s/%s_%sclay_overburden_stress' % (outdestination, layer.replace(' ','_'), thickness)) 
+                                    if gmt:
+                                        print('\t\t\t\tConverting to netCDF format. Command is:')
+                                        cmd_tmp="gmt xyz2grd %s/%s_%sclay_overburden_stress -G%s/%s_%sclay_overburden_stress.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            
+                                        print(cmd_tmp)
+                                        subprocess.call(cmd_tmp,shell=True)
+                                        os.remove('%s/%s_%sclay_overburden_stress' % (outdestination, layer.replace(' ','_'),thickness))                                                         
+                                else:
+
+                                
+                                    with open('%s/%s_%sclay_overburden_stress.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                                        csvWriter = csv.writer(myCsv, delimiter=',')
+                                        csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
 
                             
                 else:
@@ -759,37 +775,37 @@ for layer in layer_names:
             print('\tSaving s timeseries')
             np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
     
-    
-    
-            print('\tSaving plots of compaction within layer %s.' % layer)
-            t = groundwater_solution_dates[layer]
-            x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
-            x_lims = date2num(x_lims)
-            y_lims=[min(Z[layer]),max(Z[layer])]
-            
-            sns.set_style('white')
-            sns.set_context('talk')
-            plt.figure(figsize=(18,12))
-            plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer])[5:,:])),vmax=np.max(np.abs(np.array(db[layer])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-            plt.gca().xaxis_date()
-            date_format = mdates.DateFormatter('%Y')
-            plt.gca().xaxis.set_major_formatter(date_format)
-            plt.gcf().autofmt_xdate()
-            plt.colorbar(label='db (m)')
-            plt.ylabel('Z (m)')
-            plt.savefig('%s/figures/%s_compaction_internal.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
-            plt.close()
-            
-            plt.figure(figsize=(18,12))
-            plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer])[5:,:])), vmax=0),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times 
-            plt.gca().xaxis_date()
-            date_format = mdates.DateFormatter('%Y')
-            plt.gca().xaxis.set_major_formatter(date_format)
-            plt.gcf().autofmt_xdate()
-            plt.colorbar(label='db (m)')
-            plt.ylabel('Z (m)')
-            plt.savefig('%s/figures/%s_compaction_internal_highconstast.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
-            plt.close()
+            if save_internal_compaction:
+
+                print('\tSaving plots of compaction within layer %s.' % layer)
+                t = groundwater_solution_dates[layer]
+                x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
+                x_lims = date2num(x_lims)
+                y_lims=[min(Z[layer]),max(Z[layer])]
+                
+                sns.set_style('white')
+                sns.set_context('talk')
+                plt.figure(figsize=(18,12))
+                plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer])[5:,:])),vmax=np.max(np.abs(np.array(db[layer])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
+                plt.gca().xaxis_date()
+                date_format = mdates.DateFormatter('%Y')
+                plt.gca().xaxis.set_major_formatter(date_format)
+                plt.gcf().autofmt_xdate()
+                plt.colorbar(label='db (m)')
+                plt.ylabel('Z (m)')
+                plt.savefig('%s/figures/%s_compaction_internal.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
+                plt.close()
+                
+                plt.figure(figsize=(18,12))
+                plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer])[5:,:])), vmax=0),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times 
+                plt.gca().xaxis_date()
+                date_format = mdates.DateFormatter('%Y')
+                plt.gca().xaxis.set_major_formatter(date_format)
+                plt.gcf().autofmt_xdate()
+                plt.colorbar(label='db (m)')
+                plt.ylabel('Z (m)')
+                plt.savefig('%s/figures/%s_compaction_internal_highconstast.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
+                plt.close()
 #            
     if layer_types[layer]=='Aquifer':
         if layer_compaction_switch[layer]:
@@ -943,38 +959,40 @@ for layer in layer_names:
             for thickness in bed_thicknesses_tmp:
                 np.savetxt('%s/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
 
-            print('\tSaving internal compaction plots for clays of thickness ',bed_thicknesses_tmp)
-            for thickness in bed_thicknesses_tmp:
-                print('\t\t',thickness)
-                plt.figure(figsize=(18,12))
-                t = groundwater_solution_dates[layer]['%.2f clays' % thickness]
-                x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
-                x_lims = date2num(x_lims)
-                y_lims=[min(Z[layer]['%.2f clays' % thickness]),max(Z[layer]['%.2f clays' % thickness])]
-            
-                sns.set_style('white')
-                sns.set_context('talk')
-                plt.figure(figsize=(18,12))
-                plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),vmax=np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-                plt.gca().xaxis_date()
-                date_format = mdates.DateFormatter('%Y')
-                plt.gca().xaxis.set_major_formatter(date_format)
-                plt.gcf().autofmt_xdate()
-                plt.colorbar(label='db (m)')
-                plt.ylabel('Z (m)')
-                plt.savefig('%s/figures/%s/%sclay_compaction_internal.png' % (outdestination, layer,thickness),bbox_inches='tight')
-                plt.close()
-                plt.figure(figsize=(18,12))
-                plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vmax=0)
-,extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-                plt.gca().xaxis_date()
-                date_format = mdates.DateFormatter('%Y')
-                plt.gca().xaxis.set_major_formatter(date_format)
-                plt.gcf().autofmt_xdate()
-                plt.colorbar(label='db (m)')
-                plt.ylabel('Z (m)')
-                plt.savefig('%s/figures/%s/%sclay_compaction_internalHIGCONTRAST.png' % (outdestination, layer,thickness),bbox_inches='tight')
-                plt.close()
+            if save_internal_compaction:
+
+                print('\tSaving internal compaction plots for clays of thickness ',bed_thicknesses_tmp)
+                for thickness in bed_thicknesses_tmp:
+                    print('\t\t',thickness)
+                    plt.figure(figsize=(18,12))
+                    t = groundwater_solution_dates[layer]['%.2f clays' % thickness]
+                    x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
+                    x_lims = date2num(x_lims)
+                    y_lims=[min(Z[layer]['%.2f clays' % thickness]),max(Z[layer]['%.2f clays' % thickness])]
+                
+                    sns.set_style('white')
+                    sns.set_context('talk')
+                    plt.figure(figsize=(18,12))
+                    plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),vmax=np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
+                    plt.gca().xaxis_date()
+                    date_format = mdates.DateFormatter('%Y')
+                    plt.gca().xaxis.set_major_formatter(date_format)
+                    plt.gcf().autofmt_xdate()
+                    plt.colorbar(label='db (m)')
+                    plt.ylabel('Z (m)')
+                    plt.savefig('%s/figures/%s/%sclay_compaction_internal.png' % (outdestination, layer,thickness),bbox_inches='tight')
+                    plt.close()
+                    plt.figure(figsize=(18,12))
+                    plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vmax=0)
+    ,extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
+                    plt.gca().xaxis_date()
+                    date_format = mdates.DateFormatter('%Y')
+                    plt.gca().xaxis.set_major_formatter(date_format)
+                    plt.gcf().autofmt_xdate()
+                    plt.colorbar(label='db (m)')
+                    plt.ylabel('Z (m)')
+                    plt.savefig('%s/figures/%s/%sclay_compaction_internalHIGCONTRAST.png' % (outdestination, layer,thickness),bbox_inches='tight')
+                    plt.close()
 
 print("Creating overall compaction plot and saving deformation series")
 sns.set_style('whitegrid')
