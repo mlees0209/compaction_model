@@ -11,7 +11,7 @@ Reads in some InSAR and model data and makes some plots..
 import sys
 
 if len(sys.argv) != 2:
-    print('compare_with_deformation_data error; terminal. Incorrect number of input arguments. Correct usage: python execute_model.py parameter_file.par')
+    print('compare_with_deformation_data error; terminal. Incorrect number of input arguments. Correct usage: python compare_with_deformation_data.py model_directory')
     sys.exit(1)
 
 directory=sys.argv[1]
@@ -36,15 +36,15 @@ WellHlon = -119.58056
 
 datesinsarH,InSAR_H = extract_series_from_latlon(WellHlat,WellHlon,InSAR_data)
 
-Highway_198_dates = date2num([date(1965,1,1),date(2004,1,1)])
-Highway_198_data = 100*np.array([0,-2.5])
-
 Swanson_1998_quote_dates = date2num([date(1980,1,1),date(1993,1,1)])
 Swanson_1998_quote_data = 30.48*np.array([0,-2])
 
 Poland_75_dates = date2num([date(1963,1,1),date(1966,4,1),date(1970,1,1)])
 Poland_75_data = np.array([0,-3.3*0.65*30.48,-3.3*0.65*30.48 -3.6*0.3333*30.48])
 
+Highway_198_dates = date2num([date(1965,1,1),date(2004,1,1)])
+Highway_198_data = 100*np.array([0,-2.5])
+Highway_198_data_uncertainty = np.array([0,Poland_75_data[2]])
 
 save = True
 #%%
@@ -61,12 +61,16 @@ ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_se
 ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
 
 
-ax1.plot_date(Poland_75_dates,Poland_75_data + 180,'k.--',label='Poland 1975 levelling surveys')
-
-ax1.plot_date(Highway_198_dates,Highway_198_data + 100,'k^',label='Highway 198 data')
+ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1963-01-01'],'k.--',label='Poland 1975 levelling surveys')
 
 
-ax1.plot_date(Swanson_1998_quote_dates,Swanson_1998_quote_data ,'b^',label='Swanson 1998 data (v approximate)')
+ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1965-01-01'],'k^')
+ax1.errorbar(Highway_198_dates[1],Highway_198_data[1] +modelled_data_rezeroed[Data['dates']=='1965-01-01'],xerr=None,yerr=0.5*Highway_198_data_uncertainty[1],fmt='k^',label='Highway 198 data',capsize=5)
+
+
+ax1.arrow(Swanson_1998_quote_dates[1],30,-(Swanson_1998_quote_dates[1]-Swanson_1998_quote_dates[0]),0,shape='full',head_width=15,head_length=300,facecolor='black',color='black',width=3)
+ax1.arrow(Swanson_1998_quote_dates[0],30,Swanson_1998_quote_dates[1]-Swanson_1998_quote_dates[0],0,shape='full',head_width=15,head_length=300,facecolor='black',color='black',width=3,label='Swanson (1998) period of subsidence')
+txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanson_1998_quote_dates[0])/2,40,'Swanson et al. (1998) period of subsidence',horizontalalignment='center',size='x-small')
 
 
 ax1.plot_date(datesinsarH,0.1*InSAR_H + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]],'k-',label='Sentinel InSAR subsidence')
@@ -85,6 +89,7 @@ if save:
 
 yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
 
+txt.remove()
 plt.xlim([date(2015,1,1),date(2020,1,1)])
 yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
 plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]-0.25*yrange,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]]+0.25*yrange])
