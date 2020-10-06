@@ -1056,7 +1056,7 @@ plt.savefig('%s/figures/total_deformation_figure.png' % outdestination,bbox_inch
 # Rezero on jan 2015
 plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
 for line in l_aqt:
-    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
+    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
 plt.savefig('%s/figures/total_deformation_figure_20152020.png' % outdestination,bbox_inches='tight')
 plt.close()
 
