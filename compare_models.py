@@ -29,6 +29,7 @@ run_names = sys.argv[1:]
 startyear = [var for var in run_names if var.split('=')[0]=='startyear']
 if not startyear:
     print('No startyear specified; zeroing on Sep 1st 1980.')
+    startyear=1980
 else:
     startyear=int(startyear[0].split('=')[1])
     print('Startyear specified; zeroing on Sep 1st %i.' % startyear)
