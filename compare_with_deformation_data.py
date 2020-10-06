@@ -27,7 +27,22 @@ sys.path.append('/Users/mlees/Documents/RESEARCH/InSAR_processing/postprocessing
 import seaborn as sns
 from InSAR_postSBAS import *
 
-InSAR_data = import_InSAR_csv('/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv')
+if ospath.exists('/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
+    mac=1
+    linux=0
+    print("\tWe're in Mac, looking for downloaded InSAR data accordingly.")
+    file='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
+elif ospath.exists('/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
+    linux=1
+    mac=0
+    print("\tWe're in Linux, looking for downloaded InSAR data accordingly.")
+    file='/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
+else:
+    print("\tUnable to find downloaded InSAR data. Check for bigdata/InSAR folder. Aborting.")
+    sys.exit()
+
+
+InSAR_data = import_InSAR_csv(file)
 
 
 Data = pd.read_csv('Total_Deformation_Out.csv',parse_dates=[0])
