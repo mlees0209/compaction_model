@@ -65,6 +65,7 @@ overwrite=read_parameter('overwrite',bool,1,paramfilelines)
 run_name = read_parameter('run_name',str,1,paramfilelines)
 output_folder = read_parameter('output_folder',str,1,paramfilelines)
 outdestination="%s/%s" % (output_folder,run_name)
+
 if not os.path.isdir(outdestination):
     print("\t\tMaking output directory at %s. This stdout will now be directed to a log in that folder as well as displayed here." % (outdestination))
     os.mkdir(outdestination)
@@ -91,8 +92,16 @@ else:
 
 
 shutil.move('logfile.log','%s/logfile.log' % outdestination)
-copy2(param_filename,"%s/paramfile.par" % outdestination)
-
+if os.path.exists(param_filename):
+    copy2(param_filename,"%s/paramfile.par" % outdestination)
+else:
+    if param_filename.split('/')[-1]=='paramfile.par':
+        print('\tAssuming this is a rerun of old run; copying paramfile over.')
+        copy2('%s_old/paramfile.par' % outdestination, "%s/paramfile.par" % outdestination)
+    else:
+        print('\tSomething has gone wrong setting up output directories, ABORT.')
+        sys.exit(1)
+        
 save_output_head_timeseries = read_parameter('save_output_head_timeseries',bool,1,paramfilelines)
 save_effective_stress = read_parameter('save_effective_stress',bool,1,paramfilelines)
 save_internal_compaction = read_parameter('save_internal_compaction',bool,1,paramfilelines)
