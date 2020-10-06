@@ -120,7 +120,7 @@ if np.shape(interbeds_distributions1)[0]==1:
 else:
     interbeds_distributions = {}
     for abc in interbeds_distributions1:
-        interbeds_distributions[abc[0]] = dict([(float(re.split(':|,',abc[1])[2*i]),int(re.split(':|,',abc[1])[2*i+1])) for i in range(len(re.split(',',abc[1])))])
+        interbeds_distributions[abc[0]] = dict([(float(re.split(':|,',abc[1])[2*i]),float(re.split(':|,',abc[1])[2*i+1])) for i in range(len(re.split(',',abc[1])))])
     print('\tinterbeds_distributions=%s' % interbeds_distributions)
 
 aquitards = [name for name,value in layer_types.items() if value=='Aquitard']
@@ -232,6 +232,7 @@ if len(all_aquifers_needing_head_data) >=0:
 else:
     print('\tNo aquifers requiring head data; skipping reading head data.')
 starttimes = [np.min(head_data[aquifer][:,0]) for aquifer in all_aquifers_needing_head_data]
+print(starttimes)
 starttime = np.max(starttimes)
 endtimes = [np.max(head_data[aquifer][:,0]) for aquifer in all_aquifers_needing_head_data]
 endtime = np.min(endtimes)
