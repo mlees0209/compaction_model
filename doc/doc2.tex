@@ -50,6 +50,30 @@
 
 \tableofcontents
 
+\section{Installation}
+
+I am hosting these codes on Git. To install, you will use the command:
+
+\verb|git clone https://github.com/mlees0209/compaction_model.git|
+
+To run, you use the command:
+
+\verb|python execute_model.py PARAMFILE.par|
+
+And for the run to be successful, the following Python packages must be installed:
+\begin{itemize}
+\item matplotlib
+\item seaborn
+\item scipy
+\item numpy
+\item astropy
+\item pandas
+\end{itemize}
+
+Additionally, output can be saved as the highly efficient netCDF format if GMT is installed. There is an option to turn GMT off in the parameter file (I think!).
+
+Disclaimer: following these steps allowed me to successfully run and execute the script on Bletchley, using a conda environment with the above listed packages installed in addition to gmt. I can't guarantee this will always work.
+
 \section{Fundamental Equations and Math}
 
 \subsection{Diffusion Equation in Clays}
