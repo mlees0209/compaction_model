@@ -36,13 +36,13 @@ WellHlon = -119.58056
 
 datesinsarH,InSAR_H = extract_series_from_latlon(WellHlat,WellHlon,InSAR_data)
 
-Highway_198_dates = [date.toordinal(date(1965,1,1)),date.toordinal(date(2004,1,1))]
+Highway_198_dates = date2num([date(1965,1,1),date(2004,1,1)])
 Highway_198_data = 100*np.array([0,-2.5])
 
-Swanson_1998_quote_dates = [date.toordinal(date(1980,1,1)),date.toordinal(date(1993,1,1))]
+Swanson_1998_quote_dates = date2num([date(1980,1,1),date(1993,1,1)])
 Swanson_1998_quote_data = 30.48*np.array([0,-2])
 
-Poland_75_dates = [date.toordinal(date(1963,1,1)),date.toordinal(date(1966,4,1)),date.toordinal(date(1970,1,1))]
+Poland_75_dates = date2num([date(1963,1,1),date(1966,4,1),date(1970,1,1)])
 Poland_75_data = np.array([0,-3.3*0.65*30.48,-3.3*0.65*30.48 -3.6*0.3333*30.48])
 
 
@@ -81,15 +81,17 @@ plt.ylabel('Subsidence (cm)')
 plt.legend()
 
 if save:
-    plt.savefig('compare_with_measurementsFULL.png',bbox_inches='tight')
+    plt.savefig('figures/compare_with_measurementsFULL.png',bbox_inches='tight')
 
-plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - np.min(modelled_data_rezeroed)
-plt.ylim([np.min(modelled_data_rezeroed)-0.25*yrange,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]]+0.25*yrange])
+yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
+
+plt.xlim([date(2015,1,1),date(2020,1,1)])
+yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
+plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]-0.25*yrange,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]]+0.25*yrange])
 
 
 if save:
-    plt.savefig('compare_with_TRE_Altamira.png',bbox_inches='tight')
-    plt.savefig('compare_with_TRE_Altamira.svg',bbox_inches='tight')
+    plt.savefig('figures/compare_with_TRE_Altamira.png',bbox_inches='tight')
+    plt.savefig('figures/compare_with_TRE_Altamira.svg',bbox_inches='tight')
 
 os.chdir(cwd)
