@@ -24,6 +24,8 @@ t_total_start = process_time()
 
 gmt=True # If this is true, head outputs can be saved as .netCDF grid files which are tiny. It uses gmt xyz2grd command, hence requires gmt to be installed.
 
+sns.set_context('talk')
+
 output_folder='.'
 run_name='.'
 sys.stdout = Logger(output_folder,run_name)
@@ -175,11 +177,11 @@ if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we'r
 
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
-### Next section is "READING IN HEAD MODULE"
+### Next section is "READING INPUT DATA MODULE"
 print()
 print()
 print(''.center(80, '*'))
-print('  READING HEAD DATA  '.center(80, '*'))
+print('  READING INPUT DATA  '.center(80, '*'))
 print(''.center(80, '*'))
 print()
 reading_head_start = process_time()
@@ -195,7 +197,7 @@ dt_headseries={}
 print('Preparing to read in head data. Aquifers for which head data is required are: '+', '.join(map(str,all_aquifers_needing_head_data))+'.')
 if len(all_aquifers_needing_head_data) >=0:
     try:
-        os.mkdir('%s/input_head_data' % outdestination)
+        os.mkdir('%s/input_data' % outdestination)
     except FileExistsError:
         pass
     head_data_files=read_parameter('head_data_files',str,len(all_aquifers_needing_head_data),paramfilelines)
@@ -206,7 +208,7 @@ if len(all_aquifers_needing_head_data) >=0:
         if os.path.isfile(fileloc):
             print('\t\tFile %s exists. Storing copy in output folder.' % fileloc)
             print('\t\tReading in head time series.')
-            copy2(fileloc,'%s/input_head_data/%s' % (outdestination,fileloc.split('/')[-1]))
+            copy2(fileloc,'%s/input_data/%s' % (outdestination,fileloc.split('/')[-1]))
             #dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d') # IF you have trouble reading dates in, use these lines!
             try:
                 #data=pd.read_csv(fileloc,parse_dates=[0],date_parser=dateparse) # IF you have trouble reading dates in, use these lines!
@@ -258,7 +260,7 @@ for aquifer in all_aquifers_needing_head_data:
     datesnew = head_data[aquifer][:,0][idx_to_keep]
     datanew = head_data[aquifer][:,1][idx_to_keep]
     head_data[aquifer]=np.array([datesnew,datanew]).T
-    with open('%s/input_head_data/input_time_series_%s.csv' % (outdestination, aquifer.replace(' ','_')), "w+") as myCsv:
+    with open('%s/input_data/input_time_series_%s.csv' % (outdestination, aquifer.replace(' ','_')), "w+") as myCsv:
         csvWriter = csv.writer(myCsv, delimiter=',')
         csvWriter.writerows(head_data[aquifer])
 print('Clipping done.')
@@ -270,8 +272,8 @@ if overburden_stress_gwflow or overburden_stress_compaction:
     overburden_data = np.array(overburden_data)[idx_to_keep]
     print('Clipping done.')
     plt.plot_date(overburden_dates,overburden_data)
-    plt.savefig('%s/input_head_data/overburden_stress_series.png' % outdestination)
-    print('\tOverburden stress calculated and saved in input_head_data.')                    
+    plt.savefig('%s/input_data/overburden_stress_series.png' % outdestination)
+    print('\tOverburden stress calculated and saved in input_data.')                    
 effective_stress={}
 
 
@@ -281,13 +283,49 @@ for aquifer in all_aquifers_needing_head_data:
     plt.plot_date(head_data[aquifer][:,0],head_data[aquifer][:,1],label='%s' % aquifer)
 plt.ylabel('Head (masl)')
 plt.legend()
-plt.savefig('%s/input_head_data/inputtimeseries.png' % outdestination)
+plt.savefig('%s/input_data/input_head_timeseries.png' % outdestination)
 plt.close()
 sns.set_style('white')
 
 reading_head_stop = process_time()
 reading_head_time = reading_head_stop - reading_head_start
 
+print()
+if len(layers_requiring_solving)>= 0:
+    print('Making input clay distribution plot.')
+    thicknesses_tmp = []
+    for layer in layers_requiring_solving:
+        if layer_types[layer]=='Aquifer':
+            for key in interbeds_distributions[layer].keys():
+                thicknesses_tmp.append(key)
+        if layer_types[layer]=='Aquitard':
+            thicknesses_tmp.append(layer_thicknesses[layer])
+    # Find the smallest difference between two clay layer thicknesses. If that is greater than 1, set the bar width to be 1. Else, set the bar width to be that difference.
+    print(thicknesses_tmp)
+    if len(thicknesses_tmp)>1:
+        diffs=[np.array(thicknesses_tmp) - t for t in thicknesses_tmp]
+        smallest_width = np.min(np.abs(np.array(diffs)[np.where(diffs)]))
+    else:
+        smallest_width=1
+    if smallest_width>0.5:
+        smallest_width=0.5
+    barwidth=smallest_width/len(layers_requiring_solving)
+    
+    plt.figure(figsize=(18,12))
+    layeri=0
+    for layer in layers_requiring_solving:
+        if layer_types[layer]=='Aquifer':
+            plt.bar(np.array(list(interbeds_distributions[layer].keys()))+layeri*barwidth,list(interbeds_distributions[layer].values()),width=barwidth,label=layer)
+            layeri+=1
+        if layer_types[layer]=='Aquitard':
+            plt.bar(layer_thicknesses[layer]+layeri*barwidth,1,width=barwidth,label=layer)
+            layeri+=1
+    plt.legend()
+    plt.xlabel('Layer thickness (m)')
+    plt.ylabel('Number of layers')
+    plt.savefig('%s/input_data/clay_distributions.png' % outdestination,bbox_inches='tight')
+        
+        
 print()
 print()
 print(''.center(80, '*'))
