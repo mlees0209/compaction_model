@@ -324,7 +324,7 @@ if len(layers_requiring_solving)>= 0:
     plt.xlabel('Layer thickness (m)')
     plt.ylabel('Number of layers')
     plt.savefig('%s/input_data/clay_distributions.png' % outdestination,bbox_inches='tight')
-        
+    plt.close()
         
 print()
 print()
