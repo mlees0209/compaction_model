@@ -70,6 +70,7 @@ if not os.path.isdir(outdestination):
     print("\t\tMaking output directory at %s. This stdout will now be directed to a log in that folder as well as displayed here." % (outdestination))
     os.mkdir(outdestination)
     os.mkdir('%s/figures' % outdestination)
+    os.mkdir('%s/s_outputs' % outdestination)
 else:
     if overwrite==False:
         print('\t\tAdmin error: terminal. Output folder %s already exists and overwrite flag not specified.' % outdestination)
@@ -85,6 +86,7 @@ else:
             shutil.rmtree(outdestination)
             os.mkdir(outdestination)
             os.mkdir('%s/figures' % outdestination)
+            os.mkdir('%s/s_outputs' % outdestination)
         else:
             print('\t\tNot overwriting. Aborting.' % check)
             sys.exit(1)
@@ -774,10 +776,10 @@ for layer in layer_names:
             plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             plt.close()
             
-            print('\tSaving db')
-            with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                csvWriter = csv.writer(myCsv, delimiter=',')
-                csvWriter.writerows(np.array(db[layer]).T)
+            # print('\tSaving db')
+            # with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+            #     csvWriter = csv.writer(myCsv, delimiter=',')
+            #     csvWriter.writerows(np.array(db[layer]).T)
             
             print('\tSaving s_elastic timeseries')
             np.savetxt('%s/%s_s_elastic.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['elastic'])
@@ -847,130 +849,28 @@ for layer in layer_names:
             plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
             plt.close() 
             
-#            print('\tSaving % compaction plot.')
-#            
-#            pcs_layer_tmp={}
-#            sns.set_style('white')
-#            
-#            for thickness in bed_thicknesses_tmp:
-#                pcs_layer_tmp[thickness] = 100*np.array([(deformation[layer]['total_%.2f clays' % thickness][i+1] - deformation[layer]['total_%.2f clays' % thickness][i]) / (deformation[layer]['total'][1,i+1] - deformation[layer]['total'][1,i]) for i in range(len(deformation[layer]['total'][1,:])-1)])
-#            idxs_interconmat = np.isin(head_data[layer][:,0],deformation[layer]['total'][0,:])
-#            idxs_tot = np.isin(deformation[layer]['total'][0,:],head_data[layer][:,0])
-#            intercon_tmp = np.array(deformation[layer]['Interconnected matrix'])[idxs_interconmat]
-#            tot_tmp= np.array(deformation[layer]['total'][0,:])[idxs_tot]            
-#            pcs_layer_tmp['Interconnected matrix'] =  100*np.array([(intercon_tmp[i+1] - intercon_tmp[i]) / (tot_tmp[i+1] - tot_tmp[i]) for i in range(len(tot_tmp)-1)])
-#            
-#            
-#            plt.figure(figsize=(18,12))
-#            for thickness in bed_thicknesses_tmp:
-#                plt.plot_date(deformation[layer]['total'][0,:-1][np.abs(pcs_layer_tmp[thickness])<=150],pcs_layer_tmp[thickness][np.abs(pcs_layer_tmp[thickness])<=150],'-',label='%i x clays_%s' % (interbeds_distributions[layer][thickness],thickness))
-#            
-#            plt.plot_date(head_data[layer][:-1,0][np.abs(pcs_layer_tmp['Interconnected matrix'])<=150],pcs_layer_tmp['Interconnected matrix'][np.abs(pcs_layer_tmp['Interconnected matrix'])<=150],'-',label='interconnected matrix')
-#
-#            plt.ylabel('instantaneous %')
-#
-#            ax1 = plt.gca()
-#            ax2 = ax1.twinx()
-#            line, = ax2.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'k--',label='Total layer deformation')
-#
-#            lines, labels = ax1.get_legend_handles_labels()
-#            lines2, labels2 = ax2.get_legend_handles_labels()
-#            ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#            plt.ylabel('Deformation (m)')
-#            plt.savefig('%s/figures/%s/total_deformation_percentage_figure.png' % (outdestination,layer),bbox_inches='tight')
-#            
-#            plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-#            line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#            plt.savefig('%s/figures/%s/total_deformation_percentage_figure_20152020zoom.png' % (outdestination,layer),bbox_inches='tight')
-#            
-#            # Now repeat and smooth over 31 day window
-#            plt.figure(figsize=(18,12))
-#            for thickness in bed_thicknesses_tmp:
-#                plt.plot_date(deformation[layer]['total'][0,:-1][np.abs(pcs_layer_tmp[thickness])<=150],convolve(pcs_layer_tmp[thickness][np.abs(pcs_layer_tmp[thickness])<=150],np.ones((31,))/31,boundary='extend'),'-',label='%i x clays_%s' % (interbeds_distributions[layer][thickness],thickness))
-#            
-#            plt.plot_date(head_data[layer][:-1,0][np.abs(pcs_layer_tmp['Interconnected matrix'])<=150],pcs_layer_tmp['Interconnected matrix'][np.abs(pcs_layer_tmp['Interconnected matrix'])<=150],'-',label='interconnected matrix')
-#            plt.ylabel('instantaneous %')
-#
-#            ax1 = plt.gca()
-#            ax2 = ax1.twinx()
-#            line, = ax2.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'k--',label='Total layer deformation')
-#            plt.ylabel('Deformation (m)')
-#
-#            lines, labels = ax1.get_legend_handles_labels()
-#            lines2, labels2 = ax2.get_legend_handles_labels()
-#            ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#            plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-#            plt.savefig('%s/figures/%s/total_deformation_percentage_figure_20152020zoom_31ßdaysmooth.png' % (outdestination,layer),bbox_inches='tight')
-#
-#            # Finally repeat as a cumulative plot
-#            
-#            pcs_layer_cum_tmp={}
-#            sns.set_style('white')
-#            
-#            for thickness in bed_thicknesses_tmp:
-#                pcs_layer_cum_tmp[thickness] = 100*np.array([(deformation[layer]['total_%.2f clays' % thickness][i] - deformation[layer]['total_%.2f clays' % thickness][0]) / (deformation[layer]['total'][1,i] - deformation[layer]['total'][1,0]) for i in range(len(deformation[layer]['total'][1,:]))])
-#            idxs_interconmat = np.isin(head_data[layer][:,0],deformation[layer]['total'][0,:])
-#            idxs_tot = np.isin(deformation[layer]['total'][0,:],head_data[layer][:,0])
-#            intercon_tmp = np.array(deformation[layer]['Interconnected matrix'])[idxs_interconmat]
-#            tot_tmp= np.array(deformation[layer]['total'][0,:])[idxs_tot]            
-#            pcs_layer_cum_tmp['Interconnected matrix'] =  100*np.array([(intercon_tmp[i] - intercon_tmp[0]) / (tot_tmp[i] - tot_tmp[0]) for i in range(len(tot_tmp))])
-#
-#            plt.figure(figsize=(18,12))
-#            for thickness in bed_thicknesses_tmp:
-#                plt.plot_date(deformation[layer]['total'][0,:],pcs_layer_cum_tmp[thickness],'-',label='%i x clays_%s' % (interbeds_distributions[layer][thickness],thickness))
-#            
-#            plt.plot_date(head_data[layer][:,0],pcs_layer_cum_tmp['Interconnected matrix'],'-',label='interconnected matrix')
-#            plt.ylabel('cumulative %')
-#
-#            ax1 = plt.gca()
-#            ax2 = ax1.twinx()
-#            line, = ax2.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'k--',label='Total layer deformation')
-#            plt.ylabel('Deformation (m)')
-#
-#            lines, labels = ax1.get_legend_handles_labels()
-#            lines2, labels2 = ax2.get_legend_handles_labels()
-#            ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#            plt.savefig('%s/figures/%s/total_deformation_cum_percentage_figure.png' % (outdestination,layer),bbox_inches='tight')
-#            
-#            # Now do the period 2015-2020
-#            for thickness in bed_thicknesses_tmp:
-#                arg2015 = np.argwhere(np.array(deformation[layer]['total'][0,:])==date.toordinal(date(2015,1,1)))[0][0]
-#                print(arg2015)
-#                pcs_layer_cum_tmp[thickness] = 100*np.array([(deformation[layer]['total_%.2f clays' % thickness][i] - deformation[layer]['total_%.2f clays' % thickness][arg2015]) / (deformation[layer]['total'][1,i] - deformation[layer]['total'][1,arg2015]) for i in range(len(deformation[layer]['total'][1,:]))])
-#            idxs_interconmat = np.isin(head_data[layer][:,0],deformation[layer]['total'][0,:])
-#            idxs_tot = np.isin(deformation[layer]['total'][0,:],head_data[layer][:,0])
-#            intercon_tmp = np.array(deformation[layer]['Interconnected matrix'])[idxs_interconmat]
-#            tot_tmp= np.array(deformation[layer]['total'][0,:])[idxs_tot]            
-#            arg2015 = np.argwhere(np.array(head_data[layer][:,0])==date.toordinal(date(2015,1,1)))[0][0]
-#            pcs_layer_cum_tmp['Interconnected matrix'] =  100*np.array([(intercon_tmp[i] - intercon_tmp[arg2015]) / (tot_tmp[i] - tot_tmp[arg2015]) for i in range(len(tot_tmp))])
-#            
-#            plt.figure(figsize=(18,12))
-#            for thickness in bed_thicknesses_tmp:
-#                plt.plot_date(deformation[layer]['total'][0,:],pcs_layer_cum_tmp[thickness],'-',label='%i x clays_%s' % (interbeds_distributions[layer][thickness],thickness))         
-#            plt.plot_date(head_data[layer][:,0],pcs_layer_cum_tmp['Interconnected matrix'],'-',label='interconnected matrix')
-#            plt.ylabel('cumulative %')
-#            plt.ylim([-20,110])
-#            ax1 = plt.gca()
-#            ax2 = ax1.twinx()
-#            line, = ax2.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'k--',label='Total layer deformation')
-#            plt.ylabel('Deformation (m)')
-#            lines, labels = ax1.get_legend_handles_labels()
-#            lines2, labels2 = ax2.get_legend_handles_labels()
-#            ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#            line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#            plt.ylim((1.2*np.min(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]]),1.2*np.max(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]])))
-#            plt.xlim([date.toordinal(date(2015,1,3)),date.toordinal(date(2020,1,1))])
-#            plt.savefig('%s/figures/%s/total_deformation_cum_percentage_figure_20152020zoom.png' % (outdestination,layer),bbox_inches='tight')
-#            plt.close()
             
-#            print('\tSaving s (interconnected matrix)')
-#            np.savetxt('%s/%s_s_matrix.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['Interconnected matrix'])
-#            
+            print('\tSaving s (interconnected matrix)')
+            
+            if np.size(deformation[layer]['Interconnected matrix']) >= 3e6:
+                print('\t\t\ts (interconnected matrix) has more than 1 million entries; saving as 32 bit floats.')
+                deformation[layer]['Interconnected matrix'].astype(np.single).tofile('%s/s_outputs/%s_s_matrix' % (outdestination, layer.replace(' ','_')))
+
+
+            else:            
+                np.savetxt('%s/s_outputs/%s_s_matrix.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['Interconnected matrix'])
+            
+            print('\tSaving s (clay layers)')
             for thickness in bed_thicknesses_tmp:
-                np.savetxt('%s/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
+                print('\t\t%.2f' % thickness)
+                if np.size(deformation[layer]['total_%.2f clays' % thickness]) >= 1e6:
+                    print('\t\t\ts (clay) has more than 1 million entries; saving as 32 bit floats.')
+                    deformation[layer]['total_%.2f clays' % thickness].astype(np.single).tofile('%s/s_outputs/%s_s_%.2fclays' % (outdestination, layer.replace(' ','_'),thickness))
+                else:                   
+                    np.savetxt('%s/s_outputs/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
 
+            
             if save_internal_compaction:
-
                 print('\tSaving internal compaction plots for clays of thickness ',bed_thicknesses_tmp)
                 for thickness in bed_thicknesses_tmp:
                     print('\t\t',thickness)
