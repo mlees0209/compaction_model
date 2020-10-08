@@ -63,7 +63,7 @@ echo "WE ARE WORKING IN Linux MODE"
 for i in $(echo $runnames | tr ',' '\n')
 do
 echo $i
-cmd="python /home/mlees/Land_Subsidence/Local_Scale/MODEL/execute_model.py $i.par"
+cmd="python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/execute_model.py $i.par"
 echo $cmd
 xterm -hold -e "source /home/mlees/anaconda3/etc/profile.d/conda.sh; conda activate compaction_model; python /home/mlees/Land_Subsidence/Local_Scale/MODEL/execute_model.py $i.par" &
 disown
