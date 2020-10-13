@@ -16,6 +16,8 @@ if len(sys.argv) != 2:
 
 directory=sys.argv[1]
 
+foot_to_cm = 30.48
+
 import os
 cwd = os.getcwd()
 os.chdir(directory)
@@ -61,6 +63,10 @@ Highway_198_dates = date2num([date(1965,1,1),date(2004,1,1)])
 Highway_198_data = 100*np.array([0,-2.5])
 Highway_198_data_uncertainty = np.array([0,Poland_75_data[2]])
 
+Jacobus_data = pd.read_excel('/Users/mlees/Documents/RESEARCH/ground_deformation/GPS/From_Matt_Jacobus/Jacobus_Data_MASTER.xlsx')
+Jacobus_data['YRMO']= pd.to_datetime(Jacobus_data['YRMO'],format='%Y%b')
+S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
+
 save = True
 #%%
 
@@ -90,6 +96,7 @@ txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanso
 
 ax1.plot_date(datesinsarH,0.1*InSAR_H + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]],'k-',label='Sentinel InSAR subsidence')
 
+ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
 
 
 plt.ylabel('Subsidence (cm)')
@@ -101,6 +108,9 @@ plt.legend()
 
 if save:
     plt.savefig('figures/compare_with_measurementsFULL.png',bbox_inches='tight')
+    plt.savefig('figures/compare_with_measurementsFULL.pdf',bbox_inches='tight')
+    plt.savefig('figures/compare_with_measurementsFULL.svg',bbox_inches='tight')
+
 
 yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
 
