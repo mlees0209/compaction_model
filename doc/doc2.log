@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.4.16)  31 AUG 2020 16:46
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.4.16)  6 OCT 2020 10:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -548,20 +548,20 @@ LaTeX Warning: Label `fig:overburden1' multiply defined.
 )
 \openout1 = `doc2.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 36.
+LaTeX Font Info:    ... okay on input line 36.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -629,7 +629,7 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 \AtBeginShipoutBox=\box46
-Package hyperref Info: Link coloring ON on input line 35.
+Package hyperref Info: Link coloring ON on input line 36.
 
 (/usr/local/texlive/2018/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
@@ -639,33 +639,33 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count169
 )
-LaTeX Info: Redefining \ref on input line 35.
-LaTeX Info: Redefining \pageref on input line 35.
-LaTeX Info: Redefining \nameref on input line 35.
+LaTeX Info: Redefining \ref on input line 36.
+LaTeX Info: Redefining \pageref on input line 36.
+LaTeX Info: Redefining \nameref on input line 36.
 
 (./doc2.out) (./doc2.out)
 \@outlinefile=\write3
 \openout3 = `doc2.out'.
 
  ABD: EveryShipout initializing macros
-LaTeX Info: Redefining \celsius on input line 35.
-Package gensymb Info: Faking symbols for \degree and \celsius on input line 35.
+LaTeX Info: Redefining \celsius on input line 36.
+Package gensymb Info: Faking symbols for \degree and \celsius on input line 36.
 
 
 
 Package gensymb Warning: Not defining \perthousand.
 
-LaTeX Info: Redefining \ohm on input line 35.
-Package gensymb Info: Using \Omega for \ohm on input line 35.
+LaTeX Info: Redefining \ohm on input line 36.
+Package gensymb Info: Using \Omega for \ohm on input line 36.
 
 Package gensymb Warning: Not defining \micro.
 
 (./doc2.toc
-LaTeX Font Info:    Try loading font information for U+msa on input line 2.
+LaTeX Font Info:    Try loading font information for U+msa on input line 3.
  (/usr/local/texlive/2018/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 2.
+LaTeX Font Info:    Try loading font information for U+msb on input line 3.
 
 (/usr/local/texlive/2018/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -673,102 +673,125 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 \tf@toc=\write4
 \openout4 = `doc2.toc'.
 
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 65.
 
-Underfull \hbox (badness 2005) in paragraph at lines 75--76
+(/usr/local/texlive/2018/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 65.
+ [1
+
+{/usr/local/texlive/2018/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Underfull \hbox (badness 2005) in paragraph at lines 100--101
 []|\OT1/cmr/m/n/10 No. Al-ways do ex-act
  []
 
 
-Underfull \hbox (badness 3884) in paragraph at lines 77--78
+Underfull \hbox (badness 3884) in paragraph at lines 102--103
 []|\OT1/cmr/m/n/10 No. Al-ways con-stant
  []
 
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[1
-
-{/usr/local/texlive/2018/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 [2]
-<figures/BasicIllustration.pdf, id=130, 1040.68805pt x 570.93298pt>
+<figures/BasicIllustration.pdf, id=135, 1040.68805pt x 570.93298pt>
 File: figures/BasicIllustration.pdf Graphic file (type pdf)
 <use figures/BasicIllustration.pdf>
-Package pdftex.def Info: figures/BasicIllustration.pdf  used on input line 137.
+Package pdftex.def Info: figures/BasicIllustration.pdf  used on input line 162.
 
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
-<figures/BasicIllustration_ZOOM.pdf, id=131, 1040.68805pt x 570.93298pt>
+<figures/BasicIllustration_ZOOM.pdf, id=136, 1040.68805pt x 570.93298pt>
 File: figures/BasicIllustration_ZOOM.pdf Graphic file (type pdf)
 <use figures/BasicIllustration_ZOOM.pdf>
 Package pdftex.def Info: figures/BasicIllustration_ZOOM.pdf  used on input line
- 143.
+ 168.
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
-<figures/BasicIllustration_Timeevolution.pdf, id=132, 1040.68805pt x 570.93298p
+<figures/BasicIllustration_Timeevolution.pdf, id=137, 1040.68805pt x 570.93298p
 t>
 File: figures/BasicIllustration_Timeevolution.pdf Graphic file (type pdf)
 <use figures/BasicIllustration_Timeevolution.pdf>
 Package pdftex.def Info: figures/BasicIllustration_Timeevolution.pdf  used on i
-nput line 149.
+nput line 174.
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
-<figures/BasicIllustration_ElasticInelastic_n5.pdf, id=137, 1040.68805pt x 570.
+<figures/BasicIllustration_ElasticInelastic_n5.pdf, id=142, 1040.68805pt x 570.
 93298pt>
 File: figures/BasicIllustration_ElasticInelastic_n5.pdf Graphic file (type pdf)
 
 <use figures/BasicIllustration_ElasticInelastic_n5.pdf>
 Package pdftex.def Info: figures/BasicIllustration_ElasticInelastic_n5.pdf  use
-d on input line 157.
+d on input line 182.
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
- [3 <./figures/BasicIllustration.pdf>] [4 <./figures/BasicIllustration_ZOOM.pdf
-> <./figures/BasicIllustration_Timeevolution.pdf
+ [3] [4 <./figures/BasicIllustration.pdf> <./figures/BasicIllustration_ZOOM.pdf
+
 
 pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./figures/BasicIllustration_
-Timeevolution.pdf): PDF inclusion: multiple pdfs with page group included in a 
-single page
+ZOOM.pdf): PDF inclusion: multiple pdfs with page group included in a single pa
+ge
 >]
-<figures/BasicIllustration_ElasticInelastic_n21.pdf, id=273, 1040.68805pt x 570
+<figures/BasicIllustration_ElasticInelastic_n21.pdf, id=252, 1040.68805pt x 570
 .93298pt>
 File: figures/BasicIllustration_ElasticInelastic_n21.pdf Graphic file (type pdf
 )
 <use figures/BasicIllustration_ElasticInelastic_n21.pdf>
 Package pdftex.def Info: figures/BasicIllustration_ElasticInelastic_n21.pdf  us
-ed on input line 163.
+ed on input line 188.
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
- [5 <./figures/BasicIllustration_ElasticInelastic_n5.pdf>] [6 <./figures/BasicI
-llustration_ElasticInelastic_n21.pdf>] [7] [8]
-<figures/Benchmark_Output_Comparisons_StepDrop.pdf, id=439, 1040.68805pt x 570.
+ [5 <./figures/BasicIllustration_Timeevolution.pdf>] [6 <./figures/BasicIllustr
+ation_ElasticInelastic_n5.pdf> <./figures/BasicIllustration_ElasticInelastic_n2
+1.pdf
+
+pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./figures/BasicIllustration_
+ElasticInelastic_n21.pdf): PDF inclusion: multiple pdfs with page group include
+d in a single page
+>] [7] [8]
+<figures/Benchmark_Output_Comparisons_StepDrop.pdf, id=450, 1040.68805pt x 570.
 93298pt>
 File: figures/Benchmark_Output_Comparisons_StepDrop.pdf Graphic file (type pdf)
 
 <use figures/Benchmark_Output_Comparisons_StepDrop.pdf>
 Package pdftex.def Info: figures/Benchmark_Output_Comparisons_StepDrop.pdf  use
-d on input line 314.
+d on input line 339.
 (pdftex.def)             Requested size: 469.75502pt x 257.71893pt.
 
-Overfull \hbox (0.87914pt too wide) in paragraph at lines 332--333
+
+LaTeX Warning: Reference `sec:Convergence_compaction' on page 9 undefined on in
+put line 352.
+
+<figures/Benchmark_Output_Comparisons_StepDrop2.png, id=455, 987.69pt x 2186.89
+02pt>
+File: figures/Benchmark_Output_Comparisons_StepDrop2.png Graphic file (type png
+)
+<use figures/Benchmark_Output_Comparisons_StepDrop2.png>
+Package pdftex.def Info: figures/Benchmark_Output_Comparisons_StepDrop2.png  us
+ed on input line 356.
+(pdftex.def)             Requested size: 293.7623pt x 650.43001pt.
+
+LaTeX Warning: Float too large for page by 47.49998pt on input line 359.
+
+[9 <./figures/Benchmark_Output_Comparisons_StepDrop.pdf>] [10 <./figures/Benchm
+ark_Output_Comparisons_StepDrop2.png>]
+Overfull \hbox (0.87914pt too wide) in paragraph at lines 371--372
 \OT1/cmtt/m/n/9 python / python _ datetime . asp$[][] \OT1/cmr/m/n/9 and [][]$\
 OT1/cmtt/m/n/9 https : / / matplotlib . org / 3 . 1 . 1 / api / dates _ api . h
 tml # matplotlib .
  []
 
-[9 <./figures/Benchmark_Output_Comparisons_StepDrop.pdf>]
-Underfull \hbox (badness 1087) in paragraph at lines 372--373
+
+Underfull \hbox (badness 1087) in paragraph at lines 413--414
 []|\OT1/cmr/m/n/10 Approximately half that
  []
 
 
-Overfull \hbox (60.31302pt too wide) in paragraph at lines 346--377
+Overfull \hbox (60.31302pt too wide) in paragraph at lines 385--418
  [][] 
  []
 
-[10] (./doc2.bbl
+[11] (./doc2.bbl
 Underfull \hbox (badness 4556) in paragraph at lines 83--94
 \OT1/cmr/m/n/9 38(1):89--98, 2000.  ISSN 1745-6584.  doi: $10 . 1111 / j . 1745
 -[]6584 . 2000 . tb00205 . x$.  URL
  []
 
-
+[12]
 Underfull \hbox (badness 1515) in paragraph at lines 96--107
 \OT1/cmr/m/n/9 URL [][]$\OT1/cmtt/m/n/9 https : / / agupubs . onlinelibrary . w
 iley . com / doi / abs / 10 . 1029 / JB094iB09p12403$[][]\OT1/cmr/m/n/9 .  []ep
@@ -782,27 +805,30 @@ Package movie15 Warning: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 (movie15)                @@ superseded by `media9'.           @@
 (movie15)                @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 401.
-[11]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 401.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 442.
+[13]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 442.
  (./doc2.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 401.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 401.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 442.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 442.
 Package rerunfilecheck Info: File `doc2.out' has not changed.
-(rerunfilecheck)             Checksum: 164B64577B85A83F235CAE433F9789B8;1096.
+(rerunfilecheck)             Checksum: F61BBC7F063BCFFCC099260D75EC2F91;1225.
+
+
+LaTeX Warning: There were undefined references.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 11785 strings out of 492649
- 170628 string characters out of 6129622
- 352619 words of memory out of 5000000
- 15392 multiletter control sequences out of 15000+600000
+ 11820 strings out of 492649
+ 171400 string characters out of 6129622
+ 351993 words of memory out of 5000000
+ 15417 multiletter control sequences out of 15000+600000
  11491 words of font info for 45 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 33i,12n,32p,2064b,412s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 33i,12n,32p,2060b,494s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></
@@ -823,10 +849,10 @@ texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2018/te
 xmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2018/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/local/texlive/2018/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on doc2.pdf (11 pages, 4399659 bytes).
+Output written on doc2.pdf (13 pages, 4589196 bytes).
 PDF statistics:
- 644 PDF objects out of 1000 (max. 8388607)
- 377 compressed objects within 4 object streams
- 67 named destinations out of 1000 (max. 500000)
- 151 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 673 PDF objects out of 1000 (max. 8388607)
+ 401 compressed objects within 5 object streams
+ 72 named destinations out of 1000 (max. 500000)
+ 172 words of extra memory for PDF output out of 10000 (max. 10000000)
 
