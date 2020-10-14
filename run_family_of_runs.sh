@@ -67,6 +67,6 @@ cmd="python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/execute_mod
 echo $cmd
 xterm -hold -e "source /home/mlees/anaconda3/etc/profile.d/conda.sh; conda activate compaction_model; python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/execute_model.py $i.par" &
 disown
-read -t 50 -p "I am going to wait for 50 seconds now ..."
+read -t 65 -p "I am going to wait for 65 seconds now ..."
 done
 fi
