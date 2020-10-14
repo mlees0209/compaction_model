@@ -65,7 +65,7 @@ do
 echo $i
 cmd="python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/execute_model.py $i.par"
 echo $cmd
-xterm -hold -e "source /home/mlees/anaconda3/etc/profile.d/conda.sh; conda activate compaction_model; python /home/mlees/Land_Subsidence/Local_Scale/MODEL/execute_model.py $i.par" &
+xterm -hold -e "source /home/mlees/anaconda3/etc/profile.d/conda.sh; conda activate compaction_model; python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/execute_model.py $i.par" &
 disown
 read -t 60 -p "I am going to wait for 60 seconds now ..."
 done
