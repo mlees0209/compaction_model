@@ -63,16 +63,23 @@ if realdata:
     else:
         print('realdata specified but unknown option. Try TRE_Altamira')
 
-
+set_context = [var for var in run_names if var.split('=')[0]=='set_context']
+if not set_context:
+    context='poster'
+else:
+    context=set_context[0].split('=')[1]
+    print('\tset_context specified as %s. Setting sns.set_context accordingly.' % context)
 
 run_names = [var for var in run_names if var.split('=')[0]!='startyear']
 run_names = [var for var in run_names if var.split('=')[0]!='realdata']
+run_names = [var for var in run_names if var.split('=')[0]!='set_context']
+
 print("Plotting for runs ", run_names)
 
 cwd = os.getcwd()
 Data={}
 
-sns.set_context('poster')
+sns.set_context(context)
 sns.set_style('darkgrid')
 
 fig,ax1 = plt.subplots(figsize=(18,12))
