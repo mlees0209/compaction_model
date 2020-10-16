@@ -402,6 +402,7 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
     return db,s,s_elastic,s_inelastic
 
 def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100):
+    # I think delt is in units of days; see what happens with the variable t_jumps below.
         if not os.path.isdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_'))):
             os.mkdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_')))
         
@@ -417,7 +418,7 @@ def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfol
         plt.gca().invert_xaxis()
         plt.gca().invert_yaxis()
         t_tmp = date2num([dt.strptime(date, '%d-%b-%Y').date() for date in dates_str])
-        t_jumps = [t_tmp[i] - t_tmp[0] for i in range(len(t_tmp))]
+        t_jumps = [t_tmp[i] - t_tmp[0] for i in range(len(t_tmp))] # It looks like we get t in days.
         if not delt in t_jumps:
             print("\tERROR MAKING VIDEO! Selected dt not compatible with dates given.")
             sys.exit(1)
