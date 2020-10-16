@@ -67,7 +67,7 @@ ax2.legend(lines + lines2, labels + labels2, fancybox=True)
 
 if save:
     plt.savefig('figures/aquifer_partitioning_plot.png',bbox_inches='tight')
-    plt.savefig('figures/aquifer_partitioning_plot.png',bbox_inches='tight')
+    plt.savefig('figures/aquifer_partitioning_plot.pdf',bbox_inches='tight')
 
 os.chdir(cwd)
 
