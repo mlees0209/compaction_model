@@ -37,7 +37,8 @@ output['year']=years
 upper = [float(Data['Upper Aquifer'][Data['dates']=='%s-09-30' % (int(year)+1)]) - float(Data['Upper Aquifer'][Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
 lower = [float(Data['Lower Aquifer'][Data['dates']=='%s-09-30' % (int(year)+1)]) - float(Data['Lower Aquifer'][Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
 cclay = [float(Data['Corcoran Clay'][Data['dates']=='%s-09-30' % (int(year)+1)]) - float(Data['Corcoran Clay'][Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
-tot = np.array(upper)+np.array(lower)+np.array(cclay)
+tot = [float(Data['Total'][Data['dates']=='%s-09-30' % (int(year)+1)]) - float(Data['Total'][Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
+
 pc_upper = [100*(upper[i] / tot[i]) for i in range(len(upper))]
 pc_lower = [100*(lower[i] / tot[i]) for i in range(len(upper))]
 pc_cclay = [100*(cclay[i] / tot[i]) for i in range(len(upper))]
@@ -52,12 +53,17 @@ ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_ser
 plt.ylabel('Deformation (cm)')
 
 ax2 = plt.twinx()
-ax2.bar(date2num(years[:-2]),pc_lower,width=365/3,label='lower')
-ax2.bar(date2num(years[:-2])+365/3,pc_upper,width=365/3,label='upper')
-ax2.bar(date2num(years[:-2])+2*365/3,pc_cclay,width=365/3,label='cclay')
+ax2.bar(365 + date2num(years[:-2])+(60 - 365/3.2),pc_lower,width=365/3.2,label='lower')
+ax2.bar(365 + date2num(years[:-2])+60,pc_upper,width=365/3.2,label='upper')
+ax2.bar(365 + date2num(years[:-2])+(60 + 365/3.2),pc_cclay,width=365/3.2,label='cclay')
 
 plt.ylabel('% contribution')
+plt.title('%s' % directory.split('/')[-1])
 
+import matplotlib.dates as mdates
+years = mdates.YearLocator()   # every year
+#years_fmt = mdates.DateFormatter('%Y')
+ax1.xaxis.set_minor_locator(years)
 
 
 lines, labels = ax1.get_legend_handles_labels()
