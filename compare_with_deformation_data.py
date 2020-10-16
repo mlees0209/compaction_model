@@ -119,6 +119,7 @@ plt.xlim([date(2015,1,1),date(2020,1,1)])
 yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
 plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]-0.25*yrange,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]]+0.25*yrange])
 
+plt.title('%s' % directory.split('/')[-1])
 
 if save:
     plt.savefig('figures/compare_with_TRE_Altamira.png',bbox_inches='tight')
