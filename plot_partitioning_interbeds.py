@@ -147,9 +147,9 @@ fig,ax1 = plt.subplots(figsize=(18,12))
 
 
 ax2 = plt.twinx()
-ax2.bar(date2num(years[:-2])+(60 - 365/3.2),pc_less5,width=365/3.2,label='Interbeds thinner than 5 m; total thickness = %.2f' % lessthan5_thickness,color='lightblue')
-ax2.bar(date2num(years[:-2])+60,pc_5to10,width=365/3.2,label='5-10 m interbeds; total thickness = %.2f' % fiveto10_thickness,color='blue')
-ax2.bar(date2num(years[:-2])+(60 + 365/3.2),pc_greater10,width=365/3.2,label='Interbeds thicker than 10 m; total thickness = %.2f' % greater10_thickness,color='darkblue')
+ax2.bar(365 + date2num(years[:-2])+(60 - 365/3.2),pc_less5,width=365/3.2,label='Interbeds thinner than 5 m; total thickness = %.2f' % lessthan5_thickness,color='lightblue')
+ax2.bar(365 + date2num(years[:-2])+60,pc_5to10,width=365/3.2,label='5-10 m interbeds; total thickness = %.2f' % fiveto10_thickness,color='blue')
+ax2.bar(365 + date2num(years[:-2])+(60 + 365/3.2),pc_greater10,width=365/3.2,label='Interbeds thicker than 10 m; total thickness = %.2f' % greater10_thickness,color='darkblue')
 # ax2.plot_date(date2num(years[:-2]),pc_less5,'--',label='pc_less5')
 # ax2.plot_date(date2num(years[:-2])+365/3,pc_5to10,'--',label='pc_5to10')
 # ax2.plot_date(date2num(years[:-2])+2*365/3,pc_greater10,'--',label='pc_greater10')
@@ -161,6 +161,11 @@ ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_ser
 plt.ylabel('Deformation (cm)')
 ax1.set_zorder(2)
 ax1.set_facecolor("none")
+
+import matplotlib.dates as mdates
+years = mdates.YearLocator()   # every year
+ax1.xaxis.set_minor_locator(years)
+
 
 lines, labels = ax1.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
