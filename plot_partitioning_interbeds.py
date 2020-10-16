@@ -10,22 +10,15 @@ Plot the contribution of different clay layer thicknesses to subsidence across t
 
 import sys
 
-# if len(sys.argv) <= 2:
-#     print('plot_subsidence_breakdown.py error; terminal. Incorrect number of input arguments. Correct usage: python breakdown_subsidence.py model_directory endyear=XXXX')
-#     sys.exit(1)
+if len(sys.argv) != 2:
+    print('plot_partitioning_interbeds.py error; terminal. Incorrect number of input arguments. Correct usage: python plot_partitioning_interbeds.py model_directory')
+    sys.exit(1)
 
-#directory=sys.argv[1]
-directory = '/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_Runs/Ohm_Cutoffs_Family/Run34'
-#args=sys.argv[1:]
+directory=sys.argv[1]
+#directory = '/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_Runs/Ohm_Cutoffs_Family/Run34'
+args=sys.argv[1:]
 
-# endyear = [var for var in args if var.split('=')[0]=='endyear']
-# if not endyear:
-#     print('No endyear specified; ending on Sep 1st 2019.')
-#     endyear=2019
-# else:
-#     endyear=int(endyear[0].split('=')[1])
-#     print('Endyear specified; zeroing on Sep 1st %i.' % endyear)
-startyear=2015
+save=True
 
 import pandas as pd
 sys.path.append('/home/mlees/InSAR_processing/postprocessing_scripts/')
@@ -33,6 +26,9 @@ sys.path.append('/Users/mlees/Documents/RESEARCH/InSAR_processing/postprocessing
 import seaborn as sns
 import os
 from InSAR_postSBAS import *
+sys.path.append('/home/mlees/Land_Subsidence/Local_Scale/compaction_model')
+sys.path.append('/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL')
+from model_functions import *
 
 cwd = os.getcwd()
 os.chdir(directory)
@@ -97,23 +93,85 @@ for key, value in layername_dict.items():
         
 #%% Now get the summed deformation from less than 5 etc
 lessthan5_defm=np.zeros_like(Data['Total'])
+lessthan5_thickness=0
+
 for layer in lessthan5:
     lessthan5_defm += dat_all[layer]
-
+    lessthan5_thickness+=layername_dict[layer] * interbeds_distributions[layer.split('_')[0]][float(layer.split('clay')[0].split('_')[1])]
+    
 fiveto10_defm=np.zeros_like(Data['Total'])
+fiveto10_thickness=0
+
 for layer in fiveto10:
     fiveto10_defm += dat_all[layer]
+    fiveto10_thickness+=layername_dict[layer] * interbeds_distributions[layer.split('_')[0]][float(layer.split('clay')[0].split('_')[1])]
 
 greater10_defm=np.zeros_like(Data['Total'])
+greater10_thickness=0
 for layer in greater10:
     greater10_defm += dat_all[layer]
+    greater10_thickness+=layername_dict[layer] * interbeds_distributions[layer.split('_')[0]][float(layer.split('clay')[0].split('_')[1])]
 
-
+print('Plotting deformation series for different clay thicknesses.')
 plt.figure()
 plt.plot_date(Data['dates'],Data['Total'],label='total def')
-plt.plot_date(Data['dates'],lessthan5_defm,label='<5 m clay def')
-plt.plot_date(Data['dates'],fiveto10_defm,label='5-10 m clay def')
-plt.plot_date(Data['dates'],greater10_defm,label='>10 m clay def')
+plt.plot_date(Data['dates'],lessthan5_defm,label='Interbeds thinner than 5 m; total thickness = %.2f' % lessthan5_thickness)
+plt.plot_date(Data['dates'],fiveto10_defm,label='5-10 m interbeds; total thickness = %.2f' % fiveto10_thickness)
+plt.plot_date(Data['dates'],greater10_defm,label='Interbeds thicker than 10 m; total thickness = %.2f' % greater10_thickness)
 
 plt.legend()
-plt.show()
+if save:
+    plt.savefig('figures/defm_by_interbeds.png',bbox_inches='tight')
+    plt.savefig('figures/defm_by_interbeds.pdf',bbox_inches='tight')
+    plt.savefig('figures/defm_by_interbeds.svg',bbox_inches='tight')
+
+
+years = np.unique([a.strftime('%Y') for a in Data['dates']])
+
+less5_ann = [float(lessthan5_defm[Data['dates']=='%s-09-30' % (int(year)+1)]) - float(lessthan5_defm[Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
+fiveto10_ann = [float(fiveto10_defm[Data['dates']=='%s-09-30' % (int(year)+1)]) - float(fiveto10_defm[Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
+greater10_ann = [float(greater10_defm[Data['dates']=='%s-09-30' % (int(year)+1)]) - float(greater10_defm[Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
+
+tot = [float(Data['Total'][Data['dates']=='%s-09-30' % (int(year)+1)]) - float(Data['Total'][Data['dates']=='%s-10-01' % year]) for year in years[:-2]]
+#tot = np.array(less5_ann)+np.array(fiveto10_ann)+np.array(greater10_ann)
+
+pc_less5 = [100*(less5_ann[i] / tot[i]) for i in range(len(less5_ann))]
+pc_5to10 = [100*(fiveto10_ann[i] / tot[i]) for i in range(len(fiveto10_ann))]
+pc_greater10 = [100*(greater10_ann[i] / tot[i]) for i in range(len(greater10_ann))]
+
+#%%
+
+print('Plotting % contribution of differet interbeds.')
+fig,ax1 = plt.subplots(figsize=(18,12))
+
+
+
+ax2 = plt.twinx()
+ax2.bar(date2num(years[:-2])+(60 - 365/3.2),pc_less5,width=365/3.2,label='Interbeds thinner than 5 m; total thickness = %.2f' % lessthan5_thickness,color='lightblue')
+ax2.bar(date2num(years[:-2])+60,pc_5to10,width=365/3.2,label='5-10 m interbeds; total thickness = %.2f' % fiveto10_thickness,color='blue')
+ax2.bar(date2num(years[:-2])+(60 + 365/3.2),pc_greater10,width=365/3.2,label='Interbeds thicker than 10 m; total thickness = %.2f' % greater10_thickness,color='darkblue')
+# ax2.plot_date(date2num(years[:-2]),pc_less5,'--',label='pc_less5')
+# ax2.plot_date(date2num(years[:-2])+365/3,pc_5to10,'--',label='pc_5to10')
+# ax2.plot_date(date2num(years[:-2])+2*365/3,pc_greater10,'--',label='pc_greater10')
+plt.ylabel('% contribution')
+plt.title('%s' % directory.split('/')[-1])
+
+ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[0:365*20],'-',color='grey',linewidth=0.5)
+ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'k-',label='Modelled Subsidence')
+plt.ylabel('Deformation (cm)')
+ax1.set_zorder(2)
+ax1.set_facecolor("none")
+
+lines, labels = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+
+ax2.legend(lines + lines2, labels + labels2, fancybox=True)
+
+if save:
+    plt.savefig('figures/partitioning_interbeds.png',bbox_inches='tight')
+    plt.savefig('figures/partitioning_interbeds.pdf',bbox_inches='tight')
+    plt.savefig('figures/partitioning_interbeds.svg',bbox_inches='tight')
+
+
+os.chdir(cwd)
+
