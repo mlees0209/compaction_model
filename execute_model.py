@@ -655,7 +655,7 @@ if save_output_head_timeseries:
                 csvWriter.writerows(head_series[layer])
             with open('%s/head_outputs/%s_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_')), 'w') as myfile:
                 wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-                wr.writerow([x.strftime('%d-%b-%Y') for x in num2date(groundwater_solution_dates[layer])])
+                wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer])])
 
 for layer in layers_requiring_solving:
     if create_output_head_video[layer]:
