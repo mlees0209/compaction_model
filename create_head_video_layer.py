@@ -11,8 +11,8 @@ After the fact: creates a head video for a given layer.
 
 import sys
 
-if len(sys.argv) != 2:
-    print('create_head_video_layer.py error; terminal. Incorrect number of input arguments. Correct usage: python create_head_video_layer.py layername. Layername should be fmt LAYER_THICKclay')
+if len(sys.argv) <= 2:
+    print('create_head_video_layer.py error; terminal. Incorrect number of input arguments. Correct usage: python create_head_video_layer.py layername dt=XXXX. Layername should be fmt LAYER_THICKclay; dt=DAYS')
     sys.exit(1)
 
 
@@ -31,6 +31,18 @@ from netCDF4 import Dataset
 import numpy as np
 
 layername=sys.argv[1]
+args=sys.argv[1:]
+
+dt = [var for var in args if var.split('=')[0]=='dt']
+if not dt:
+    print('No dt specified; dt=30 days.')
+    dt=30
+else:
+    dt=int(dt[0].split('=')[1])
+    print('dt specified; dt=%i.' % dt)
+
+save=True
+
 aquifer=re.split('_(\d+)',layername)[0]
 
 Dat = Dataset("head_outputs/%s_head_data.nc" % layername, "r", format="CF-1.7")
@@ -51,4 +63,4 @@ dates_str = [datetime.datetime.strptime(string, '%a %d %b %Y %X %p').strftime('%
 #%%
 
 print('\t\tCreating video for %s' % layername)
-create_head_video_elasticinelastic(head,z,inelasticflag==1,dates_str,'figures',layername,delt=30)
+create_head_video_elasticinelastic(head,z,inelasticflag==1,dates_str,'figures',layername,delt=dt)
