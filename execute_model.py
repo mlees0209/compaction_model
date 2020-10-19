@@ -285,7 +285,7 @@ plt.ylabel('Head (masl)')
 plt.legend()
 plt.savefig('%s/input_data/input_head_timeseries.png' % outdestination)
 plt.savefig('%s/input_data/input_head_timeseries.pdf' % outdestination)
-plt.savefig('%s/intut_data/input_head_timeseries.svg' % outdestination)
+plt.savefig('%s/input_data/input_head_timeseries.svg' % outdestination)
 plt.close()
 sns.set_style('white')
 
