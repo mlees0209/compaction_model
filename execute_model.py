@@ -816,26 +816,26 @@ for layer in layer_names:
             plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             plt.close()
             
-            if save_internal_compaction:
-                print('\tSaving db')
+            # if save_internal_compaction:
+            #     print('\tSaving db')
             
-                if np.size(db[layer]) >= 1e6:
-                    if gmt:
-                        print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
-                        db[layer].astype(np.single).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
-                        print('\t\t\t\tConverting to netCDF format. Command is:')
-                        cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer][0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer])))
+            #     if np.size(db[layer]) >= 1e6:
+            #         if gmt:
+            #             print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
+            #             db[layer].astype(np.single).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+            #             print('\t\t\t\tConverting to netCDF format. Command is:')
+            #             cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer][0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer])))
                         
-                        print(cmd_tmp)
-                        subprocess.call(cmd_tmp,shell=True)
-                        os.remove('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
-                    else:
-                        print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
-                        db[layer].astype(np.half).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
-                else:
-                    with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                        csvWriter = csv.writer(myCsv, delimiter=',')
-                        csvWriter.writerows(np.array(db[layer]).T)
+            #             print(cmd_tmp)
+            #             subprocess.call(cmd_tmp,shell=True)
+            #             os.remove('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+            #         else:
+            #             print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
+            #             db[layer].astype(np.half).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+            #     else:
+            #         with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+            #             csvWriter = csv.writer(myCsv, delimiter=',')
+            #             csvWriter.writerows(np.array(db[layer]).T)
 
 
             
