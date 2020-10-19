@@ -284,6 +284,8 @@ for aquifer in all_aquifers_needing_head_data:
 plt.ylabel('Head (masl)')
 plt.legend()
 plt.savefig('%s/input_data/input_head_timeseries.png' % outdestination)
+plt.savefig('%s/input_data/input_head_timeseries.pdf' % outdestination)
+plt.savefig('%s/intut_data/input_head_timeseries.svg' % outdestination)
 plt.close()
 sns.set_style('white')
 
@@ -814,10 +816,11 @@ for layer in layer_names:
             plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             plt.close()
             
-            # print('\tSaving db')
-            # with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-            #     csvWriter = csv.writer(myCsv, delimiter=',')
-            #     csvWriter.writerows(np.array(db[layer]).T)
+            if save_internal_compaction:
+                print('\tSaving db')
+                with open('%s/%s_db.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                    csvWriter = csv.writer(myCsv, delimiter=',')
+                    csvWriter.writerows(np.array(db[layer]).T)
             
             print('\tSaving s_elastic timeseries')
             np.savetxt('%s/%s_s_elastic.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['elastic'])
