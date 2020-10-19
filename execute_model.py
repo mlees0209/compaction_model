@@ -846,37 +846,37 @@ for layer in layer_names:
             print('\tSaving s timeseries')
             np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
     
-            if save_internal_compaction:
+            # if save_internal_compaction:
 
-                print('\tSaving plots of compaction within layer %s.' % layer)
-                t = groundwater_solution_dates[layer]
-                x_lims = [np.min(t_gwflow[layer]),np.max(t_gwflow[layer])]
+            #     print('\tSaving plots of compaction within layer %s.' % layer)
+            #     t = groundwater_solution_dates[layer]
+            #     x_lims = [np.min(t_gwflow[layer]),np.max(t_gwflow[layer])]
 
-                y_lims=[min(Z[layer]),max(Z[layer])]
+            #     y_lims=[min(Z[layer]),max(Z[layer])]
                 
-                sns.set_style('white')
-                sns.set_context('talk')
-                plt.figure(figsize=(18,12))
-                plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer])[5:,:])),vmax=np.max(np.abs(np.array(db[layer])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-                plt.gca().xaxis_date()
-                date_format = mdates.DateFormatter('%Y')
-                plt.gca().xaxis.set_major_formatter(date_format)
-                plt.gcf().autofmt_xdate()
-                plt.colorbar(label='db (m)')
-                plt.ylabel('Z (m)')
-                plt.savefig('%s/figures/%s_compaction_internal.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
-                plt.close()
+            #     sns.set_style('white')
+            #     sns.set_context('talk')
+            #     plt.figure(figsize=(18,12))
+            #     plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer])[5:,:])),vmax=np.max(np.abs(np.array(db[layer])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
+            #     plt.gca().xaxis_date()
+            #     date_format = mdates.DateFormatter('%Y')
+            #     plt.gca().xaxis.set_major_formatter(date_format)
+            #     plt.gcf().autofmt_xdate()
+            #     plt.colorbar(label='db (m)')
+            #     plt.ylabel('Z (m)')
+            #     plt.savefig('%s/figures/%s_compaction_internal.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
+            #     plt.close()
                 
-                plt.figure(figsize=(18,12))
-                plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer])[5:,:])), vmax=0),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times 
-                plt.gca().xaxis_date()
-                date_format = mdates.DateFormatter('%Y')
-                plt.gca().xaxis.set_major_formatter(date_format)
-                plt.gcf().autofmt_xdate()
-                plt.colorbar(label='db (m)')
-                plt.ylabel('Z (m)')
-                plt.savefig('%s/figures/%s_compaction_internal_highconstast.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
-                plt.close()
+            #     plt.figure(figsize=(18,12))
+            #     plt.imshow(np.array(db[layer]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer])[5:,:])), vmax=0),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times 
+            #     plt.gca().xaxis_date()
+            #     date_format = mdates.DateFormatter('%Y')
+            #     plt.gca().xaxis.set_major_formatter(date_format)
+            #     plt.gcf().autofmt_xdate()
+            #     plt.colorbar(label='db (m)')
+            #     plt.ylabel('Z (m)')
+            #     plt.savefig('%s/figures/%s_compaction_internal_highconstast.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
+            #     plt.close()
 #            
     if layer_types[layer]=='Aquifer':
         if layer_compaction_switch[layer]:
