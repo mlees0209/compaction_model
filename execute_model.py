@@ -933,8 +933,7 @@ for layer in layer_names:
                     print('\t\t',thickness)
                     plt.figure(figsize=(18,12))
                     t = groundwater_solution_dates[layer]['%.2f clays' % thickness]
-                    x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
-                    x_lims = date2num(x_lims)
+                    x_lims = [np.min(t_gwflow[layer]),np.max(t_gwflow[layer])]
                     y_lims=[min(Z[layer]['%.2f clays' % thickness]),max(Z[layer]['%.2f clays' % thickness])]
                 
                     sns.set_style('white')
