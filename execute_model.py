@@ -822,8 +822,24 @@ for layer in layer_names:
                     csvWriter = csv.writer(myCsv, delimiter=',')
                     csvWriter.writerows(np.array(db[layer]).T)
             
-            print('\tSaving s_elastic timeseries')
-            np.savetxt('%s/%s_s_elastic.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['elastic'])
+                if np.size(db[layer]) >= 1e6:
+                    if gmt:
+                        print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
+                        db[layer].astype(np.single).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+                        print('\t\t\t\tConverting to netCDF format. Command is:')
+                        cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer][0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer])))
+                        
+                        print(cmd_tmp)
+                        subprocess.call(cmd_tmp,shell=True)
+                        os.remove('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+                    else:
+                        print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
+                        db[layer].astype(np.half).tofile('%s/s_outputs/%s_db' % (outdestination, layer.replace(' ','_')))
+
+            
+            
+            # print('\tSaving s_elastic timeseries')
+            # np.savetxt('%s/%s_s_elastic.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['elastic'])
     
             print('\tSaving s timeseries')
             np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
@@ -832,8 +848,8 @@ for layer in layer_names:
 
                 print('\tSaving plots of compaction within layer %s.' % layer)
                 t = groundwater_solution_dates[layer]
-                x_lims = list(map(dt.fromordinal,[int(min(t)),int(max(t))]))
-                x_lims = date2num(x_lims)
+                x_lims = [np.min(t_gwflow[layer]),np.max(t_gwflow[layer])]
+
                 y_lims=[min(Z[layer]),max(Z[layer])]
                 
                 sns.set_style('white')
