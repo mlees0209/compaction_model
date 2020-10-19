@@ -890,7 +890,7 @@ for layer in layer_names:
                     if np.size(db[layer]['total_%.2f clays' % thickness]) >= 1e6:
                         if gmt:
                             print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
-                            db[layer]['total_%.2f clays' % thickness].astype(np.single).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_')),thickness)
+                            np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.single).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_')),thickness)
                             print('\t\t\t\tConverting to netCDF format. Command is:')
                             cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_%sclay_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer][0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer])))
                             
@@ -899,7 +899,7 @@ for layer in layer_names:
                             os.remove('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
                         else:
                             print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
-                            db[layer]['total_%.2f clays' % thickness].astype(np.half).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
+                            np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.half).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
     
                 
             
