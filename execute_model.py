@@ -892,11 +892,12 @@ for layer in layer_names:
                             print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
                             np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.single).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
                             print('\t\t\t\tConverting to netCDF format. Command is:')
-                            cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_%sclay_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]) - np.diff(Z[layer]['%.2f clays' % thickness])[0] ,np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            Z_midpoints_tmp = [(Z[layer]['%.2f clays' % thickness][i] + Z[layer]['%.2f clays' % thickness][i+1])/2 for i in range(len(Z[layer]['%.2f clays' % thickness])-1)]
+                            cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_%sclay_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]) - np.diff(Z[layer]['%.2f clays' % thickness])[0] ,np.min(Z_midpoints_tmp),np.max(Z_midpoints_tmp))
                             
                             print(cmd_tmp)
                             subprocess.call(cmd_tmp,shell=True)
-                            os.remove('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
+#                            os.remove('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
                         else:
                             print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
                             np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.half).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
