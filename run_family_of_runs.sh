@@ -35,8 +35,9 @@ runname=$(echo $runnames | tr ',' '\n' | head -n $i | tail -n 1)
 changed_var=$(echo $changed_vars | tr '|' '\n' | head -n $i | tail -n 1)
 echo '	Forming paramfile for run'$runname
 cp $dummyfilename $runname.par
+echo '		Changing '$var_to_change' to '$changed_var'.'
 sed -i .bak -e "s/run_name=.*/run_name=$runname/" $runname.par
-sed -i .bak -e "s/$var_to_change=.*/$var_to_change=$changed_var/" $runname.par
+sed -i .bak -e "s!$var_to_change=.*!$var_to_change=$changed_var!" $runname.par
 sed -i .bak -e "s:output_folder=.*:output_folder=$current_dir:" $runname.par
 rm *.bak
 done
