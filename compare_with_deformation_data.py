@@ -67,6 +67,11 @@ Jacobus_data = pd.read_excel('/Users/mlees/Documents/RESEARCH/ground_deformation
 Jacobus_data['YRMO']= pd.to_datetime(Jacobus_data['YRMO'],format='%Y%b')
 S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
 
+# Import Envisat data
+# Envisat = import_InSAR_csv('/Users/mlees/Dropbox/Mer, RK, ML, RS NASA/InSAR/Datasets/Envisat/Envisat.csv')
+# Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
+
+
 save = True
 #%%
 
