@@ -56,20 +56,20 @@ datesinsarH,InSAR_H = extract_series_from_latlon(WellHlat,WellHlon,InSAR_data)
 Swanson_1998_quote_dates = date2num([date(1980,1,1),date(1993,1,1)])
 Swanson_1998_quote_data = 30.48*np.array([0,-2])
 
-Poland_75_dates = date2num([date(1963,1,1),date(1966,4,1),date(1970,1,1)])
-Poland_75_data = np.array([0,-3.3*0.65*30.48,-3.3*0.65*30.48 -3.6*0.3333*30.48])
+Poland_75_dates = date2num([date(1954,1,1),date(1957,1,1),date(1958,7,1),date(1962,1,1),date(1966,4,1),date(1970,1,1)])
+Poland_75_data = -30.48*  np.array([0,0.83,1.34,3.25,4.92,6.31])
 
-Highway_198_dates = date2num([date(1965,1,1),date(2004,1,1)])
+Highway_198_dates = date2num([date(1964,6,1),date(2004,1,1)])
 Highway_198_data = 100*np.array([0,-2.5])
-Highway_198_data_uncertainty = np.array([0,Poland_75_data[2]])
+Highway_198_data_uncertainty = np.array([0,Poland_75_data[4]-Poland_75_data[2]])
 
 Jacobus_data = pd.read_excel('/Users/mlees/Documents/RESEARCH/ground_deformation/GPS/From_Matt_Jacobus/Jacobus_Data_MASTER.xlsx')
 Jacobus_data['YRMO']= pd.to_datetime(Jacobus_data['YRMO'],format='%Y%b')
 S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
 
 # Import Envisat data
-# Envisat = import_InSAR_csv('/Users/mlees/Dropbox/Mer, RK, ML, RS NASA/InSAR/Datasets/Envisat/Envisat.csv')
-# Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
+Envisat = import_InSAR_csv('/Users/mlees/Dropbox/Mer, RK, ML, RS NASA/InSAR/Datasets/Envisat/Envisat.csv')
+Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
 
 
 save = True
@@ -87,11 +87,11 @@ ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_se
 ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
 
 
-ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1963-01-01'],'k.--',label='Poland 1975 levelling surveys')
+ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1954-01-01'],'k.--',label='Poland 1975 levelling surveys')
 
 
-ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1965-01-01'],'k^')
-ax1.errorbar(Highway_198_dates[1],Highway_198_data[1] +modelled_data_rezeroed[Data['dates']=='1965-01-01'],xerr=None,yerr=0.5*Highway_198_data_uncertainty[1],fmt='k^',label='Highway 198 data',capsize=5)
+ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1964-01-01'],'k^')
+ax1.errorbar(Highway_198_dates[1],Highway_198_data[1] +modelled_data_rezeroed[Data['dates']=='1964-01-01'],xerr=None,yerr=0.5*Highway_198_data_uncertainty[1],fmt='k^',label='Highway 198 data',capsize=5)
 
 
 ax1.arrow(Swanson_1998_quote_dates[1],30,-(Swanson_1998_quote_dates[1]-Swanson_1998_quote_dates[0]),0,shape='full',head_width=15,head_length=300,facecolor='black',color='black',width=3)
@@ -101,6 +101,9 @@ txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanso
 
 ax1.plot_date(datesinsarH,0.1*InSAR_H + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]],'k-',label='Sentinel InSAR subsidence')
 
+ax1.plot_date(Envisat_dates,Envisat_data + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]],'r-',label='Envisat InSAR subsidence')
+
+
 ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
 
 
@@ -108,6 +111,7 @@ plt.ylabel('Subsidence (cm)')
 
 #plt.xlim([date.toordinal(date(2010,1,1)),date.toordinal(date(2020,1,1))])
 #plt.ylim([-80,10])
+plt.title('%s' % directory.split('/')[-1])
 
 plt.legend()
 
