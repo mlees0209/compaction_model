@@ -314,6 +314,8 @@ if len(layers_requiring_solving)>= 0:
         smallest_width=0.5
     barwidth=smallest_width/len(layers_requiring_solving)
     
+    # Make the clay distribution plot
+    sns.set_context('talk')
     plt.figure(figsize=(18,12))
     layeri=0
     for layer in layers_requiring_solving:
