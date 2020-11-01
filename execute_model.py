@@ -315,7 +315,7 @@ if len(layers_requiring_solving)>= 0:
     barwidth=smallest_width/len(layers_requiring_solving)
     
     # Make the clay distribution plot
-    sns.set_context('talk')
+    sns.set_context('poster')
     plt.figure(figsize=(18,12))
     layeri=0
     for layer in layers_requiring_solving:
@@ -326,6 +326,7 @@ if len(layers_requiring_solving)>= 0:
             plt.bar(layer_thicknesses[layer]+layeri*barwidth,1,width=barwidth,label=layer,color='None',edgecolor=sns.color_palette()[layeri],linewidth=5,alpha=0.6)
             layeri+=1
     plt.legend()
+    plt.xticks(np.arange(0,np.max(thicknesses_tmp)+barwidth+1,np.max([1,barwidth])))
     plt.xlabel('Layer thickness (m)')
     plt.ylabel('Number of layers')
     plt.savefig('%s/input_data/clay_distributions.png' % outdestination,bbox_inches='tight')
