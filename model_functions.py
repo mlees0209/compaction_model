@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import subprocess
 import scipy
+import glob
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
@@ -401,11 +402,13 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
 
     return db,s,s_elastic,s_inelastic
 
-def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100):
-    # I think delt is in units of days; see what happens with the variable t_jumps below.
+def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100,startyear=None,endyear=None,datelabels='year'):
+    # I think delt is in units of days; see what happens with the variable t_jumps below. startyear and endyear should be YYYY. datelabels can be 'year' or 'monthyear' and changes the title of the plots.
         if not os.path.isdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_'))):
             os.mkdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_')))
         
+        t1_start = process_time()  
+ 
         # Make the video frames; use ffmpeg -f image2 -i %*.png vid.mp4 to make the vid itself
         plt.ioff()
         sns.set_context('talk')
@@ -418,27 +421,45 @@ def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfol
         plt.gca().invert_xaxis()
         plt.gca().invert_yaxis()
         t_tmp = date2num([dt.strptime(date, '%d-%b-%Y').date() for date in dates_str])
+        
         t_jumps = [t_tmp[i] - t_tmp[0] for i in range(len(t_tmp))] # It looks like we get t in days.
         if not delt in t_jumps:
             print("\tERROR MAKING VIDEO! Selected dt not compatible with dates given.")
             sys.exit(1)
         
-        t1_start = process_time()  
-        ts_to_do = np.arange(t_tmp[0],t_tmp[-1]+0.0001,delt)
+        if startyear:
+            starting_t=date2num(dt.strptime('01-09-%s' % startyear, '%d-%m-%Y'))      
+            print('Movie starting at date %s' % num2date(starting_t).strftime('%d-%b-%Y'))
+        else:
+            starting_t = t_tmp[0]
+            print('Movie starting at date %s' % num2date(starting_t).strftime('%d-%b-%Y'))
+
+
+        if endyear:
+            ending_t=date2num(dt.strptime('01-09-%s' % endyear, '%d-%m-%Y'))      
+            print('Movie ending at date %s' % num2date(ending_t).strftime('%d-%b-%Y'))
+        else:
+            ending_t = t_tmp[-1]
+            print('Movie ending at date %s' % num2date(ending_t).strftime('%d-%b-%Y'))
+
+        
+        ts_to_do = np.arange(starting_t,ending_t+0.0001,delt)
+        
         firsttime=0
+        
         for t in ts_to_do:
             i=np.argwhere(t_tmp==t)[0][0] # If there are multiple frames on the same day, this line means we take the first of them
             if firsttime==2: # This whole "firsttime" bit is just to help print every 5%, it's really not important.
-                if i % (int(len(t_tmp)/20)) <= di:
-                    printProgressBar(i,len(t_tmp))
+                if i % (int(len(ts_to_do)/20)) <= di: # This should make it so only 20 progress bars are printed
+                    printProgressBar(np.argwhere(ts_to_do==t)[0][0],len(ts_to_do))
             else:
-                printProgressBar(i,len(t_tmp))
+                printProgressBar(np.argwhere(ts_to_do==t)[0][0],len(ts_to_do))
 
             #plt.plot(hmat[:,0],np.linspace(0,40,20),'k--',label='t=0 position')
             if firsttime==1:
                 firsttime=2
-                di = i
-            if i==0:
+                di = np.argwhere(ts_to_do==t)[0][0]
+            if t==starting_t:
                 l1, = plt.plot(np.min(hmat[:,:i+1],axis=1),z,'b--',label='Preconsolidation head')
                 l2,= plt.plot(hmat[:,i],z,'r.')
                 l3, = plt.plot(hmat[:,i][~inelastic_flag[:,i]],z[~inelastic_flag[:,i]],'g.')
@@ -449,7 +470,11 @@ def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfol
                 l2.set_xdata(hmat[:,i])
                 l3.remove()
                 l3, = plt.plot(hmat[:,i][~inelastic_flag[:,i]],z[~inelastic_flag[:,i]],'g.')
-            plt.title('t=%s' % num2date(t_tmp[i]).strftime('%Y'))
+            if datelabels=='year':
+                plt.title('t=%s' % num2date(t_tmp[i]).strftime('%Y'))
+            if datelabels=='monthyear':
+                plt.title('t=%s' % num2date(t_tmp[i]).strftime('%b-%Y'))
+
 #            set_size(plt.gcf(), (12, 12))
             plt.savefig('%s/headvideo_%s/frame%06d.jpg' % (outputfolder, layer.replace(' ','_'),i),dpi=60,bbox_inches='tight')
         t1_stop = process_time() 
@@ -458,12 +483,20 @@ def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfol
         print('')
         print('\t\tStitching frames together using ffmpeg.')
         #cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %*.jpg vid.mp4'
-        cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %*.jpg -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" vid.mp4'
+        cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %%*.jpg -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" vid_years%sto%s.mp4' % (num2date(starting_t).strftime('%Y'),num2date(ending_t).strftime('%Y'))
 
         print('\t\t\t%s.' % cmd)
         cd=os.getcwd()
         os.chdir('%s/headvideo_%s' % (outputfolder, layer.replace(' ','_')))
         subprocess.call(cmd,shell=True)
+        
+        if os.path.isfile('vid_years%sto%s.mp4' % (num2date(starting_t).strftime('%Y'),num2date(ending_t).strftime('%Y'))):
+              print('\tVideo seems to have been a success; deleting excess .jpg files.')
+              jpg_files_tmp = glob.glob('*.jpg')
+              for file in jpg_files_tmp:
+                  os.remove(file)
+              print('\tDone.')
+
         os.chdir(cd)
         
         
