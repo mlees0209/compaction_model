@@ -41,6 +41,30 @@ else:
     dt=int(dt[0].split('=')[1])
     print('dt specified; dt=%i.' % dt)
 
+startyear = [var for var in args if var.split('=')[0]=='startyear']
+if not startyear:
+    print('No startyear specified; starting on day 0.')
+    startyear=None
+else:
+    startyear=int(startyear[0].split('=')[1])
+    print('startyear specified as %s.' % startyear)
+
+endyear = [var for var in args if var.split('=')[0]=='endyear']
+if not endyear:
+    print('No endyear specified; starting on day 0.')
+    endyear=None
+else:
+    endyear=int(endyear[0].split('=')[1])
+    print('endyear specified as %s.' % endyear)
+
+datelabels = [var for var in args if var.split('=')[0]=='datelabels']
+if not datelabels:
+    datelabels='year'
+else:
+    datelabels=str(datelabels[0].split('=')[1])
+    print('datelabels specified as %s.' % datelabels)
+
+
 save=True
 
 aquifer=re.split('_(\d+)',layername)[0]
@@ -60,7 +84,8 @@ dates_str = [datetime.datetime.strptime(string, '%c').strftime('%d-%b-%Y') for s
 
 
 
+
 #%%
 
 print('\t\tCreating video for %s' % layername)
-create_head_video_elasticinelastic(head,z,inelasticflag==1,dates_str,'figures',layername,delt=dt)
+create_head_video_elasticinelastic(head,z,inelasticflag==1,dates_str,'figures',layername,delt=dt,startyear=startyear,endyear=endyear,datelabels=datelabels)
