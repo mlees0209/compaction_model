@@ -89,6 +89,7 @@ else:
             os.mkdir(outdestination)
             os.mkdir('%s/figures' % outdestination)
             os.mkdir('%s/s_outputs' % outdestination)
+            os.mkdir('%s/head_outputs' % outdestination)
         else:
             print('\t\tNot overwriting. Aborting.' % check)
             sys.exit(1)
