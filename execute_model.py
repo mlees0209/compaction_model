@@ -359,6 +359,9 @@ t_gwflow={}
 head_series=copy.deepcopy(head_data)
 
 
+if save_output_head_timeseries:
+    os.mkdir('%s/head_outputs' % outdestination)
+
 if len(layers_requiring_solving)>=0:
     groundwater_solution_dates={}
     for layer in layers_requiring_solving:
@@ -387,13 +390,18 @@ if len(layers_requiring_solving)>=0:
                 sys.exit(1)
             if dt_master[layer]>=dt_tmp[0]:
                 spacing_top = int(dt_master[layer]/dt_tmp[0])
+                top_head_tmp = head_data[top_boundary]
+
             else:
                 print('\t\t\tNOTE: dt_master < dt_data. Linear resampling of input head series occuring.')
                 t_interp_new = np.arange(min(t_top),max(t_top)+0.00001,dt_master[layer])
                 f_tmp = scipy.interpolate.interp1d(t_top,head_data[top_boundary][:,1])
-                head_data[top_boundary] = np.array([t_interp_new,f_tmp(t_interp_new)]).T
+                top_head_tmp = np.array([t_interp_new,f_tmp(t_interp_new)]).T
                 spacing_top=1
-
+            
+    
+            
+            
             t_bot=head_data[bot_boundary][:,0]
             dt_tmp = np.diff(t_bot)
             test1 = [n.is_integer() for n in dt_master[layer]/dt_tmp]
@@ -403,13 +411,14 @@ if len(layers_requiring_solving)>=0:
                 sys.exit(1)
             if dt_master[layer]>=dt_tmp[0]:
                 spacing_bot = int(dt_master[layer]/dt_tmp[0])
+                bot_head_tmp = head_data[bot_boundary]
             else:
                 print('\t\t\tNOTE: dt_master < dt_data. Linear resampling of input head series occuring.')
                 t_interp_new = np.arange(min(t_bot),max(t_bot)+0.000001,dt_master[layer])
                 f_tmp = scipy.interpolate.interp1d(t_top,head_data[bot_boundary][:,1])
-                head_data[bot_boundary] = np.array([t_interp_new,f_tmp(t_interp_new)]).T
+                bot_head_tmp = np.array([t_interp_new,f_tmp(t_interp_new)]).T
                 spacing_bot=1
-
+                
             if not all(t_top == t_bot):
                 print('\t\t\tSolving head series error: TERMINAL. Time series in %s and %s aquifers have different dates.' % (top_boundary,bot_boundary))
                 sys.exit(1)
@@ -419,8 +428,9 @@ if len(layers_requiring_solving)>=0:
             z=np.arange(0,layer_thicknesses[layer]+0.00001,dz_clays[layer]) # 0.000001 to include the stop value.
             Z[layer]=z
             
-            t_in = np.arange(np.min(t_top),np.max(t_top)+0.0001,dt_master[layer]) # 0.000001 to include the stop value.
-            
+            t_in = np.arange(np.min(t_top),np.max(t_top)+0.0001,dt_master[layer]) # 0.000001 to include the stop value. note that t_top and t_bot were clipped to the same yearrange when importing head data.
+            t_gwflow[layer]=t_in
+                        
             if overburden_stress_gwflow:
                 if layer != unconfined_aquifer_name:
                     print('\t\tPreparing overburden stress.')
@@ -436,30 +446,54 @@ if len(layers_requiring_solving)>=0:
             else:
                 overburden_data_tmp = [0]
             
-            initial_condition_tmp = (head_data[top_boundary][0,1] + head_data[bot_boundary][0,1]) / 2
+            initial_condition_tmp = (top_head_tmp[0,1] + top_head_tmp[0,1]) / 2
             
             if groundwater_flow_solver_type[layer] == 'singlevalue':
-                hmat=solve_head_equation_singlevalue(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/(clay_Ssk[layer]+compressibility_of_water))
+                hmat_tmp=solve_head_equation_singlevalue(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((top_head_tmp[::spacing_top,1],top_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/(clay_Ssk[layer]+compressibility_of_water))
             elif groundwater_flow_solver_type[layer] == 'elastic-inelastic':
                 t1_start = process_time() 
-                hmat,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((head_data[top_boundary][::spacing_top,1],head_data[bot_boundary][::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
+                # hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
+
+                hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((top_head_tmp[::spacing_top,1],bot_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
                 t1_stop = process_time() 
                 print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
 
-            head_series[layer]=hmat
+            head_series[layer]=hmat_tmp
             inelastic_flag[layer] = inelastic_flag_tmp
-            effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat)[0],1)) -  rho_w*g*hmat 
+            effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat_tmp)[0],1)) -  rho_w*g*hmat_tmp 
 
-            with open('%s/%s_inelastic_flag_DEBUG.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                csvWriter = csv.writer(myCsv, delimiter=',')
-                csvWriter.writerows(inelastic_flag_tmp)
+            if np.size(inelastic_flag_tmp) >= 3e6:
+                if gmt:
+                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_inelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+                    print('\t\t\t\tConverting to netCDF format. Command is:')
+                    cmd_tmp="gmt xyz2grd %s/head_outputs/%s_inelastic_flag_GWFLOW -G%s/head_outputs/%s_inelastic_flag_GWFLOW.nb -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                    
+                    print(cmd_tmp)
+                    subprocess.call(cmd_tmp,shell=True)
+                    os.remove('%s/head_outputs/%s_inelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+
+                else:
+                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_inelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+
+
+            else:
+                with open('%s/head_outputs/%s_inelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                    csvWriter = csv.writer(myCsv, delimiter=',')
+                    csvWriter.writerows(inelastic_flag_tmp)
+
+
+
+
+
             #dateslist = [x.strftime('%d-%b-%Y') for x in num2date(t_in)]
-            groundwater_solution_dates[layer]=t_in
+            groundwater_solution_dates[layer]=t_interp_new
 
             if overburden_stress_gwflow:
-                effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat)[0],1)) -  rho_w*g*hmat 
+                effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat_tmp)[0],1)) -  rho_w*g*hmat_tmp 
             else:
-                effective_stress[layer] = np.zeros_like(hmat) -  rho_w*g*hmat                             
+                effective_stress[layer] = np.zeros_like(hmat_tmp) -  rho_w*g*hmat_tmp                             
 
 
             if save_effective_stress:
@@ -471,7 +505,7 @@ if len(layers_requiring_solving)>=0:
                 else:
                     with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
                         csvWriter = csv.writer(myCsv, delimiter=',')
-                        csvWriter.writerows(np.zeros_like(hmat))
+                        csvWriter.writerows(np.zeros_like(hmat_tmp))
 
                 if np.size(effective_stress[layer]) >= 5e6:
                     print('\t\t\tEffective stress has more than 5 million entries; saving as 16 bit floats.')
@@ -538,17 +572,17 @@ if len(layers_requiring_solving)>=0:
                         if np.size(inelastic_flag_tmp) >= 3e6:
                             if gmt:
                                 print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                                inelastic_flag_tmp.astype(np.byte).tofile('%s/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
+                                inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
                                 print('\t\t\t\tConverting to netCDF format. Command is:')
-                                cmd_tmp="gmt xyz2grd %s/%s_%sclayinelastic_flag_GWFLOW -G%s/%s_%sclayinelastic_flag_GWFLOW.nb -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLc" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLc" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                                 
                                 print(cmd_tmp)
                                 subprocess.call(cmd_tmp,shell=True)
-                                os.remove('%s/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
+                                os.remove('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
 
                             else:
                                 print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                                inelastic_flag_tmp.astype(np.byte).tofile('%s/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
+                                inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
 
 
                         else:
@@ -622,7 +656,6 @@ time.sleep(internal_time_delay)
 
 if save_output_head_timeseries:
     print('save_output_head_timeseries = True. Saving head timeseries for all layers.')
-    os.mkdir('%s/head_outputs' % outdestination)
     for layer in layers_requiring_solving:
         print('\tSaving head timeseries for %s.' % layer)
         if layer_types[layer]=='Aquifer':
@@ -660,7 +693,7 @@ if save_output_head_timeseries:
                 csvWriter = csv.writer(myCsv, delimiter=',')
                 csvWriter.writerows(head_series[layer])
             with open('%s/head_outputs/%s_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_')), 'w') as myfile:
-                wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+                wr = csv.writer(myfile)
                 wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer])])
 
 for layer in layers_requiring_solving:
@@ -999,6 +1032,7 @@ maxdtlayer = max(dt_master_compacting_layers.items(), key=operator.itemgetter(1)
 dt_interconnecteds = [dt_headseries[layer] for layer in layer_names if (layer in compacting_layers) and (layer_types[layer]=='Aquifer')]
 if np.max(dt_interconnecteds)>maxdt:
     maxdt=np.max(dt_interconnecteds)
+print('\tmax dt (output dt) = %.2f' % maxdt)
 deformation_OUTPUT = {}
 t_total_tmp = 0.0001*np.arange(10000*np.min(deformation[maxdtlayer]['total'][0,:]),10000*(np.max(deformation[maxdtlayer]['total'][0,:]+0.001)),10000*maxdt)
 deformation_OUTPUT['dates']=[x.strftime('%d-%b-%Y') for x in num2date(t_total_tmp)]
@@ -1030,7 +1064,6 @@ for layer in layer_names:
         t_overall = t_overall + newtot
 
 deformation_OUTPUT['Total']=t_overall
-#print(deformation_OUTPUT)
 def_out = pd.DataFrame(deformation_OUTPUT)
 def_out.to_csv('%s/Total_Deformation_Out.csv' % outdestination,index=False)
 
