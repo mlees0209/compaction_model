@@ -586,7 +586,7 @@ if len(layers_requiring_solving)>=0:
 
 
                         else:
-                            with open('%s/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                            with open('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                                 csvWriter = csv.writer(myCsv, delimiter=',')
                                 csvWriter.writerows(inelastic_flag_tmp)
 
