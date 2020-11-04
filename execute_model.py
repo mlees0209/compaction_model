@@ -73,6 +73,7 @@ if not os.path.isdir(outdestination):
     os.mkdir(outdestination)
     os.mkdir('%s/figures' % outdestination)
     os.mkdir('%s/s_outputs' % outdestination)
+    os.mkdir('%s/head_outputs' % outdestination)
 else:
     if overwrite==False:
         print('\t\tAdmin error: terminal. Output folder %s already exists and overwrite flag not specified.' % outdestination)
