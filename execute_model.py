@@ -1048,14 +1048,14 @@ for layer in layer_names:
 #            t_overall = t_overall + deformation[layer]['total'][1,::dt_tmp]
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqt.append(l_tmp)
-            deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.where(np.isin(deformation[layer]['total'][0,:],t_total_tmp))]
+            deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.isin(deformation[layer]['total'][0,:],t_total_tmp)]
 
 
         if layer_types[layer]=='Aquifer':
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqf.append(l_tmp)
             #dt_tmp = int(maxdt/dt_master[layer])
-            deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.where(np.isin(deformation[layer]['total'][0,:],t_total_tmp))]
+            deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.isin(deformation[layer]['total'][0,:],t_total_tmp)]
 
 # Add up all the deformations from each layer
             
