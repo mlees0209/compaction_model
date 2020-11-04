@@ -89,6 +89,7 @@ else:
             os.mkdir(outdestination)
             os.mkdir('%s/figures' % outdestination)
             os.mkdir('%s/s_outputs' % outdestination)
+            os.mkdir('%s/head_outputs' % outdestination)
         else:
             print('\t\tNot overwriting. Aborting.' % check)
             sys.exit(1)
@@ -127,7 +128,7 @@ interbeds_distributions1=read_parameter('interbeds_distributions',dict,sum(inter
 interbeds_distributions1=np.array(interbeds_distributions1)
 if np.shape(interbeds_distributions1)[0]==1:
     interbeds_distributions1=interbeds_distributions1[0]
-    minidics = [dict([(float(re.split(',|:',interbeds_distributions1[2*i + 1])[2*j]),int( re.split(',|:',interbeds_distributions1[2*i + 1])[2*j+1])) for j in range(int(len( re.split(',|:',interbeds_distributions1[2*i + 1]))/2))]) for i in range(sum(interbeds_switch.values()))]
+    minidics = [dict([(float(re.split(',|:',interbeds_distributions1[2*i + 1])[2*j]),float( re.split(',|:',interbeds_distributions1[2*i + 1])[2*j+1])) for j in range(int(len( re.split(',|:',interbeds_distributions1[2*i + 1]))/2))]) for i in range(sum(interbeds_switch.values()))]
     interbeds_distributions = dict([(interbeds_distributions1[2*i],minidics[i]) for i in range(sum(interbeds_switch.values()))])
     print('\tinterbeds_distributions=%s' % interbeds_distributions)
 else:
@@ -359,8 +360,8 @@ t_gwflow={}
 head_series=copy.deepcopy(head_data)
 
 
-if save_output_head_timeseries:
-    os.mkdir('%s/head_outputs' % outdestination)
+#if save_output_head_timeseries:
+#    os.mkdir('%s/head_outputs' % outdestination)
 
 if len(layers_requiring_solving)>=0:
     groundwater_solution_dates={}
@@ -586,7 +587,7 @@ if len(layers_requiring_solving)>=0:
 
 
                         else:
-                            with open('%s/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
+                            with open('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),thickness), "w+") as myCsv:
                                 csvWriter = csv.writer(myCsv, delimiter=',')
                                 csvWriter.writerows(inelastic_flag_tmp)
 
