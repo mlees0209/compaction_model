@@ -73,7 +73,7 @@ Dat = Dataset("head_outputs/%s_head_data.nc" % layername, "r", format="CF-1.7")
 head = Dat.variables['z'][:]
 z = Dat.variables['y'][:]
 
-InelasticFlagDat = Dataset("%sinelastic_flag_GWFLOW.nb" % layername, "r", format="CF-1.7")
+InelasticFlagDat = Dataset("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername, "r", format="CF-1.7")
 inelasticflag = InelasticFlagDat.variables['z'][:]
 
 print('Reading dates.')
