@@ -490,7 +490,7 @@ if len(layers_requiring_solving)>=0:
 
 
             #dateslist = [x.strftime('%d-%b-%Y') for x in num2date(t_in)]
-            groundwater_solution_dates[layer]=t_interp_new
+            groundwater_solution_dates[layer]=t_in
 
             if overburden_stress_gwflow:
                 effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat_tmp)[0],1)) -  rho_w*g*hmat_tmp 
