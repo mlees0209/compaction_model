@@ -82,7 +82,7 @@ Data={}
 sns.set_context(context)
 sns.set_style('darkgrid')
 
-fig,ax1 = plt.subplots(figsize=(18,12))
+fig,ax1 = plt.subplots(figsize=(16,8))
 
 
 for run in run_names:
