@@ -1037,6 +1037,7 @@ if np.max(dt_interconnecteds)>maxdt:
 print('\tmax dt (output dt) = %.2f' % maxdt)
 deformation_OUTPUT = {}
 t_total_tmp = 0.0001*np.arange(10000*np.min(deformation[maxdtlayer]['total'][0,:]),10000*(np.max(deformation[maxdtlayer]['total'][0,:]+0.001)),10000*maxdt)
+print(t_total_tmp)
 deformation_OUTPUT['dates']=[x.strftime('%d-%b-%Y') for x in num2date(t_total_tmp)]
 t_overall = np.zeros_like(t_total_tmp,dtype=float)
 l_aqt=[]
@@ -1049,8 +1050,7 @@ for layer in layer_names:
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqt.append(l_tmp)
             deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.isin(deformation[layer]['total'][0,:],t_total_tmp)]
-
-
+            
         if layer_types[layer]=='Aquifer':
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqf.append(l_tmp)
