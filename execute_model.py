@@ -430,7 +430,8 @@ if len(layers_requiring_solving)>=0:
             z=np.arange(0,layer_thicknesses[layer]+0.00001,dz_clays[layer]) # 0.000001 to include the stop value.
             Z[layer]=z
             
-            t_in = np.arange(np.min(t_top),np.max(t_top)+0.0001,dt_master[layer]) # 0.000001 to include the stop value. note that t_top and t_bot were clipped to the same yearrange when importing head data.
+            t_in = 0.0001*np.arange(10000*np.min(t_top),10000*np.max(t_top)+1,10000*dt_master[layer]) # 0.000001 to include the stop value. note that t_top and t_bot were clipped to the same yearrange when importing head data.
+            print(t_in)
             t_gwflow[layer]=t_in
                         
             if overburden_stress_gwflow:
@@ -1050,7 +1051,7 @@ for layer in layer_names:
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqt.append(l_tmp)
             deformation_OUTPUT[layer]=deformation[layer]['total'][1,:][np.isin(deformation[layer]['total'][0,:],t_total_tmp)]
-            
+             
         if layer_types[layer]=='Aquifer':
             l_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='%s' % layer)
             l_aqf.append(l_tmp)
@@ -1066,6 +1067,10 @@ for layer in layer_names:
         t_overall = t_overall + newtot
 
 deformation_OUTPUT['Total']=t_overall
+
+
+
+
 def_out = pd.DataFrame(deformation_OUTPUT)
 def_out.to_csv('%s/Total_Deformation_Out.csv' % outdestination,index=False)
 
