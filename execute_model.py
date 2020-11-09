@@ -423,6 +423,8 @@ if len(layers_requiring_solving)>=0:
                 
             if not all(t_top == t_bot):
                 print('\t\t\tSolving head series error: TERMINAL. Time series in %s and %s aquifers have different dates.' % (top_boundary,bot_boundary))
+                print(t_top)
+                print(t_bot)
                 sys.exit(1)
             else:
                 print('\t\t\tTime series found with correct dt and over same timespan.')          
