@@ -39,7 +39,7 @@ if not dt:
     dt=30
 else:
     dt=int(dt[0].split('=')[1])
-    print('dt specified; dt=%i.' % dt)
+    print('dt specified; dt=%i days.' % dt)
 
 startyear = [var for var in args if var.split('=')[0]=='startyear']
 if not startyear:
@@ -73,8 +73,17 @@ Dat = Dataset("head_outputs/%s_head_data.nc" % layername, "r", format="CF-1.7")
 head = Dat.variables['z'][:]
 z = Dat.variables['y'][:]
 
-InelasticFlagDat = Dataset("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername, "r", format="CF-1.7")
-inelasticflag = InelasticFlagDat.variables['z'][:]
+print('Reading inelastic flag...')
+if os.path.isfile("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername):
+    print('\tFound as .nb file. Reading in...')
+    InelasticFlagDat = Dataset("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername, "r", format="CF-1.7")     
+    inelasticflag = InelasticFlagDat.variables['z'][:]
+elif os.path.isfile("head_outputs/%sinelastic_flag_GWFLOW.csv" % layername):
+    print('\tFound as .csv file. Reading in...')
+    inelasticflag = np.genfromtxt('head_outputs/%sinelastic_flag_GWFLOW.csv' % layername,delimiter=',')
+else:
+    print('\tUnable to find inelastic flag file as .nb or .csv. Something has gone wrong; aborting.')
+    sys.exit(1)
 
 print('Reading dates.')
 dates_str_tmp = np.core.defchararray.rstrip(np.genfromtxt('head_outputs/%s_groundwater_solution_dates.csv' % aquifer,dtype=str,delimiter=','))

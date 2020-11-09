@@ -9,7 +9,7 @@ Simple script to compare N runs. OPTIONAL INPUT ARGUMENT 'startyear=XXXX' allows
 """
 import sys
 
-if len(sys.argv) <= 2:
+if len(sys.argv) <= 1:
     print('compare_models error; terminal. Incorrect number of input arguments. Correct usage: python compare_models.py model1 model2 model3 ... modelN.')
     sys.exit(1)
 

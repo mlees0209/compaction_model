@@ -1099,6 +1099,9 @@ plt.pie(np.abs([param_read_time, solving_compaction_time, saving_head_time, read
 plt.title('Total runtime = %i seconds' % t_total)
 plt.savefig('%s/figures/runtime_breakdown.png' % outdestination,bbox_inches='tight')
 plt.close()
+
+
+print('Model Run Complete')
 #for line in l_aqf:
 #    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
 #
