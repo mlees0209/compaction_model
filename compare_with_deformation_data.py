@@ -24,6 +24,14 @@ else:
     extraloc=bool(ut.strtobool(extraloc[0].split('=')[1]))
     print('\textraloc specified; also plotting the periodic bullseye.')
 
+deephead = [var for var in sys.argv[1:] if var.split('=')[0]=='deephead']
+if not deephead:
+    deephead=None
+else:
+    deephead=bool(ut.strtobool(deephead[0].split('=')[1]))
+    print('\thead specified; also plotting the deephead.')
+
+
 
 foot_to_cm = 30.48
 
@@ -55,6 +63,9 @@ else:
 
 InSAR_data = import_InSAR_csv(file)
 
+if deephead:
+    print('Reading head.')
+    H= pd.read_csv('input_data/input_time_series_Lower_Aquifer.csv',header=None)
 
 Data = pd.read_csv('Total_Deformation_Out.csv',parse_dates=[0])
 WellHlat = 36.32750
@@ -92,14 +103,18 @@ Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envi
 save = True
 #%%
 
-sns.set_style('whitegrid')
+if not deephead:
+    sns.set_style('whitegrid')
 sns.set_context('talk')
 
 fig,ax1 = plt.subplots(figsize=(18,12))
 
 modelled_data_rezeroed = np.array(100 * rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980'))
 
-ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[0:365*20],'-',color='grey',linewidth=0.5,label='Modelled (spin up?)')
+Sentinel_rezeroed = np.array(0.1 * rezero_series(InSAR_H,datesinsarH,'Jan-2016'))
+
+
+ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[0:365*20],'--',color='grey',linewidth=0.5,label='Modelled (spin up?)')
 
 ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
 
@@ -116,7 +131,7 @@ ax1.arrow(Swanson_1998_quote_dates[0],30,Swanson_1998_quote_dates[1]-Swanson_199
 txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanson_1998_quote_dates[0])/2,40,'Swanson et al. (1998) period of subsidence',horizontalalignment='center',size='x-small')
 
 
-ax1.plot_date(datesinsarH,0.1*InSAR_H + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]],'k-',label='Sentinel InSAR subsidence')
+ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed[np.argmin(np.abs(date2num(Data['dates'])- date2num(date(2016,1,1))))],'k-',label='Sentinel InSAR subsidence')
 
 
 
@@ -132,7 +147,20 @@ plt.ylabel('Subsidence (cm)')
 #plt.ylim([-80,10])
 plt.title('%s' % directory.split('/')[-1])
 
-plt.legend()
+leg = plt.legend()
+
+if deephead:
+    ax2 = ax1.twinx()
+    leg.remove()
+    ax2.plot_date(H[0],H[1],'k-',linewidth=0.5,label='Deep aquifer head')
+    plt.ylabel('Head (masl)')
+    
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    
+    #ax1.get_legend().remove()
+    ax2.legend(lines + lines2, labels + labels2,fancybox=True)
+
 
 if save:
     plt.savefig('figures/compare_with_measurementsFULL.png',bbox_inches='tight')
@@ -141,6 +169,9 @@ if save:
 
 
 yrange = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarH[-1])[0][0]]
+
+if deephead:
+    ax2.remove()
 
 txt.remove()
 plt.xlim([date(2015,1,1),date(2020,1,1)])
@@ -151,12 +182,27 @@ plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['date
 if extraloc:
     ax1.plot_date(datesinsarBULL,0.1*InSAR_BULL + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarBULL[0])[0][0]],'g-',label='Sentinel InSAR subsidence at Borsa Bullseye')
 
-plt.legend()
+leg = plt.legend()
 
 plt.title('%s' % directory.split('/')[-1])
 
+if deephead:
+    leg.remove()
+    ax2 = ax1.twinx()
+    
+    ax2.plot_date(H[0],H[1],'k-',linewidth=0.5,label='Deep aquifer head')
+    plt.ylabel('Head (masl)')
+    plt.ylim([-20,40])
+    
+    ax2.legend(lines + lines2, labels + labels2,fancybox=True)
+
+
 if save:
-    plt.savefig('figures/compare_with_TRE_Altamira.png',bbox_inches='tight')
-    plt.savefig('figures/compare_with_TRE_Altamira.svg',bbox_inches='tight')
+    if deephead:
+        plt.savefig('figures/compare_with_TRE_Altamira_deephead.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_TRE_Altamira_deephead.svg',bbox_inches='tight')
+    else:
+        plt.savefig('figures/compare_with_TRE_Altamira.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_TRE_Altamira.svg',bbox_inches='tight')
 
 os.chdir(cwd)
