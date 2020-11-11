@@ -91,9 +91,9 @@ Highway_198_dates = date2num([date(1972,6,1),date(2004,1,1)])
 Highway_198_data = 100*np.array([0,-0.84])
 Highway_198_data_uncertainty = np.array([0,Poland_75_data[4]-Poland_75_data[2]])
 
-Jacobus_data = pd.read_excel('/Users/mlees/Documents/RESEARCH/ground_deformation/GPS/From_Matt_Jacobus/Jacobus_Data_MASTER.xlsx')
-Jacobus_data['YRMO']= pd.to_datetime(Jacobus_data['YRMO'],format='%Y%b')
-S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
+# Jacobus_data = pd.read_excel('/Users/mlees/Documents/RESEARCH/ground_deformation/GPS/From_Matt_Jacobus/Jacobus_Data_MASTER.xlsx')
+# Jacobus_data['YRMO']= pd.to_datetime(Jacobus_data['YRMO'],format='%Y%b')
+# S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
 
 # Import Envisat data
 Envisat = import_InSAR_csv('/Users/mlees/Dropbox/Mer, RK, ML, RS NASA/InSAR/Datasets/Envisat/Envisat.csv')
@@ -138,7 +138,7 @@ ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed[np.argmin(n
 ax1.plot_date(Envisat_dates,Envisat_data + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]],'r-',label='Envisat InSAR subsidence')
 
 
-ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
+# ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
 
 
 plt.ylabel('Subsidence (cm)')
