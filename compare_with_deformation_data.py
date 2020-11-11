@@ -96,7 +96,13 @@ Highway_198_data_uncertainty = np.array([0,Poland_75_data[4]-Poland_75_data[2]])
 # S224P2data = Jacobus_data[Jacobus_data['STATION']=='S224P2']
 
 # Import Envisat data
-Envisat = import_InSAR_csv('/Users/mlees/Dropbox/Mer, RK, ML, RS NASA/InSAR/Datasets/Envisat/Envisat.csv')
+if linux:
+    envisat_file ='/home/mlees/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
+if mac:
+    envisat_file ='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
+
+
+Envisat = import_InSAR_csv(envisat_file)
 Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
 
 
