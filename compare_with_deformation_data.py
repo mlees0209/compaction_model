@@ -43,6 +43,7 @@ os.chdir(directory)
 import pandas as pd
 sys.path.append('/home/mlees/InSAR_processing/postprocessing_scripts/')
 sys.path.append('/Users/mlees/Documents/RESEARCH/InSAR_processing/postprocessing_scripts/')
+sys.path.append('/home/mlees/InSAR_postprocessing/')
 import seaborn as sns
 from InSAR_postSBAS import *
 
@@ -56,6 +57,12 @@ elif ospath.exists('/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Ve
     mac=0
     print("\tWe're in Linux, looking for downloaded InSAR data accordingly.")
     file='/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
+elif ospath.exists('/data1/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
+    print("\tWe're in Knightblade, looking for downloading InSAR data accordingly.")
+    mac=0
+    linux=0
+    knightblade=1
+    file='/data1/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
 else:
     print("\tUnable to find downloaded InSAR data. Check for bigdata/InSAR folder. Aborting.")
     sys.exit()
@@ -100,6 +107,8 @@ if linux:
     envisat_file ='/home/mlees/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
 if mac:
     envisat_file ='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
+if knightblade:
+    envisat_file='/data1/mlees/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
 
 
 Envisat = import_InSAR_csv(envisat_file)
