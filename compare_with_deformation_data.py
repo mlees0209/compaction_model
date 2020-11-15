@@ -50,11 +50,13 @@ from InSAR_postSBAS import *
 if ospath.exists('/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
     mac=1
     linux=0
+    knightblade=0
     print("\tWe're in Mac, looking for downloaded InSAR data accordingly.")
     file='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
 elif ospath.exists('/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
     linux=1
     mac=0
+    knightblade=0
     print("\tWe're in Linux, looking for downloaded InSAR data accordingly.")
     file='/home/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical/CALIFORNIA_DWR_studyarea.csv'
 elif ospath.exists('/data1/mlees/bigdata/InSAR/Processed_datasets/TRE_Altamira_Vertical'):
