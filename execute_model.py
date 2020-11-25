@@ -62,122 +62,150 @@ paramfilelines[:] = [x for x in paramfilelines if x]
 
 # Read in parameters
 
-MODE = read_parameter('mode',str,1,paramfilelines)
-sys.exit(1)
-internal_time_delay = read_parameter('internal_time_delay',float,1,paramfilelines)
-overwrite=read_parameter('overwrite',bool,1,paramfilelines)
-run_name = read_parameter('run_name',str,1,paramfilelines)
-output_folder = read_parameter('output_folder',str,1,paramfilelines)
-outdestination="%s/%s" % (output_folder,run_name)
-
-if not os.path.isdir(outdestination):
-    print("\t\tMaking output directory at %s. This stdout will now be directed to a log in that folder as well as displayed here." % (outdestination))
-    os.mkdir(outdestination)
-    os.mkdir('%s/figures' % outdestination)
-    os.mkdir('%s/s_outputs' % outdestination)
-    os.mkdir('%s/head_outputs' % outdestination)
-else:
-    if overwrite==False:
-        print('\t\tAdmin error: terminal. Output folder %s already exists and overwrite flag not specified.' % outdestination)
-        sys.exit(1)
-    if overwrite==True:
-        print('\t\tOutput folder %s already exists and overwrite flag specified. Do you want to overwrite? (Y/N)' % outdestination)
-        check= input()
-        check = ut.strtobool(check)
-        if check:
-            if os.path.isdir('%s_old' % outdestination):
-                shutil.rmtree('%s_old' % outdestination)
-            copy_tree(outdestination,'%s_old' % outdestination)
-            shutil.rmtree(outdestination)
-            os.mkdir(outdestination)
-            os.mkdir('%s/figures' % outdestination)
-            os.mkdir('%s/s_outputs' % outdestination)
-            os.mkdir('%s/head_outputs' % outdestination)
-        else:
-            print('\t\tNot overwriting. Aborting.' % check)
-            sys.exit(1)
-    #    OVERWRITE = input("\t\tOutput directory %s already exists. Do you want to overwrite this directory? WARNING: may delete existing data." % (outdestination))
-
-
-shutil.move('logfile.log','%s/logfile.log' % outdestination)
-if os.path.exists(param_filename):
-    copy2(param_filename,"%s/paramfile.par" % outdestination)
-else:
-    if param_filename.split('/')[-1]=='paramfile.par':
-        print('\tAssuming this is a rerun of old run; copying paramfile over.')
-        copy2('%s_old/paramfile.par' % outdestination, "%s/paramfile.par" % outdestination)
+def make_output_folder(outdestination,overwrite):
+    # Function which makes the output folder, and copies across the paramfile; I just defined this as a function for neatness.
+    if not os.path.isdir(outdestination):
+        print("\t\tMaking output directory at %s. This stdout will now be directed to a log in that folder as well as displayed here." % (outdestination))
+        os.mkdir(outdestination)
+        os.mkdir('%s/figures' % outdestination)
+        os.mkdir('%s/s_outputs' % outdestination)
+        os.mkdir('%s/head_outputs' % outdestination)
     else:
-        print('\tSomething has gone wrong setting up output directories, ABORT.')
+        if overwrite==False:
+            print('\t\tAdmin error: terminal. Output folder %s already exists and overwrite flag not specified.' % outdestination)
+            sys.exit(1)
+        if overwrite==True:
+            print('\t\tOutput folder %s already exists and overwrite flag specified. Do you want to overwrite? (Y/N)' % outdestination)
+            check= input()
+            check = ut.strtobool(check)
+            if check:
+                if os.path.isdir('%s_old' % outdestination):
+                    shutil.rmtree('%s_old' % outdestination)
+                copy_tree(outdestination,'%s_old' % outdestination)
+                shutil.rmtree(outdestination)
+                os.mkdir(outdestination)
+                os.mkdir('%s/figures' % outdestination)
+                os.mkdir('%s/s_outputs' % outdestination)
+                os.mkdir('%s/head_outputs' % outdestination)
+            else:
+                print('\t\tNot overwriting. Aborting.' % check)
+                sys.exit(1)
+    #    OVERWRITE = input("\t\tOutput directory %s already exists. Do you want to overwrite this directory? WARNING: may delete existing data." % (outdestination))
+    
+    
+    shutil.move('logfile.log','%s/logfile.log' % outdestination)
+    if os.path.exists(param_filename):
+        copy2(param_filename,"%s/paramfile.par" % outdestination)
+    else:
+        if param_filename.split('/')[-1]=='paramfile.par':
+            print('\tAssuming this is a rerun of old run; copying paramfile over.')
+            copy2('%s_old/paramfile.par' % outdestination, "%s/paramfile.par" % outdestination)
+        else:
+            print('\tSomething has gone wrong setting up output directories, ABORT.')
+            sys.exit(1)
+
+MODE = read_parameter('mode',str,1,paramfilelines)
+
+def read_parameters_admin(paramfilelines):
+    internal_time_delay = read_parameter('internal_time_delay',float,1,paramfilelines)
+    overwrite=read_parameter('overwrite',bool,1,paramfilelines)
+    run_name = read_parameter('run_name',str,1,paramfilelines)
+    output_folder = read_parameter('output_folder',str,1,paramfilelines)
+    outdestination="%s/%s" % (output_folder,run_name)
+    make_output_folder(outdestination,overwrite)    
+    return internal_time_delay,overwrite,run_name,output_folder,outdestination
+
+def read_parameters_noadmin(paramfilelines):
+    # Function to read all parameters; defined as a function again for neatness.
+          
+    save_output_head_timeseries = read_parameter('save_output_head_timeseries',bool,1,paramfilelines)
+    save_effective_stress = read_parameter('save_effective_stress',bool,1,paramfilelines)
+    save_internal_compaction = read_parameter('save_internal_compaction',bool,1,paramfilelines)
+    no_layers = read_parameter('no_layers',int,1,paramfilelines)
+    layer_names=read_parameter('layer_names',str,no_layers,paramfilelines)
+    if no_layers==1:
+        layer_names = np.array([layer_names])
+    layer_types=read_parameter('layer_types',str,no_layers,paramfilelines)
+    no_aquifers = list(layer_types.values()).count('Aquifer')
+    no_aquitards = list(layer_types.values()).count('Aquitard')
+    print('\t\tNumber of aquifer layers calculated to be %i.' % no_aquifers)
+    print('\t\tNumber of aquitard layers calculated to be %i.' % no_aquitards)
+    layer_thicknesses=read_parameter('layer_thicknesses',float,no_layers,paramfilelines)
+    layer_compaction_switch=read_parameter('layer_compaction_switch',bool,no_layers,paramfilelines)
+    interbeds_switch=read_parameter('interbeds_switch',bool,list(layer_types.values()).count('Aquifer'),paramfilelines)
+    #interbeds_type=read_parameter('interbeds_type',str,list(layer_types.values()).count('Aquifer'),paramfilelines)
+    # Import interbeds_distributions -- an awkward parameter as its a dictionary of dictionaries!
+    interbeds_distributions1=read_parameter('interbeds_distributions',dict,sum(interbeds_switch.values()),paramfilelines)
+    interbeds_distributions1=np.array(interbeds_distributions1)
+    if np.shape(interbeds_distributions1)[0]==1:
+        interbeds_distributions1=interbeds_distributions1[0]
+        minidics = [dict([(float(re.split(',|:',interbeds_distributions1[2*i + 1])[2*j]),float( re.split(',|:',interbeds_distributions1[2*i + 1])[2*j+1])) for j in range(int(len( re.split(',|:',interbeds_distributions1[2*i + 1]))/2))]) for i in range(sum(interbeds_switch.values()))]
+        interbeds_distributions = dict([(interbeds_distributions1[2*i],minidics[i]) for i in range(sum(interbeds_switch.values()))])
+        print('\tinterbeds_distributions=%s' % interbeds_distributions)
+    else:
+        interbeds_distributions = {}
+        for abc in interbeds_distributions1:
+            interbeds_distributions[abc[0]] = dict([(float(re.split(':|,',abc[1])[2*i]),float(re.split(':|,',abc[1])[2*i+1])) for i in range(len(re.split(',',abc[1])))])
+        print('\tinterbeds_distributions=%s' % interbeds_distributions)
+    
+    aquitards = [name for name,value in layer_types.items() if value=='Aquitard']
+    interbedded_layers= [name for name,value in interbeds_switch.items() if value==True]
+    no_layers_containing_clay = len(aquitards) + len(interbedded_layers)
+    #no_layers_containing_clay = list(layer_types.values()).count('Aquitard') + sum(list(interbeds_switch.values()))
+    print('\t\tNumber of layers containing clay calculated to be %i.' % no_layers_containing_clay)
+    
+    layers_requiring_solving = interbedded_layers + aquitards
+    create_output_head_video= read_parameter('create_output_head_video',bool,no_layers_containing_clay,paramfilelines)
+    groundwater_flow_solver_type=read_parameter('groundwater_flow_solver_type',str,len(layers_requiring_solving),paramfilelines)
+    if False in [x == 'singlevalue' or x == 'elastic-inelastic' for x in groundwater_flow_solver_type.values()]:
+        print("\t\tReading parameters error: terminal. Only groundwater_flow_solver_type of 'singlevalue' or 'elastic-inelastic' currently supported.")
         sys.exit(1)
+    overburden_stress_gwflow = read_parameter('overburden_stress_gwflow',bool,1,paramfilelines)
+    compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
+    compaction_solver_debug_include_endnodes = read_parameter('compaction_solver_debug_include_endnodes',bool,1,paramfilelines)
         
-save_output_head_timeseries = read_parameter('save_output_head_timeseries',bool,1,paramfilelines)
-save_effective_stress = read_parameter('save_effective_stress',bool,1,paramfilelines)
-save_internal_compaction = read_parameter('save_internal_compaction',bool,1,paramfilelines)
-no_layers = read_parameter('no_layers',int,1,paramfilelines)
-layer_names=read_parameter('layer_names',str,no_layers,paramfilelines)
-if no_layers==1:
-    layer_names = np.array([layer_names])
-layer_types=read_parameter('layer_types',str,no_layers,paramfilelines)
-no_aquifers = list(layer_types.values()).count('Aquifer')
-no_aquitards = list(layer_types.values()).count('Aquitard')
-print('\t\tNumber of aquifer layers calculated to be %i.' % no_aquifers)
-print('\t\tNumber of aquitard layers calculated to be %i.' % no_aquitards)
-layer_thicknesses=read_parameter('layer_thicknesses',float,no_layers,paramfilelines)
-layer_compaction_switch=read_parameter('layer_compaction_switch',bool,no_layers,paramfilelines)
-interbeds_switch=read_parameter('interbeds_switch',bool,list(layer_types.values()).count('Aquifer'),paramfilelines)
-#interbeds_type=read_parameter('interbeds_type',str,list(layer_types.values()).count('Aquifer'),paramfilelines)
-# Import interbeds_distributions -- an awkward parameter as its a dictionary of dictionaries!
-interbeds_distributions1=read_parameter('interbeds_distributions',dict,sum(interbeds_switch.values()),paramfilelines)
-interbeds_distributions1=np.array(interbeds_distributions1)
-if np.shape(interbeds_distributions1)[0]==1:
-    interbeds_distributions1=interbeds_distributions1[0]
-    minidics = [dict([(float(re.split(',|:',interbeds_distributions1[2*i + 1])[2*j]),float( re.split(',|:',interbeds_distributions1[2*i + 1])[2*j+1])) for j in range(int(len( re.split(',|:',interbeds_distributions1[2*i + 1]))/2))]) for i in range(sum(interbeds_switch.values()))]
-    interbeds_distributions = dict([(interbeds_distributions1[2*i],minidics[i]) for i in range(sum(interbeds_switch.values()))])
-    print('\tinterbeds_distributions=%s' % interbeds_distributions)
-else:
-    interbeds_distributions = {}
-    for abc in interbeds_distributions1:
-        interbeds_distributions[abc[0]] = dict([(float(re.split(':|,',abc[1])[2*i]),float(re.split(':|,',abc[1])[2*i+1])) for i in range(len(re.split(',',abc[1])))])
-    print('\tinterbeds_distributions=%s' % interbeds_distributions)
+    clay_Ssk = read_parameter('clay_Ssk',float,sum(value == 'singlevalue' for value in groundwater_flow_solver_type.values()),paramfilelines)
+    clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
+    clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
+    sand_Sse = read_parameter('sand_Sse',float,no_aquifers,paramfilelines)
+    
+    time_unit = read_parameter('time_unit',str,1,paramfilelines)
+    
+    #clay_porosity = read_parameter('clay_porosity',float,no_layers_containing_clay,paramfilelines)
+    sand_Ssk = read_parameter('sand_Ssk',float,no_aquifers,paramfilelines)
+    compressibility_of_water = read_parameter('compressibility_of_water',float,1,paramfilelines)
+    rho_w = read_parameter('rho_w',float,1,paramfilelines)
+    g = read_parameter('g',float,1,paramfilelines)
+    dt_master = read_parameter('dt_master',float,no_layers_containing_clay,paramfilelines)
+    dz_clays = read_parameter('dz_clays',float,no_layers_containing_clay,paramfilelines)
+    vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
+    overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
+    #overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
+    if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
+        specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
+    else:
+        specific_yield=None
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield
 
-aquitards = [name for name,value in layer_types.items() if value=='Aquitard']
-interbedded_layers= [name for name,value in interbeds_switch.items() if value==True]
-no_layers_containing_clay = len(aquitards) + len(interbedded_layers)
-#no_layers_containing_clay = list(layer_types.values()).count('Aquitard') + sum(list(interbeds_switch.values()))
-print('\t\tNumber of layers containing clay calculated to be %i.' % no_layers_containing_clay)
+internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
-layers_requiring_solving = interbedded_layers + aquitards
-create_output_head_video= read_parameter('create_output_head_video',bool,no_layers_containing_clay,paramfilelines)
-groundwater_flow_solver_type=read_parameter('groundwater_flow_solver_type',str,len(layers_requiring_solving),paramfilelines)
-if False in [x == 'singlevalue' or x == 'elastic-inelastic' for x in groundwater_flow_solver_type.values()]:
-    print("\t\tReading parameters error: terminal. Only groundwater_flow_solver_type of 'singlevalue' or 'elastic-inelastic' currently supported.")
-    sys.exit(1)
-overburden_stress_gwflow = read_parameter('overburden_stress_gwflow',bool,1,paramfilelines)
-compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
-compaction_solver_debug_include_endnodes = read_parameter('compaction_solver_debug_include_endnodes',bool,1,paramfilelines)
+if MODE=='resume':
+    resume_directory=read_parameter('resume_directory',str,1,paramfilelines)
+    print('')
+    print('MODE is RESUME; reading all non-admin parameters from paramfile %s' % (resume_directory+'/paramfile.par'))
+    copy2('%s/paramfile.par' % resume_directory,"%s/resume_paramfile.par" % outdestination)
 
+    f = open("%s/paramfile.par" % resume_directory, "r")
+    paramfilelines = f.readlines()
+    f.close()
+    paramfilelines = [line.strip() for line in paramfilelines]
+    paramfilelines = [x for x in paramfilelines if not x.startswith('#')]
+    paramfilelines[:] = [x for x in paramfilelines if x]
+    print('')
 
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield = read_parameters_noadmin(paramfilelines)
 
-clay_Ssk = read_parameter('clay_Ssk',float,sum(value == 'singlevalue' for value in groundwater_flow_solver_type.values()),paramfilelines)
-clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
-clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
-sand_Sse = read_parameter('sand_Sse',float,no_aquifers,paramfilelines)
-
-time_unit = read_parameter('time_unit',str,1,paramfilelines)
-
-#clay_porosity = read_parameter('clay_porosity',float,no_layers_containing_clay,paramfilelines)
-sand_Ssk = read_parameter('sand_Ssk',float,no_aquifers,paramfilelines)
-compressibility_of_water = read_parameter('compressibility_of_water',float,1,paramfilelines)
-rho_w = read_parameter('rho_w',float,1,paramfilelines)
-g = read_parameter('g',float,1,paramfilelines)
-dt_master = read_parameter('dt_master',float,no_layers_containing_clay,paramfilelines)
-dz_clays = read_parameter('dz_clays',float,no_layers_containing_clay,paramfilelines)
-vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
-overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
-#overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
-if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
-    specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
-
+sys.exit(1)
 
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
