@@ -62,6 +62,8 @@ paramfilelines[:] = [x for x in paramfilelines if x]
 
 # Read in parameters
 
+MODE = read_parameter('mode',str,1,paramfilelines)
+sys.exit(1)
 internal_time_delay = read_parameter('internal_time_delay',float,1,paramfilelines)
 overwrite=read_parameter('overwrite',bool,1,paramfilelines)
 run_name = read_parameter('run_name',str,1,paramfilelines)
