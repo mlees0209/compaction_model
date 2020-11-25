@@ -23,6 +23,8 @@ save=True
 import pandas as pd
 sys.path.append('/home/mlees/InSAR_processing/postprocessing_scripts/')
 sys.path.append('/Users/mlees/Documents/RESEARCH/InSAR_processing/postprocessing_scripts/')
+sys.path.append('/home/mlees/InSAR_postprocessing/')
+
 import seaborn as sns
 import os
 from InSAR_postSBAS import *
