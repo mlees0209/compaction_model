@@ -141,7 +141,7 @@ pc_greater10 = [100*(greater10_ann[i] / tot[i]) for i in range(len(greater10_ann
 
 #%%
 
-print('Plotting % contribution of differet interbeds.')
+print('Plotting % contribution of different interbeds.')
 fig,ax1 = plt.subplots(figsize=(18,12))
 
 
