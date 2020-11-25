@@ -472,7 +472,7 @@ if len(layers_requiring_solving)>=0:
                     print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
                     inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_inelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
                     print('\t\t\t\tConverting to netCDF format. Command is:')
-                    cmd_tmp="gmt xyz2grd %s/head_outputs/%s_inelastic_flag_GWFLOW -G%s/head_outputs/%s_inelastic_flag_GWFLOW.nb -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                    cmd_tmp="gmt xyz2grd %s/head_outputs/%s_inelastic_flag_GWFLOW -G%s/head_outputs/%s_inelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
                     
                     print(cmd_tmp)
                     subprocess.call(cmd_tmp,shell=True)
@@ -579,7 +579,7 @@ if len(layers_requiring_solving)>=0:
                                 print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
                                 inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),thickness))
                                 print('\t\t\t\tConverting to netCDF format. Command is:')
-                                cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLc" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                                 
                                 print(cmd_tmp)
                                 subprocess.call(cmd_tmp,shell=True)
@@ -610,7 +610,7 @@ if len(layers_requiring_solving)>=0:
                                 effective_stress[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/%s_%sclayeffective_stress' % (outdestination, layer.replace(' ','_'), thickness)) 
                                 if gmt:
                                     print('\t\t\t\tConverting to netCDF format. Command is:')
-                                    cmd_tmp="gmt xyz2grd %s/%s_%sclayeffective_stress -G%s/%s_%sclayeffective_stress.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                    cmd_tmp="gmt xyz2grd %s/%s_%sclayeffective_stress -G%s/%s_%sclayeffective_stress.nc -I%.3f/%.5f -R%.3ft/%.3ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                             
                                     print(cmd_tmp)
                                     subprocess.call(cmd_tmp,shell=True)
@@ -627,7 +627,7 @@ if len(layers_requiring_solving)>=0:
                                     overburden_tmp_tosave.astype(np.single).tofile('%s/%s_%sclay_overburden_stress' % (outdestination, layer.replace(' ','_'), thickness)) 
                                     if gmt:
                                         print('\t\t\t\tConverting to netCDF format. Command is:')
-                                        cmd_tmp="gmt xyz2grd %s/%s_%sclay_overburden_stress -G%s/%s_%sclay_overburden_stress.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                        cmd_tmp="gmt xyz2grd %s/%s_%sclay_overburden_stress -G%s/%s_%sclay_overburden_stress.nc -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                             
                                         print(cmd_tmp)
                                         subprocess.call(cmd_tmp,shell=True)
@@ -674,7 +674,7 @@ if save_output_head_timeseries:
                             print('\t\t\tHead has more than 1 million entries; saving as 32 bit floats.')
                             head_series[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
                             print('\t\t\t\tConverting to netCDF format. Command is:')
-                            cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                             
                             print(cmd_tmp)
                             subprocess.call(cmd_tmp,shell=True)
