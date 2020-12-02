@@ -884,7 +884,7 @@ for layer in layer_names:
             plt.plot_date(t,deformation[layer]['inelastic'],label='inelastic')
             plt.legend()
             plt.savefig('%s/figures/compaction_%s.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
-            plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
+            plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
             plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             plt.close()
             
@@ -986,21 +986,28 @@ for layer in layer_names:
             print('\tSaving layer compaction figure')
             sns.set_style('whitegrid')
             sns.set_context('talk')
+            l_aqt=[]
+
             plt.figure(figsize=(18,12))
-            plt.plot_date(head_series[layer]['Interconnected matrix'][:,0],deformation[layer]['Interconnected matrix'],'-',label='Interconnected matrix')
+            line_tmp, = plt.plot_date(head_series[layer]['Interconnected matrix'][:,0],deformation[layer]['Interconnected matrix'],'-',label='Interconnected matrix')
+            l_aqt.append(line_tmp)
 
             interbeds_tmp=interbeds_distributions[layer]
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
 
             for thickness in bed_thicknesses_tmp:
-                plt.plot_date(groundwater_solution_dates[layer]['%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
+                line_tmp, = plt.plot_date(groundwater_solution_dates[layer]['%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
+                l_aqt.append(line_tmp)
 
-            plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='total')
+            line_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='total')
+            l_aqt.append(line_tmp)
             plt.title('%s' % layer)
             plt.ylabel('Deformation (m)')
             plt.legend()
             plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox='tight')
-            plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
+            plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
+            for line in l_aqt:
+                line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
             plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
             plt.close() 
             
@@ -1112,7 +1119,7 @@ plt.ylabel('Z (m)')
 plt.legend()
 plt.savefig('%s/figures/total_deformation_figure.png' % outdestination,bbox_inches='tight')
 # Rezero on jan 2015
-plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
+plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
 for line in l_aqt:
     line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
 plt.savefig('%s/figures/total_deformation_figure_20152020.png' % outdestination,bbox_inches='tight')
