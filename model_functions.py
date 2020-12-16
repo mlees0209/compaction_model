@@ -32,7 +32,7 @@ import glob
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False,'resume_date':False} # Define which variables have pre-defined defaults
 
 Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False,'save_internal_compaction':False,'mode':'Normal'}
 
@@ -129,7 +129,7 @@ def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):
     return hmat
 
 
-def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[]):        
+def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[],initial_precons=False,initial_condition_precons=[]):        
     print ( '' )
     print ( '\t\t\tFD1D_HEAT_EXPLICIT_ELASTICINELASTIC_Ssk:' )
     print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
@@ -145,6 +145,14 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     else:
         overburden_data = np.zeros_like(t)
     
+        h_precons = np.zeros ( ( len(x), len(t) ) )
+    if not initial_precons:
+        h_precons[:,0] = ic
+    else:
+        print('\t\t\t preset preconsolidation stress found to be',initial_condition_precons)
+        h_precons[:,0]=initial_condition_precons
+    inelastic_flag = np.zeros ( ( len(x), len(t) ) ) 
+
     cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence 
     cfl_inelastic = k_inelastic * dt / dx / dx # This is the coefficient that determines convergence 
 
@@ -170,9 +178,6 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
 
 
     hmat = np.zeros ( ( len(x), len(t) ) ) # running the code creates an output matrix of heads at each position and time
-    h_precons = np.zeros ( ( len(x), len(t) ) )
-    h_precons[:,0] = ic
-    inelastic_flag = np.zeros ( ( len(x), len(t) ) ) 
 
     for j in range ( 0, len(t) ):
         if j % (int(len(t)/20)) == 0:
@@ -298,13 +303,18 @@ def read_parameter(name,typ,length,paramfilelines):
 
     return par
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False):
+def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_precons=False,ic_precons=[]):
     ### TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum.
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
-        print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
-        print('\t\t\tOverburden data read in as ')
-        print(overburden_data)
+        if not unconfined:
+            print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
+            print('\t\t\tOverburden data read in as ')
+            print(overburden_data)
+        else:
+            print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
+            print('\t\t\tThis aquifer is unconfined. ')
+            print(overburden_data)
 
     print('Aquitard solver is done at midpoints. Applying linear interpolation to hmat.')
     if not endnodes:
@@ -337,17 +347,26 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
     else:
         overburden_data_midpoints = np.zeros_like(hmat_midpoints)
     
-    stress_midpoints = hmat_midpoints - overburden_data_midpoints
+    stress_midpoints = overburden_data_midpoints - hmat_midpoints
     
     stress_midpoints_precons = np.zeros_like(hmat_midpoints)
     inelastic_flag_midpoints = np.zeros_like(hmat_midpoints)
-    stress_midpoints_precons[:,0] = hmat_midpoints[:,0] - overburden_data_midpoints[:,0]
+    if preset_precons:
+        print('preset precons found. interpolating to midpoints.')
+        print('starting with',ic_precons)
+        a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),ic_precons)
+        ic_precons_interp = a(0.001* np.arange(0,1000* ((np.shape(hmat)[0] - 1)*dz)+1,1000*dz/(2*TESTn)))
+        ic_precons_initial = ic_precons_interp[1::2]
+        print('interpoolated to',ic_precons_initial)
+        stress_midpoints_precons[:,0] = ic_precons_initial
+    else:
+        stress_midpoints_precons[:,0] = overburden_data_midpoints[:,0] - hmat_midpoints[:,0]
     
     for i in range(np.shape(stress_midpoints)[1]-1):
         if i % (int((np.shape(stress_midpoints)[1]-1)/20)) == 0:
             printProgressBar(i,np.shape(stress_midpoints)[1])        
         for j in range(np.shape(stress_midpoints)[0]):
-            if stress_midpoints[j,i] < stress_midpoints_precons[j,i]:
+            if stress_midpoints[j,i] > stress_midpoints_precons[j,i]:
                 stress_midpoints_precons[j,i+1]=stress_midpoints[j,i]
                 inelastic_flag_midpoints[j,i]=1
             else:
@@ -396,11 +415,11 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,inelastic_flag,Sske,Sskv,dz
     for i in range(1,np.shape(hmat)[1]):
         if i % (int(np.shape(hmat)[1]/20)) == 0:
             printProgressBar(i,np.shape(hmat)[1]-1)
-        s[i] = s[i-1]+ds[i-1]
-        s_elastic[i] = s_elastic[i-1]+ds_elastic[i-1]
-        s_inelastic[i] = s_inelastic[i-1]+ds_inelastic[i-1]
+        s[i] = s[i-1]-ds[i-1]
+        s_elastic[i] = s_elastic[i-1]-ds_elastic[i-1]
+        s_inelastic[i] = s_inelastic[i-1]-ds_inelastic[i-1]
 
-    return db,s,s_elastic,s_inelastic
+    return db,s,s_elastic,s_inelastic,inelastic_flag_midpoints
 
 def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100,startyear=None,endyear=None,datelabels='year'):
     # I think delt is in units of days; see what happens with the variable t_jumps below. startyear and endyear should be YYYY. datelabels can be 'year' or 'monthyear' and changes the title of the plots.
@@ -500,6 +519,102 @@ def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfol
         os.chdir(cd)
         
         
+def create_compaction_video(outputfolder,layer,db_plot,z,time_sim,Inelastic_Flag,delt=20,startyear=None,endyear=None,datelabels='year'):
+    
+    t1_start = process_time()  
+    
+    if not os.path.isdir('%s/compactionvideo_%s' % (outputfolder, layer.replace(' ','_'))):
+        os.mkdir('%s/compactionvideo_%s' % (outputfolder, layer.replace(' ','_')))
+
+
+    plt.ioff()
+    sns.set_context('talk')
+    print('\t\tCreating frames.')
+    plt.figure(figsize=(8,8))
+    plt.xlabel('node compaction rate (cm yr-1)')
+    plt.ylabel('Z (m)')
+    plt.xlim([np.max(db_plot),np.min(db_plot)])
+    plt.ylim([np.min(z)-0.1*(z[-1]-z[1]),np.max(z)+0.1*(z[-1]-z[1])])
+    plt.gca().invert_xaxis()
+    plt.gca().invert_yaxis()
+    plt.xscale('symlog')
+    t_tmp = np.round(time_sim,5)
+    
+    t_jumps = np.round([t_tmp[i] - t_tmp[0] for i in range(len(t_tmp))],4) # It looks like we get t in days.
+    if not delt in t_jumps:
+        print("\tERROR MAKING VIDEO! Selected dt not compatible with dates given.")
+        sys.exit(1)
+    
+    if startyear:
+        starting_t=date2num(dt.strptime('01-09-%s' % startyear, '%d-%m-%Y'))      
+        print('Movie starting at date %s' % num2date(starting_t).strftime('%d-%b-%Y'))
+    else:
+        starting_t = t_tmp[0]
+        print('Movie starting at date %s' % num2date(starting_t).strftime('%d-%b-%Y'))
+    
+    
+    if endyear:
+        ending_t=date2num(dt.strptime('01-09-%s' % endyear, '%d-%m-%Y'))      
+        print('Movie ending at date %s' % num2date(ending_t).strftime('%d-%b-%Y'))
+    else:
+        ending_t = t_tmp[-1]
+        print('Movie ending at date %s' % num2date(ending_t).strftime('%d-%b-%Y'))
+
+
+    ts_to_do = 1/1000* np.arange(1000*starting_t,1000*ending_t+0.0001,1000*delt) # avoid weird rounding issues
+    
+    firsttime=0
+    
+    for t in ts_to_do:
+        i=np.argwhere(t_tmp==t)[0][0] # If there are multiple frames on the same day, this line means we take the first of them
+        if firsttime==2: # This whole "firsttime" bit is just to help print every 5%, it's really not important.
+            if i % (int(len(ts_to_do)/20)) <= di: # This should make it so only 20 progress bars are printed
+                printProgressBar(np.argwhere(ts_to_do==t)[0][0],len(ts_to_do))
+        else:
+            printProgressBar(np.argwhere(ts_to_do==t)[0][0],len(ts_to_do))
+    
+        #plt.plot(hmat[:,0],np.linspace(0,40,20),'k--',label='t=0 position')
+        if firsttime==1:
+            firsttime=2
+            di = np.argwhere(ts_to_do==t)[0][0]
+        if t==starting_t:
+            l2,= plt.plot(db_plot[:,i],z,'r.',label='inelastic node')
+            l3, = plt.plot(db_plot[:,i][~Inelastic_Flag[:,i]],z[~Inelastic_Flag[:,i]],'g.',label='elastic node')
+            plt.legend()
+            firsttime=1
+        else:
+            l2.set_xdata(db_plot[:,i])
+            l3.remove()
+            l3, = plt.plot(db_plot[:,i][~Inelastic_Flag[:,i]],z[~Inelastic_Flag[:,i]],'g.')
+        if datelabels=='year':
+            plt.title('t=%s' % num2date(t_tmp[i]).strftime('%Y'))
+        if datelabels=='monthyear':
+            plt.title('t=%s' % num2date(t_tmp[i]).strftime('%b-%Y'))
+    
+    #            set_size(plt.gcf(), (12, 12))
+        plt.savefig('%s/compactionvideo_%s/frame%06d.jpg' % (outputfolder, layer.replace(' ','_'),i),dpi=60,bbox_inches='tight')
+    print("")     
+    print('')
+    print('\t\tStitching frames together using ffmpeg.')
+    #cmd='ffmpeg -hide_banner -loglevel warning -r 10 -f image2 -i %*.jpg vid.mp4'
+    cmd='ffmpeg -hide_banner -loglevel warning -r 5 -f image2 -i %%*.jpg -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" vid_b_inst_years%sto%s.mp4' % (num2date(starting_t).strftime('%Y'),num2date(ending_t).strftime('%Y'))
+    
+    print('\t\t\t%s.' % cmd)
+    cd=os.getcwd()
+    os.chdir('%s/compactionvideo_%s' % (outputfolder, layer.replace(' ','_')))
+    subprocess.call(cmd,shell=True)
+    
+    if os.path.isfile('vid_b_inst_years%sto%s.mp4' % (num2date(starting_t).strftime('%Y'),num2date(ending_t).strftime('%Y'))):
+          print('\tVideo seems to have been a success; deleting excess .jpg files.')
+          jpg_files_tmp = glob.glob('*.jpg')
+          for file in jpg_files_tmp:
+              os.remove(file)
+          print('\tDone.')
+    
+    os.chdir(cd)
+
+
+
 ## Misc functions 
         
 from matplotlib.image import imread
