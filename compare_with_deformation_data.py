@@ -151,8 +151,8 @@ txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanso
 ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed[np.argmin(np.abs(date2num(Data['dates'])- date2num(date(2016,1,1))))],'k-',label='Sentinel InSAR subsidence')
 
 
-
-ax1.plot_date(Envisat_dates,Envisat_data + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]],'r-',label='Envisat InSAR subsidence')
+rezero_idx_env =2
+ax1.plot_date(Envisat_dates,Envisat_data - Envisat_data[rezero_idx_env] + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'r-',label='Envisat InSAR subsidence')
 
 
 # ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
@@ -221,5 +221,44 @@ if save:
     else:
         plt.savefig('figures/compare_with_TRE_Altamira.png',bbox_inches='tight')
         plt.savefig('figures/compare_with_TRE_Altamira.svg',bbox_inches='tight')
+
+#%%
+
+yrange_envisat = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]
+
+if deephead:
+    ax2.remove()
+
+plt.xlim([date(2005,1,1),date(2011,1,1)])
+plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]-0.25*yrange_envisat,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]]+0.25*yrange_envisat])
+
+
+if extraloc:
+    ax1.plot_date(datesinsarBULL,0.1*InSAR_BULL + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarBULL[0])[0][0]],'g-',label='Sentinel InSAR subsidence at Borsa Bullseye')
+
+leg = plt.legend()
+
+plt.title('%s' % directory.split('/')[-1])
+
+if deephead:
+    leg.remove()
+    ax2 = ax1.twinx()
+    
+    ax2.plot_date(H[0],H[1],'k-',linewidth=0.5,label='Deep aquifer head')
+    plt.ylabel('Head (masl)')
+    plt.ylim([-20,40])
+    
+    ax2.legend(lines + lines2, labels + labels2,fancybox=True)
+
+
+if save:
+    if deephead:
+        plt.savefig('figures/compare_with_ENVISAT_deephead.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_ENVISAT_deephead.svg',bbox_inches='tight')
+    else:
+        plt.savefig('figures/compare_with_ENVISAT.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_ENVISAT.svg',bbox_inches='tight')
+
+
 
 os.chdir(cwd)
