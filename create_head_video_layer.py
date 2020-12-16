@@ -69,9 +69,20 @@ save=True
 
 aquifer=re.split('_(\d+)',layername)[0]
 
-Dat = Dataset("head_outputs/%s_head_data.nc" % layername, "r", format="CF-1.7")
-head = Dat.variables['z'][:]
-z = Dat.variables['y'][:]
+print('Reading head.')
+if os.path.isfile("head_outputs/%s_head_data.nc" % layername):
+    print('Head found as .nc file. Reading.')
+    Dat = Dataset("head_outputs/%s_head_data.nc" % layername, "r", format="CF-1.7")
+    head = Dat.variables['z'][:]
+    z = Dat.variables['y'][:]
+elif os.path.isfile("head_outputs/%s_head_data.csv" % layername):
+    print('Head found as .csv file. Reading.')
+    head=np.genfromtxt('head_outputs/%s_head_data.csv' % layername,delimiter=',')     
+    zmax = float(layername.split('clay')[0].split('_')[-1])
+    z = np.linspace(start=0,stop=zmax,num=np.shape(head)[0])
+else:
+    print('\tUnable to find head file as .nc or .csv. Something has gone wrong; aborting.')
+    sys.exit(1)    
 
 print('Reading inelastic flag...')
 if os.path.isfile("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername):
