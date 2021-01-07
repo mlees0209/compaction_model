@@ -89,9 +89,9 @@ for run in run_names:
     print('\tPlotting %s.' % run)
     os.chdir(run)
     Data[run] = pd.read_csv('Total_Deformation_Out.csv',parse_dates=[0])
-    ax1.plot_date([date2num(date) for date in Data[run]['dates']][0:365*20],100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[0:365*20],'-',color='grey',linewidth=0.5,label='_nolegend_')
+#    ax1.plot_date([date2num(date) for date in Data[run]['dates'] if date < date2num(datetime(1965,1,1))],100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[0:365*20],'-',color='grey',linewidth=0.5,label='_nolegend_')
 
-    ax1.plot_date([date2num(date) for date in Data[run]['dates']][365*20:],100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[365*20:],'-',label=run)
+    ax1.plot_date([date2num(date) for date in Data[run]['dates']],100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear),'-',label=run)
     os.chdir(cwd)
 
 if realdata:
@@ -113,5 +113,13 @@ for run in run_names:
 plt.savefig('%s_STARTYEAR%s.png' % (s,startyear), bbox_inches='tight')
 plt.savefig('%s_STARTYEAR%s.pdf' % (s,startyear), bbox_inches='tight')
 plt.savefig('%s_STARTYEAR%s.svg' % (s,startyear), bbox_inches='tight')
+
+# Do 2015-2020 version
+yrange = 10
+plt.ylim([100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2019,6,1)))[0][0]]-yrange,100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2015,1,1)))[0][0]]+yrange])
+    
+plt.xlim([date(2015,1,1),date(2020,1,1)])
+plt.savefig('%s_STARTYEAR%s_20152020.pdf' % (s,startyear), bbox_inches='tight')
+
 
 os.chdir(cwd)
