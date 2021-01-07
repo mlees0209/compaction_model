@@ -136,7 +136,7 @@ ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_se
 ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
 
 
-ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1954-01-01'],'k.--',label='Poland 1975 levelling surveys')
+ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1966-04-01'] - Poland_75_data[Poland_75_dates==date2num(date(1966,4,1))],'k.--',label='Poland 1975 levelling surveys')
 
 
 ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1972-06-01'],'k^')
@@ -152,7 +152,7 @@ ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed[np.argmin(n
 
 
 rezero_idx_env =2
-ax1.plot_date(Envisat_dates,Envisat_data - Envisat_data[rezero_idx_env] + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'r-',label='Envisat InSAR subsidence')
+ax1.plot_date(Envisat_dates,0.1* (Envisat_data - Envisat_data[rezero_idx_env]) + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'r-',label='Envisat InSAR subsidence')
 
 
 # ax1.plot_date(S224P2data['YRMO'],foot_to_cm* ( S224P2data['ELEf'] - S224P2data['ELEf'][S224P2data['YRMO']==dt(2016,2,1)].values) +  modelled_data_rezeroed[Data['dates']==dt(2016,2,1)],label='S224P2 data')
