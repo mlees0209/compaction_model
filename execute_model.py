@@ -202,6 +202,11 @@ if MODE=='resume':
     resume_date=read_parameter('resume_date',str,1,paramfilelines)
     resume_date=dt.strptime(resume_date,'%b-%d-%Y')
     print('\t\tResume date read in as %s' % resume_date)
+    
+    no_layers = read_parameter('no_layers',int,1,paramfilelines)
+    layer_types=read_parameter('layer_types',str,no_layers,paramfilelines)
+    no_aquifers = list(layer_types.values()).count('Aquifer')
+    resume_head_value=read_parameter('resume_head_value',str,no_aquifers,paramfilelines)
 
     print('')
     print('*** MODE is RESUME; reading all non-admin parameters from paramfile %s ***' % (resume_directory+'/paramfile.par'))
@@ -275,12 +280,6 @@ if len(all_aquifers_needing_head_data) >=0:
             print('\t\tSuccessfully read in. Head data for %s printing now.' % aquifer)
             print(head_data[aquifer])
             dt_headseries[aquifer] = np.diff(head_data[aquifer][:,0])[0]
-            if overburden_stress_gwflow or overburden_stress_compaction:
-                if aquifer == layer_names[0]:
-                    print('\t%s is the uppermost aquifer; therefore it is unconfined. Calculating overburden stress from changing water levels in this aquifer.' % aquifer)
-                    unconfined_aquifer_name = aquifer
-                    overburden_dates = dates
-                    overburden_data = [specific_yield * rho_w * g * (data[i] - data[0]) for i in range(len(data))]
         else:
             print('\t\tReading head data error: terminal. File %s not found.' % fileloc)
             sys.exit(1)
@@ -309,10 +308,29 @@ for aquifer in all_aquifers_needing_head_data:
     datesnew = head_data[aquifer][:,0][idx_to_keep]
     datanew = head_data[aquifer][:,1][idx_to_keep]
     head_data[aquifer]=np.array([datesnew,datanew]).T
+print('Clipping done.')
+
+if MODE=='resume':
+    for aquifer in all_aquifers_needing_head_data:
+            if resume_head_value[aquifer]=='cst':
+                print('\tResume head value=cst. Setting head in aquifer layers to be constant at the value it was in %s.' % resume_date)
+                print('Setting head in %s to be %.2f.' % (aquifer,head_data[aquifer][:,1][0]))
+                head_data[aquifer][:,1] = head_data[aquifer][:,1][0]
+                print(head_data[aquifer])
+
+for aquifer in all_aquifers_needing_head_data:
     with open('%s/input_data/input_time_series_%s.csv' % (outdestination, aquifer.replace(' ','_')), "w+") as myCsv:
         csvWriter = csv.writer(myCsv, delimiter=',')
         csvWriter.writerows(head_data[aquifer])
-print('Clipping done.')
+
+if overburden_stress_gwflow or overburden_stress_compaction:
+    for aquifer in all_aquifers_needing_head_data:
+        if aquifer == layer_names[0]:
+            print('\t%s is the uppermost aquifer; therefore it is unconfined. Calculating overburden stress from changing water levels in this aquifer.' % aquifer)
+            unconfined_aquifer_name = aquifer
+            overburden_dates = head_data[aquifer][:,0]
+            overburden_data = [specific_yield * rho_w * g * (head_data[aquifer][i,1] - head_data[aquifer][0,1]) for i in range(len(head_data[aquifer][:,1]))]
+
 
 if overburden_stress_gwflow or overburden_stress_compaction:
     print('Clipping overburden stress.')
@@ -448,7 +466,7 @@ if len(layers_requiring_solving)>=0:
 
             else:
                 print('\t\t\tNOTE: dt_master < dt_data. Linear resampling of input head series occuring.')
-                t_interp_new = np.arange(min(t_top),max(t_top)+0.00001,dt_master[layer])
+                t_interp_new = 0.0001*np.arange(10000*min(t_top),10000*max(t_top)+1,10000*dt_master[layer])
                 f_tmp = scipy.interpolate.interp1d(t_top,head_data[top_boundary][:,1])
                 top_head_tmp = np.array([t_interp_new,f_tmp(t_interp_new)]).T
                 spacing_top=1
@@ -468,7 +486,7 @@ if len(layers_requiring_solving)>=0:
                 bot_head_tmp = head_data[bot_boundary]
             else:
                 print('\t\t\tNOTE: dt_master < dt_data. Linear resampling of input head series occuring.')
-                t_interp_new = np.arange(min(t_bot),max(t_bot)+0.000001,dt_master[layer])
+                t_interp_new = 0.0001*np.arange(10000*min(t_bot),10000*max(t_bot)+1,10000*dt_master[layer])
                 f_tmp = scipy.interpolate.interp1d(t_top,head_data[bot_boundary][:,1])
                 bot_head_tmp = np.array([t_interp_new,f_tmp(t_interp_new)]).T
                 spacing_bot=1
@@ -1111,7 +1129,7 @@ for layer in layer_names:
     
                     if np.size(inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]) >= 3e6:
                         if gmt:
-                            print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                            print('\t\t\tInelastic flag has more than 3 million entries; saving as signed char.')
                             inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness].astype(np.byte).tofile('%s/s_outputs/%s_%sclayinelastic_flag_COMPACTION' % (outdestination, layer.replace(' ','_'),thickness))
                             print('\t\t\t\tConverting to netCDF format. Command is:')
                             cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclayinelastic_flag_COMPACTION -G%s/s_outputs/%s_%sclayinelastic_flag_COMPACTION.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness])+ np.diff(Z[layer]['%.2f clays' % thickness])[0]/2,np.max(Z[layer]['%.2f clays' % thickness])-np.diff(Z[layer]['%.2f clays' % thickness])[0]/2)
@@ -1160,19 +1178,20 @@ for layer in layer_names:
             plt.ylabel('Deformation (m)')
             plt.legend()
             plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox='tight')
-            for line in l_aqt:
-                line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
-            # # rescale axis
-            # ax = plt.gca()
-            # # recompute the ax.dataLim
-            # ax.relim()
-            # # update ax.viewLim using the new dataLim
-            # ax.autoscale_view()
-            # plt.draw()
-
-            plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
-            
-            plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
+            if np.min(line_tmp.get_xdata()) <= date2num(date(2015,1,1)):
+                for line in l_aqt:
+                    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
+                # # rescale axis
+                # ax = plt.gca()
+                # # recompute the ax.dataLim
+                # ax.relim()
+                # # update ax.viewLim using the new dataLim
+                # ax.autoscale_view()
+                # plt.draw()
+    
+                plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
+                
+                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
             plt.close() 
             
             
@@ -1284,17 +1303,18 @@ plt.legend()
 plt.savefig('%s/figures/total_deformation_figure.png' % outdestination,bbox_inches='tight')
 # Rezero on jan 2015
 plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
-for line in l_aqt:
-    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
-
-# rescale axis
-ax = plt.gca()
-# recompute the ax.dataLim
-ax.relim()
-# update ax.viewLim using the new dataLim
-ax.autoscale()
-plt.draw()
-plt.savefig('%s/figures/total_deformation_figure_20152020.png' % outdestination,bbox_inches='tight')
+if np.min(l_tmp.get_xdata()) <= date2num(date(2015,1,1)):
+    for line in l_aqt:
+        line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
+    
+    # rescale axis
+    ax = plt.gca()
+    # recompute the ax.dataLim
+    ax.relim()
+    # update ax.viewLim using the new dataLim
+    ax.autoscale()
+    plt.draw()
+    plt.savefig('%s/figures/total_deformation_figure_20152020.png' % outdestination,bbox_inches='tight')
 plt.close()
 
 saving_compaction_stop = process_time()
