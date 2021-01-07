@@ -145,7 +145,7 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     else:
         overburden_data = np.zeros_like(t)
     
-        h_precons = np.zeros ( ( len(x), len(t) ) )
+    h_precons = np.zeros ( ( len(x), len(t) ) )
     if not initial_precons:
         h_precons[:,0] = ic
     else:
