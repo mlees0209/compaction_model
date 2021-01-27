@@ -100,7 +100,10 @@ print('Reading dates.')
 dates_str_tmp = np.core.defchararray.rstrip(np.genfromtxt('head_outputs/%s_groundwater_solution_dates.csv' % aquifer,dtype=str,delimiter=','))
 import datetime
 print('Converting date formats.')
-dates_str = [datetime.datetime.strptime(string, '%c').strftime('%d-%b-%Y') for string in dates_str_tmp]
+if dates_str_tmp[0][-1]=='M':
+    dates_str = [datetime.datetime.strptime(string, '%a %d %b %Y %X %p').strftime('%d-%b-%Y') for string in dates_str_tmp]
+else:
+    dates_str = [datetime.datetime.strptime(string, '%c').strftime('%d-%b-%Y') for string in dates_str_tmp]
 
 
 
