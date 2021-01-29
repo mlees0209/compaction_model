@@ -10,7 +10,7 @@ then
 echo "WE ARE WORKING IN MAC MODE"
 echo "Making deformation data comparisons"
 python /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/compare_with_deformation_data.py $runname
-python /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/compare_with_deformation_data.py $runname deephead=True
+#python /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/compare_with_deformation_data.py $runname deephead=True
 echo "Plotting aquifer partitioning"
 python /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/plot_partitioning.py $runname
 echo "Plotting interbed partitioning"
@@ -22,7 +22,7 @@ then
 echo "WE ARE WORKING IN LINIUX MODE"
 echo "Making deformation data comparisons"
 python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/compare_with_deformation_data.py $runname
-python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/compare_with_deformation_data.py $runname deephead=True
+#python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/compare_with_deformation_data.py $runname deephead=True
 echo "Plotting aquifer partitioning"
 python /home/mlees/Land_Subsidence/Local_Scale/compaction_model/plot_partitioning.py $runname
 echo "Plotting interbed partitioning"
