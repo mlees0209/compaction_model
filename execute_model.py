@@ -623,13 +623,30 @@ if len(layers_requiring_solving)>=0:
             if save_effective_stress:
                 print('\t\tSaving effective stress and overburden stress outputs.')
                 if overburden_stress_gwflow:
-                    with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                        csvWriter = csv.writer(myCsv, delimiter=',')
-                        csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
+                    if len(overburden_data_tmp) * len(z_tmp) >= 1e6:
+                        print('\t\t\tOverburden stress has more than 1 million entries; saving as 32 bit floats.')
+                        overburden_tmp_tosave = np.tile(overburden_data_tmp, (len(z_tmp),1))
+                        overburden_tmp_tosave.astype(np.single).tofile('%s/%s_overburden_stress' % (outdestination, layer.replace(' ','_'))) 
+                        if gmt:
+                            print('\t\t\t\tConverting to netCDF format. Command is:')
+                            cmd_tmp="gmt xyz2grd %s/%s_overburden_stress -G%s/%s_overburden_stress.nc -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                            
+                            print(cmd_tmp)
+                            subprocess.call(cmd_tmp,shell=True)
+                            os.remove('%s/%s_overburden_stress' % (outdestination, layer.replace(' ','_')))                                                         
+                    else:                                
+                        with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                            csvWriter = csv.writer(myCsv, delimiter=',')
+                            csvWriter.writerows(np.tile(overburden_data_tmp, (len(z_tmp),1)))
                 else:
                     with open('%s/%s_overburden_stress.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
                         csvWriter = csv.writer(myCsv, delimiter=',')
                         csvWriter.writerows(np.zeros_like(hmat_tmp))
+
+                    
+                    
+                    
+                    
 
 
                 if np.size(effective_stress[layer]) >= 1e6:
