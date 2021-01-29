@@ -154,7 +154,7 @@ ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_ser
 ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed[Data['dates']=='1966-04-01'] - Poland_75_data[Poland_75_dates==date2num(date(1966,4,1))],'k.--',label='Poland 1975 levelling surveys')
 
 
-ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1972-06-01'],'k^')
+ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed[Data['dates']=='1972-06-01'],'k^',label='Highway 198 levelling surveys')
 #ax1.errorbar(Highway_198_dates[1],Highway_198_data[1] +modelled_data_rezeroed[Data['dates']=='1972-06-01'],xerr=None,yerr=0.5*Highway_198_data_uncertainty[1],fmt='k^',label='Highway 198 data',capsize=5)
 
 
