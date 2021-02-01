@@ -282,41 +282,41 @@ if save:
 #%% Extra plot for "adjusted"
 
 
-print('Making version with scaled lower aquifer prior to 2015')
-Data_variablethickness = Data.copy()
-Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) <= date2num(dt(2015,1,1))] = Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) <= date2num(dt(2015,1,1))] * 0.5
-Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) > date2num(dt(2015,1,1))] = Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) == date2num(dt(2015,1,1))].values + (Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) > date2num(dt(2015,1,1))] - Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) == date2num(dt(2015,1,1))].values)
-Data_variablethickness['Total'] = Data_variablethickness['Upper Aquifer'] + Data_variablethickness['Corcoran Clay'] + Data_variablethickness['Lower Aquifer']
+# print('Making version with scaled lower aquifer prior to 2015')
+# Data_variablethickness = Data.copy()
+# Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) <= date2num(dt(2015,1,1))] = Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) <= date2num(dt(2015,1,1))] * 0.5
+# Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) > date2num(dt(2015,1,1))] = Data_variablethickness['Lower Aquifer'][date2num(Data_variablethickness['dates']) == date2num(dt(2015,1,1))].values + (Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) > date2num(dt(2015,1,1))] - Data['Lower Aquifer'][date2num(Data_variablethickness['dates']) == date2num(dt(2015,1,1))].values)
+# Data_variablethickness['Total'] = Data_variablethickness['Upper Aquifer'] + Data_variablethickness['Corcoran Clay'] + Data_variablethickness['Lower Aquifer']
 
 
-modelled_data_rezeroed_adusted = np.array(100 * rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980'))
-Sentinel_rezeroed = np.array(0.1 * rezero_series(InSAR_H,datesinsarH,'Jan-2016'))
+# modelled_data_rezeroed_adusted = np.array(100 * rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980'))
+# Sentinel_rezeroed = np.array(0.1 * rezero_series(InSAR_H,datesinsarH,'Jan-2016'))
 
 
-fig,ax1 = plt.subplots(figsize=(18,12))
+# fig,ax1 = plt.subplots(figsize=(18,12))
 
 
-# ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
+# # ax1.plot_date([date2num(date) for date in Data['dates']][365*20:],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[365*20:],'b--',label='Modelled (believable)')
 
-ax1.plot_date([date2num(date) for date in Data_variablethickness['dates']][0:365*20],100*rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980')[0:365*20],'--',color='grey',linewidth=0.5,label='Modelled (spin up?)')
+# ax1.plot_date([date2num(date) for date in Data_variablethickness['dates']][0:365*20],100*rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980')[0:365*20],'--',color='grey',linewidth=0.5,label='Modelled (spin up?)')
 
-ax1.plot_date([date2num(date) for date in Data_variablethickness['dates']][365*20:],100*rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980')[365*20:],'r--',label='Modelled adjusted (believable)')
+# ax1.plot_date([date2num(date) for date in Data_variablethickness['dates']][365*20:],100*rezero_series(Data_variablethickness['Total'],np.array([date2num(date) for date in Data_variablethickness['dates']]),'Jun-1980')[365*20:],'r--',label='Modelled adjusted (believable)')
 
-ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed_adusted[Data_variablethickness['dates']=='1972-06-01'],'k^',label='Highway 198 data')
+# ax1.plot_date(Highway_198_dates,Highway_198_data + modelled_data_rezeroed_adusted[Data_variablethickness['dates']=='1972-06-01'],'k^',label='Highway 198 data')
 
-ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed_adusted[Data['dates']=='1966-04-01'] - Poland_75_data[Poland_75_dates==date2num(date(1966,4,1))],'k.--',label='Poland 1975 levelling surveys')
+# ax1.plot_date(Poland_75_dates,Poland_75_data + modelled_data_rezeroed_adusted[Data['dates']=='1966-04-01'] - Poland_75_data[Poland_75_dates==date2num(date(1966,4,1))],'k.--',label='Poland 1975 levelling surveys')
 
-rezero_idx_env =2
-ax1.plot_date(Envisat_dates,0.1/np.cos(np.deg2rad(envisat_incidence)) * (Envisat_data - Envisat_data[rezero_idx_env]) + modelled_data_rezeroed_adusted[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'p-',label='Envisat InSAR subsidence (vert)')
-ax1.plot_date(Envisat_dates_KSB0486,0.1/np.cos(np.deg2rad(envisat_incidence_KSB0486)) * (Envisat_data_KSB0486 - Envisat_data_KSB0486[rezero_idx_env]) + modelled_data_rezeroed_adusted[np.where([date2num(date) for date in Data['dates']]==Envisat_dates_KSB0486[rezero_idx_env])[0][0]],'o-',label='Envisat InSAR subsidence (KSB-486 vert)')
+# rezero_idx_env =2
+# ax1.plot_date(Envisat_dates,0.1/np.cos(np.deg2rad(envisat_incidence)) * (Envisat_data - Envisat_data[rezero_idx_env]) + modelled_data_rezeroed_adusted[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'p-',label='Envisat InSAR subsidence (vert)')
+# ax1.plot_date(Envisat_dates_KSB0486,0.1/np.cos(np.deg2rad(envisat_incidence_KSB0486)) * (Envisat_data_KSB0486 - Envisat_data_KSB0486[rezero_idx_env]) + modelled_data_rezeroed_adusted[np.where([date2num(date) for date in Data['dates']]==Envisat_dates_KSB0486[rezero_idx_env])[0][0]],'o-',label='Envisat InSAR subsidence (KSB-486 vert)')
 
-ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed_adusted[np.argmin(np.abs(date2num(Data['dates'])- date2num(date(2016,1,1))))],'k-',label='Sentinel InSAR subsidence')
+# ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed_adusted[np.argmin(np.abs(date2num(Data['dates'])- date2num(date(2016,1,1))))],'k-',label='Sentinel InSAR subsidence')
 
-plt.legend()
+# plt.legend()
 
-plt.title('%s (with expanding lower aquifer in 2015)' % directory.split('/')[-1])
+# plt.title('%s (with expanding lower aquifer in 2015)' % directory.split('/')[-1])
 
-if save:
-    plt.savefig('figures/compare_with_measurementsFULL_adjusted.png',bbox_inches='tight')
+# if save:
+#     plt.savefig('figures/compare_with_measurementsFULL_adjusted.png',bbox_inches='tight')
 
 os.chdir(cwd)
