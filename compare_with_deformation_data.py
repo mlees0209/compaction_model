@@ -114,21 +114,32 @@ if knightblade:
     envisat_file='/data1/mlees/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
 
 
-Envisat = import_InSAR_csv(envisat_file)
-Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
-print('Finding envisat incidence angle.')
-envisat_incidence = Envisat['incidence_angle'].values[np.argmax([np.sum(Envisat.values[i,-24:] == Envisat_data) for i in range(len(Envisat))])]
-print('\tIncidence angle is %.2f deg.' % envisat_incidence)
-print()
+# Envisat = import_InSAR_csv(envisat_file)
+# Envisat_dates,Envisat_data = extract_series_from_latlon(36.32750,-119.58056,Envisat)
+# print('Finding envisat incidence angle.')
+# envisat_incidence = Envisat['incidence_angle'].values[np.argmax([np.sum(Envisat.values[i,-24:] == Envisat_data) for i in range(len(Envisat))])]
+# print('\tIncidence angle is %.2f deg.' % envisat_incidence)
+# print()
 
-KSB0486_lat=36.2811
-KSB0486_lon = -119.6367
-Envisat_dates_KSB0486,Envisat_data_KSB0486 = extract_series_from_latlon(KSB0486_lat,KSB0486_lon,Envisat)
-print('Finding envisat incidence angle at KSB0486.')
-envisat_incidence_KSB0486 = Envisat['incidence_angle'].values[np.argmax([np.sum(Envisat.values[i,-24:] == Envisat_data_KSB0486) for i in range(len(Envisat))])]
-print('\tIncidence angle is %.2f deg.' % envisat_incidence_KSB0486)
-print()
+# KSB0486_lat=36.2811
+# KSB0486_lon = -119.6367
+# Envisat_dates_KSB0486,Envisat_data_KSB0486 = extract_series_from_latlon(KSB0486_lat,KSB0486_lon,Envisat)
+# print('Finding envisat incidence angle at KSB0486.')
+# envisat_incidence_KSB0486 = Envisat['incidence_angle'].values[np.argmax([np.sum(Envisat.values[i,-24:] == Envisat_data_KSB0486) for i in range(len(Envisat))])]
+# print('\tIncidence angle is %.2f deg.' % envisat_incidence_KSB0486)
+# print()
 
+
+# Import ALOS data
+if linux:
+    envisat_file ='/home/mlees/bigdata/InSAR/Processed_datasets/ALOS/SmithKnight19_ALOS_SBAS.csv'
+if mac:
+    ALOS_file ='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/ALOS/SmithKnight19_ALOS_SBAS.csv'
+if knightblade:
+    ALOS_file='/data1/mlees/bigdata/InSAR/Processed_datasets/Tom_ENVISAT/Envisat.csv'
+
+ALOS = import_InSAR_csv(ALOS_file)
+ALOS_dates,ALOS_data = extract_series_from_latlon(36.32750,-119.58056,ALOS)
 
 
 save = True
@@ -166,8 +177,8 @@ txt = ax1.text(Swanson_1998_quote_dates[0] + (Swanson_1998_quote_dates[1]-Swanso
 ax1.plot_date(datesinsarH,Sentinel_rezeroed + modelled_data_rezeroed[np.argmin(np.abs(date2num(Data['dates'])- date2num(date(2016,1,1))))],'k-',label='Sentinel InSAR subsidence')
 
 
-rezero_idx_env =2
-ax1.plot_date(Envisat_dates,0.1/np.cos(np.deg2rad(envisat_incidence)) * (Envisat_data - Envisat_data[rezero_idx_env]) + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[rezero_idx_env])[0][0]],'p-',label='Envisat InSAR subsidence (vert)')
+rezero_idx_env =1
+ax1.plot_date(ALOS_dates,-(ALOS_data - ALOS_data[rezero_idx_env]) + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==ALOS_dates[rezero_idx_env])[0][0]],'p-',label='ALOS InSAR subsidence (vert)')
 # ax1.plot_date(Envisat_dates_KSB0486,0.1/np.cos(np.deg2rad(envisat_incidence_KSB0486)) * (Envisat_data_KSB0486 - Envisat_data_KSB0486[rezero_idx_env]) + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates_KSB0486[rezero_idx_env])[0][0]],'r-',label='Envisat InSAR subsidence (KSB-486 vert)')
 
 
@@ -240,13 +251,50 @@ if save:
 
 #%%
 
-yrange_envisat = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]
+# yrange_envisat = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]
+
+# if deephead:
+#     ax2.remove()
+
+# plt.xlim([date(2005,1,1),date(2011,1,1)])
+# plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]-0.25*yrange_envisat,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]]+0.25*yrange_envisat])
+
+
+# if extraloc:
+#     ax1.plot_date(datesinsarBULL,0.1*InSAR_BULL + modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==datesinsarBULL[0])[0][0]],'g-',label='Sentinel InSAR subsidence at Borsa Bullseye')
+
+# leg = plt.legend()
+
+# plt.title('%s' % directory.split('/')[-1])
+
+# if deephead:
+#     leg.remove()
+#     ax2 = ax1.twinx()
+    
+#     ax2.plot_date(H[0],H[1],'k-',linewidth=0.5,label='Deep aquifer head')
+#     plt.ylabel('Head (masl)')
+#     plt.ylim([-20,40])
+    
+#     ax2.legend(lines + lines2, labels + labels2,fancybox=True)
+
+
+# if save:
+#     if deephead:
+#         plt.savefig('figures/compare_with_ENVISAT_deephead.png',bbox_inches='tight')
+#         plt.savefig('figures/compare_with_ENVISAT_deephead.svg',bbox_inches='tight')
+#     else:
+#         plt.savefig('figures/compare_with_ENVISAT.png',bbox_inches='tight')
+#         plt.savefig('figures/compare_with_ENVISAT.svg',bbox_inches='tight')
+
+#%%
+
+yrange_ALOS = modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==ALOS_dates[0])[0][0]] - modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==ALOS_dates[-1])[0][0]]
 
 if deephead:
     ax2.remove()
 
 plt.xlim([date(2005,1,1),date(2011,1,1)])
-plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[-1])[0][0]]-0.25*yrange_envisat,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==Envisat_dates[0])[0][0]]+0.25*yrange_envisat])
+plt.ylim([modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==ALOS_dates[-1])[0][0]]-0.25*yrange_ALOS,modelled_data_rezeroed[np.where([date2num(date) for date in Data['dates']]==ALOS_dates[0])[0][0]]+0.25*yrange_ALOS])
 
 
 if extraloc:
@@ -269,12 +317,11 @@ if deephead:
 
 if save:
     if deephead:
-        plt.savefig('figures/compare_with_ENVISAT_deephead.png',bbox_inches='tight')
-        plt.savefig('figures/compare_with_ENVISAT_deephead.svg',bbox_inches='tight')
+        plt.savefig('figures/compare_with_ALOS_deephead.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_ALOS_deephead.svg',bbox_inches='tight')
     else:
-        plt.savefig('figures/compare_with_ENVISAT.png',bbox_inches='tight')
-        plt.savefig('figures/compare_with_ENVISAT.svg',bbox_inches='tight')
-
+        plt.savefig('figures/compare_with_ALOS.png',bbox_inches='tight')
+        plt.savefig('figures/compare_with_ALOS.svg',bbox_inches='tight')
 
 
 
