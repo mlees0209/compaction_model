@@ -132,7 +132,7 @@ if knightblade:
 
 # Import ALOS data
 if linux:
-    envisat_file ='/home/mlees/bigdata/InSAR/Processed_datasets/ALOS/SmithKnight19_ALOS_SBAS.csv'
+    ALOS_file ='/home/mlees/bigdata/InSAR/Processed_datasets/ALOS/SmithKnight19_ALOS_SBAS.csv'
 if mac:
     ALOS_file ='/Users/mlees/Documents/RESEARCH/bigdata/InSAR/Processed_datasets/ALOS/SmithKnight19_ALOS_SBAS.csv'
 if knightblade:
