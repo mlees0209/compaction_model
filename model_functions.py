@@ -303,6 +303,36 @@ def read_parameter(name,typ,length,paramfilelines):
 
     return par
 
+def read_parameter_layerthickness_multitype(name,paramfilelines):
+      par_out = {}
+      par_paramfile=[x for x in paramfilelines if x.replace(' ','').startswith('%s=' % name)]
+      par=par_paramfile[0].split('#')[0].split('=')[1]
+      par=re.split(':|,',par)
+      # Find if there are any dictionaries
+      contains_dict = ['{' in s or '}' in s for s in par]
+      if sum(contains_dict) % 2 != 0:
+          print('\tERROR: odd number of { or } brackets found.' % (name,par))          
+          print('\t\tReading parameters error: terminal. %s should have even number of { } brackets.' % name)
+      elif sum(contains_dict) > 0:
+          for i_tmp in range(int(len(np.where(contains_dict)[0])/2)):
+              layername_tmp=par[np.where(contains_dict)[0][2*i_tmp]-1]
+              par_out[layername_tmp] = {}
+              dic_length_tmp = int((np.where(contains_dict)[0][2*i_tmp + 1] - np.where(contains_dict)[0][2*i_tmp] + 1)/2)
+              for j_tmp in range(dic_length_tmp):
+                  keytmp = par[np.where(contains_dict)[0][2*i_tmp]+ j_tmp*2].split('{')[-1]
+                  val_tmp = par[np.where(contains_dict)[0][2*i_tmp]+ 1+ j_tmp*2].split('}')[0]
+                  par_out[layername_tmp][keytmp] = float(val_tmp)
+      dict_idxs_full=[]
+      for i_tmp in range(int(len(np.where(contains_dict)[0])/2)):
+          dict_idxs_full= np.append(dict_idxs_full,np.arange(np.where(contains_dict)[0][2*i_tmp]-1,np.where(contains_dict)[0][2*i_tmp+1]+1))
+      all_idxs = np.arange(len(par))
+      nondict_idxs = [idx for idx in all_idxs if idx not in dict_idxs_full]
+      nondict_par = np.array(par)[nondict_idxs]
+      for i_tmp in range(int(len(nondict_par)/2)):
+          par_out[nondict_par[2*i_tmp]]=float(nondict_par[2*i_tmp+1])
+      print('\t%s=%s' % (name,par_out))
+      return par_out
+
 def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_precons=False,ic_precons=[]):
     ### TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum.
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
