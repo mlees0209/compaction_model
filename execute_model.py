@@ -131,7 +131,8 @@ def read_parameters_noadmin(paramfilelines):
     no_aquitards = list(layer_types.values()).count('Aquitard')
     print('\t\tNumber of aquifer layers calculated to be %i.' % no_aquifers)
     print('\t\tNumber of aquitard layers calculated to be %i.' % no_aquitards)
-    layer_thicknesses=read_parameter('layer_thicknesses',float,no_layers,paramfilelines)
+    layer_thickness_types=read_parameter('layer_thickness_types',str,no_layers,paramfilelines)
+    layer_thicknesses=read_parameter_layerthickness_multitype('layer_thicknesses',paramfilelines)
     layer_compaction_switch=read_parameter('layer_compaction_switch',bool,no_layers,paramfilelines)
     interbeds_switch=read_parameter('interbeds_switch',bool,list(layer_types.values()).count('Aquifer'),paramfilelines)
     #interbeds_type=read_parameter('interbeds_type',str,list(layer_types.values()).count('Aquifer'),paramfilelines)
@@ -186,7 +187,7 @@ def read_parameters_noadmin(paramfilelines):
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield
 
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
@@ -221,12 +222,49 @@ if MODE=='resume':
     print('')
 
 
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield = read_parameters_noadmin(paramfilelines)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield = read_parameters_noadmin(paramfilelines)
+
+# Check that the layer thicknesses were correctly imported
+print()
+print('PARAMETER CHECK: checking layer_thickness_types and layer_thicknesses...')
+
+layers_cst_thickness = [k for k,v in layer_thickness_types.items() if v == 'constant']
+layers_var_thickness = [k for k,v in layer_thickness_types.items() if v != 'constant']
+for layer in layers_cst_thickness:
+    if type(layer_thicknesses[layer])==dict:
+        print("ERROR, terminal, layer thicknesses for %s is %s. It's a constant thickness layer so shouldn't be a dictionary." % (layer,layer_thicknesses[layer]))
+        sys.exit(1)
+    else:
+        print('\t%s look good.' % layer)
+for layer in layers_var_thickness:
+    if type(layer_thicknesses[layer])!=dict:
+        print("ERROR, terminal, layer thicknesses for %s is %s. It's a variable thickness layer so should be a dictionary." % (layer,layer_thicknesses[layer]))
+        sys.exit(1)
+    else:
+        print('\t%s look good.' % layer)
+
+for layer in layers_var_thickness:
+    if layer_thickness_types[layer]=='step_changes':
+        tmp = layer_thicknesses[layer]
+        pre = ['pre' in s for s in tmp]
+        if sum(pre)==1:
+            print("\tExactly 1 'pre' entry for %s, looks good." % layer)
+        else:
+            print("\tERROR:terminal. %s is variable thickness but doesn't have a pre entry. Needs fixing!." % layer)
+            sys.exit(1)
+
+if len(layers_var_thickness)>=1:
+    initial_thicknesses={}
+    for layer in layers_var_thickness:
+        prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
+        initial_thicknesses[layer] = layer_thicknesses[layer][prekeyname]
+    print('\tInitial thicknesses for varying aquifer thicknesses are %s.' % initial_thicknesses)
 
 
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
-### Next section is "READING INPUT DATA MODULE"
+
+#%% Next section is "READING INPUT DATA MODULE"
 print()
 print()
 print(''.center(80, '*'))
@@ -235,6 +273,8 @@ print(''.center(80, '*'))
 print()
 reading_head_start = process_time()
 time.sleep(internal_time_delay)
+
+
 
 aquifer_layer_names = [name for name, layer_type in layer_types.items() if layer_type=='Aquifer']
 compactable_aquifers_names = [name for name, switch in layer_compaction_switch.items() if name in aquifer_layer_names if switch==True]
@@ -292,6 +332,9 @@ print(starttimes)
 starttime = np.max(starttimes)
 endtimes = [np.max(head_data[aquifer][:,0]) for aquifer in all_aquifers_needing_head_data]
 endtime = np.min(endtimes)
+
+
+
 
 print('')
 print('CLIPPING HEAD TIMESERIES TO HAVE CONSISTENT START/END DATES ACROSS AQUIFERS.')
@@ -372,7 +415,11 @@ if len(layers_requiring_solving)>= 0:
             for key in interbeds_distributions[layer].keys():
                 thicknesses_tmp.append(key)
         if layer_types[layer]=='Aquitard':
-            thicknesses_tmp.append(layer_thicknesses[layer])
+            if layer_thickness_types[layer]=='constant':
+                thicknesses_tmp.append(layer_thicknesses[layer])
+            else:
+                print('Error, aquitards with varying thickness not (yet) supported.')
+                sys.exit(1)
     # Find the smallest difference between two clay layer thicknesses. If that is greater than 1, set the bar width to be 1. Else, set the bar width to be that difference.
     print(thicknesses_tmp)
     if len(thicknesses_tmp)>1:
@@ -401,7 +448,8 @@ if len(layers_requiring_solving)>= 0:
     plt.ylabel('Number of layers')
     plt.savefig('%s/input_data/clay_distributions.png' % outdestination,bbox_inches='tight')
     plt.close()
-        
+   
+#%% New section, head solver.
 print()
 print()
 print(''.center(80, '*'))
@@ -852,7 +900,7 @@ else:
     
 solving_head_stop = process_time()
 solving_head_time = solving_head_stop - solving_head_start
-
+#%% New section, saving head outputs.
 print()
 print()
 print(''.center(80, '*'))
@@ -947,6 +995,7 @@ for layer in layers_requiring_solving:
 saving_head_stop = process_time()
 saving_head_time = saving_head_stop - saving_head_start
 
+#%% New section, compaction solver.
 print()
 print()
 print(''.center(80, '*'))
@@ -978,8 +1027,12 @@ for layer in layer_names:
             deformation[layer]={}
             db[layer]={}
             inelastic_flag_compaction[layer]={}
-            layer_sand_thickness_tmp = layer_thicknesses[layer] - np.sum([list(interbeds_distributions[layer].keys())[i] * list(interbeds_distributions[layer].values())[i] for i in range(len(interbeds_distributions[layer]))])
-            print('\tTotal sand thickness in aquifer is %.2f m.' % layer_sand_thickness_tmp)
+            if layer_thickness_types[layer]=='constant':
+                layer_sand_thickness_tmp = layer_thicknesses[layer] - np.sum([list(interbeds_distributions[layer].keys())[i] * list(interbeds_distributions[layer].values())[i] for i in range(len(interbeds_distributions[layer]))])
+                print('\tTotal sand thickness in aquifer is %.2f m.' % layer_sand_thickness_tmp)
+            elif layer_thickness_types[layer]=='step_changes':
+                layer_sand_thickness_tmp = initial_thicknesses[layer] - np.sum([list(interbeds_distributions[layer].keys())[i] * list(interbeds_distributions[layer].values())[i] for i in range(len(interbeds_distributions[layer]))])
+                print('\tInitial total sand thickness in aquifer is %.2f m.' % layer_sand_thickness_tmp)
             deformation[layer]['Interconnected matrix']=[-1 * layer_sand_thickness_tmp*(sand_Sse[layer]-compressibility_of_water)*(head_series[layer]['Interconnected matrix'][i,1] - head_series[layer]['Interconnected matrix'][0,1]) for i in range(len(head_series[layer]['Interconnected matrix'][:,1]))]
             interbeds_tmp=interbeds_distributions[layer]
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
@@ -1053,10 +1106,40 @@ for layer in layer_names:
                 else:
                     db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic'],inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
-  
+
+
+if len(layers_var_thickness)>=1:
+    print('')
+    print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
+    for layer in layers_var_thickness:
+        prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
+        datetimedates = num2date(deformation[layer]['total'][0,:])
+#        datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+        logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+        scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
+        deformation_scaled_tmp =  deformation[layer]['total'][1,:][logicaltmp] * scaling_factor_tmp
+
+        nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
+        nonprekeynames.sort()
+        for key in nonprekeynames:
+            if not key.endswith('-'):
+                scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                years_tmp=key.split('-')
+                logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
+                deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])
+        for key in nonprekeynames:
+            if key.endswith('-'):
+                scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                years_tmp=key.split('-')
+                logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+                deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])
+        deformation[layer]['total'][1,:]=deformation_scaled_tmp
+
+
 solving_compaction_stop = process_time()
 solving_compaction_time = solving_compaction_stop - solving_compaction_start
 
+#%% New section, saving compaction outputs.
 print()
 print()
 print(''.center(80, '*'))
