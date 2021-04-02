@@ -24,7 +24,7 @@ from model_functions import *
 
 import datetime as datetime
 
-sweep_directory='/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_Runs/LATEST'
+sweep_directory='/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Model_Runs/ParamSpaceSweep_Apr1'
 
 foot_to_cm = 30.48
 
@@ -72,9 +72,9 @@ Highway_198_dates = date2num([date(1972,6,1),date(2004,1,1)])
 
 
 model_runs= next(os.walk(sweep_directory))[1]
-model_runs = [run for run in model_runs if run.startswith('P')]
+model_runs = [run for run in model_runs if run.startswith('C')]
 
-results = pd.DataFrame(columns=['RunID','Runname','Clay','Sskv','Sske','Kv','Sentinel RMS Misfit (cm)','Highway 198 modelled subsidence (cm)','ALOS subsidence rate (cm/yr)','Period15-17 average rate (cm/yr)','Period07-09 average rate (cm/yr)'])
+results = pd.DataFrame(columns=['RunID','Runname','Clay','Sskv','Sske','Kv','d_i','Sentinel RMS Misfit (cm)','Highway 198 modelled subsidence (cm)','ALOS subsidence rate (cm/yr)','Period15-17 average rate (cm/yr)','Period07-09 average rate (cm/yr)'])
 
 #run = model_runs[0]
 
@@ -100,8 +100,9 @@ for run in model_runs:
     groundwater_flow_solver_type=read_parameter('groundwater_flow_solver_type',str,len(layers_requiring_solving),paramfilelines)
     clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
     clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
-    #clay_value = run.split('y')[1].split('S')[0]  
-    clay_value="NA"
+    clay_value = run.split('y')[1].split('S')[0]  
+    di_value = run.split('di')[1]
+    
     vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
 
     if os.path.isfile('%s/%s/Total_Deformation_Out.csv' % (sweep_directory,run)):
@@ -139,7 +140,7 @@ for run in model_runs:
         print('2007-09 average rate = %.2f cm/yr' % Period0709_modelled_average_rate)
 
 
-        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],primary_RMS,deformation_modelled_Highway198_tmp[0],ALOS_modelled_average_rate,Period1517_modelled_average_rate,Period0709_modelled_average_rate]
+        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,primary_RMS,deformation_modelled_Highway198_tmp[0],ALOS_modelled_average_rate,Period1517_modelled_average_rate,Period0709_modelled_average_rate]
         print('i=%i' % i)
         print('')
         print('')
@@ -147,7 +148,7 @@ for run in model_runs:
         i+=1
 
     else:
-        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],'NA','NA','NA','NA','NA']
+        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,'NA','NA','NA','NA','NA']
 
         i+=1
 
