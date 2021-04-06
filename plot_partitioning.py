@@ -97,7 +97,47 @@ ax2.legend(lines + lines2, labels + labels2, fancybox=True)
 
 if save:
     plt.savefig('figures/aquifer_partitioning_plot_PERCENT.png',bbox_inches='tight')
-    plt.savefig('figures/aquifer_partitioning_plot_PERCENT.pdf',bbox_inches='tight')
+    # plt.savefig('figures/aquifer_partitioning_plot_PERCENT.pdf',bbox_inches='tight')
+
+
+#%%
+fig,ax1 = plt.subplots(figsize=(18,12))
+
+
+#ax1.plot_date([date2num(date) for date in Data['dates']][0:365*20],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980')[0:365*20],'-',color='grey',linewidth=0.5)
+
+ax1.plot_date([date2num(date) for date in Data['dates']],100*rezero_series(Data['Total'],np.array([date2num(date) for date in Data['dates']]),'Jun-1980'),'k-',label='Modelled Subsidence')
+plt.ylabel('Deformation (cm)')
+
+ax2 = plt.twinx()
+
+no_layers = len(layer_names)
+
+i_tmp=0
+for layer in layer_names:
+    ax2.bar(365 + date2num(years[:-2])+(60 + (i_tmp -1) * 365/( no_layers*1.07)),-100 * np.array(results[layer]),width=365/(no_layers*1.07),label=layer)
+    i_tmp+=1
+
+# ax2.bar(365 + date2num(years[:-2])+60,pc_upper,width=365/3.2,label='upper')
+# ax2.bar(365 + date2num(years[:-2])+(60 + 365/3.2),pc_cclay,width=365/3.2,label='cclay')
+
+plt.ylabel('annual compaction (cm)')
+plt.title('%s' % directory.split('/')[-1])
+
+import matplotlib.dates as mdates
+years_label = mdates.YearLocator()   # every year
+#years_fmt = mdates.DateFormatter('%Y')
+ax1.xaxis.set_minor_locator(years_label)
+
+
+lines, labels = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+
+ax2.legend(lines + lines2, labels + labels2, fancybox=True)
+
+if save:
+    plt.savefig('figures/aquifer_partitioning_plot_ABSOLUTE.png',bbox_inches='tight')
+    # plt.savefig('figures/aquifer_partitioning_plot_ABSOLUTE.pdf',bbox_inches='tight')
 
 #%%
 # fig,ax1 = plt.subplots(figsize=(18,12))
