@@ -256,6 +256,7 @@ def read_parameter(name,typ,length,paramfilelines):
             par=par.split(',')
             if len(par) != length:
                 print('\t\tReading parameters error: terminal. %s should have %i entries but only has %i.' % (name,length,len(par)))
+                sys.exit(1)
             par=[x.strip() for x in par]
     
     if ':' in par:
