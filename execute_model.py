@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-### This is the main model script. This is where all the "under the hood" operations occur. Do not edit unless you know what you are doing, THIS MEANS YOU MATT!! The correct call should be: python execute_model.py parameter_file.par
+### This is the main model script. This is where all the "under the hood" operations occur. Do not edit unless you know what you are doing!! The correct call should be: python execute_model.py parameter_file.par
 
 #from __future__ import print_function
 from model_functions import *
