@@ -1148,7 +1148,7 @@ for layer in layer_names:
                     db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic'],inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
 
-if MODE=='normal':
+if MODE=='Normal':
     if len(layers_var_thickness)>=1:
         print('')
         print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
