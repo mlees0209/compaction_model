@@ -1148,7 +1148,7 @@ for layer in layer_names:
                     db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic'],inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
 
-if MODE=='Normal':
+if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
     if len(layers_var_thickness)>=1:
         print('')
         print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
@@ -1179,36 +1179,37 @@ if MODE=='Normal':
                     deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])
             deformation[layer]['total'][1,:]=deformation_scaled_tmp
 
-if MODE=='resume':
-    print("MODE IS RESUME, so reading resumed layer thicknesses. If you have an error here, it's either because a) your resume parameter file has layer thicknesses referring to a time before the model resume date or b) because this code is a bit new and has some flaws in it. Good luck!")
-    if len(layers_var_thickness)>=1:
-        print('')
-        print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
-        for layer in layers_var_thickness:
-            print('\tScaling outouts for %s.' % layer)
-            prekeyname = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(resume_layer_thicknesses[layer].keys())])[0][0]]
-            datetimedates = num2date(deformation[layer]['total'][0,:])
-    #        datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
-            logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-            scaling_factor_tmp = resume_layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
-            deformation_scaled_tmp =  deformation[layer]['total'][1,:][logicaltmp] * scaling_factor_tmp
-    
-            nonprekeynames = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(resume_layer_thicknesses[layer].keys())])[0]]
-            nonprekeynames.sort()
-            for key in nonprekeynames:
-                if not key.endswith('-'):
-                    scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-                    years_tmp=key.split('-')
-                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-                    logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
-                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
-            for key in nonprekeynames:
-                if key.endswith('-'):
-                    scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-                    years_tmp=key.split('-')
-                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-                    logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])    
+# if MODE=='resume':
+    # if len(layers_var_thickness)>=1:
+    #     print("MODE IS RESUME, so reading resumed layer thicknesses. If you have an error here, it's either because a) your resume parameter file has layer thicknesses referring to a time before the model resume date or b) because this code is a bit new and has some flaws in it. Good luck!")
+    #     if len(layers_var_thickness)>=1:
+    #         print('')
+    #         print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
+    #         for layer in layers_var_thickness:
+    #             print('\tScaling outouts for %s.' % layer)
+    #             prekeyname = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(resume_layer_thicknesses[layer].keys())])[0][0]]
+    #             datetimedates = num2date(deformation[layer]['total'][0,:])
+    #     #        datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+    #             logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+    #             scaling_factor_tmp = resume_layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
+    #             deformation_scaled_tmp =  deformation[layer]['total'][1,:][logicaltmp] * scaling_factor_tmp
+        
+    #             nonprekeynames = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(resume_layer_thicknesses[layer].keys())])[0]]
+    #             nonprekeynames.sort()
+    #             for key in nonprekeynames:
+    #                 if not key.endswith('-'):
+    #                     scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+    #                     years_tmp=key.split('-')
+    #                     print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+    #                     logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
+    #                     deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
+    #             for key in nonprekeynames:
+    #                 if key.endswith('-'):
+    #                     scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+    #                     years_tmp=key.split('-')
+    #                     print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+    #                     logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+    #                     deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])    
 
 solving_compaction_stop = process_time()
 solving_compaction_time = solving_compaction_stop - solving_compaction_start
