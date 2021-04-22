@@ -188,11 +188,12 @@ def read_parameters_noadmin(paramfilelines):
     vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
     overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
     #overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
+    save_s = read_parameter('save_s',bool,1,paramfilelines)
     if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset,save_s
 
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
@@ -230,7 +231,7 @@ if MODE=='resume':
     print('')
 
 
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset = read_parameters_noadmin(paramfilelines)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset,save_s = read_parameters_noadmin(paramfilelines)
 
 # Check that the layer thicknesses were correctly imported
 print()
@@ -407,7 +408,7 @@ plt.ylabel('Head (masl)')
 plt.legend()
 plt.savefig('%s/input_data/input_head_timeseries.png' % outdestination)
 plt.savefig('%s/input_data/input_head_timeseries.pdf' % outdestination)
-plt.savefig('%s/input_data/input_head_timeseries.svg' % outdestination)
+#plt.savefig('%s/input_data/input_head_timeseries.svg' % outdestination)
 plt.close()
 sns.set_style('white')
 
@@ -1373,25 +1374,25 @@ for layer in layer_names:
                 plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
             plt.close() 
             
-            
-            print('\tSaving s (interconnected matrix)')
-            
-            if np.size(deformation[layer]['Interconnected matrix']) >= 3e6:
-                print('\t\t\ts (interconnected matrix) has more than 1 million entries; saving as 32 bit floats.')
-                deformation[layer]['Interconnected matrix'].astype(np.single).tofile('%s/s_outputs/%s_s_matrix' % (outdestination, layer.replace(' ','_')))
-
-
-            else:            
-                np.savetxt('%s/s_outputs/%s_s_matrix.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['Interconnected matrix'])
-            
-            print('\tSaving s (clay layers)')
-            for thickness in bed_thicknesses_tmp:
-                print('\t\t%.2f' % thickness)
-                if np.size(deformation[layer]['total_%.2f clays' % thickness]) >= 1e6:
-                    print('\t\t\ts (clay) has more than 1 million entries; saving as 32 bit floats.')
-                    deformation[layer]['total_%.2f clays' % thickness].astype(np.single).tofile('%s/s_outputs/%s_s_%.2fclays' % (outdestination, layer.replace(' ','_'),thickness))
-                else:                   
-                    np.savetxt('%s/s_outputs/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
+            if save_s:
+                print('\tSaving s (interconnected matrix)')
+                
+                if np.size(deformation[layer]['Interconnected matrix']) >= 3e6:
+                    print('\t\t\ts (interconnected matrix) has more than 1 million entries; saving as 32 bit floats.')
+                    deformation[layer]['Interconnected matrix'].astype(np.single).tofile('%s/s_outputs/%s_s_matrix' % (outdestination, layer.replace(' ','_')))
+    
+    
+                else:            
+                    np.savetxt('%s/s_outputs/%s_s_matrix.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['Interconnected matrix'])
+                
+                print('\tSaving s (clay layers)')
+                for thickness in bed_thicknesses_tmp:
+                    print('\t\t%.2f' % thickness)
+                    if np.size(deformation[layer]['total_%.2f clays' % thickness]) >= 1e6:
+                        print('\t\t\ts (clay) has more than 1 million entries; saving as 32 bit floats.')
+                        deformation[layer]['total_%.2f clays' % thickness].astype(np.single).tofile('%s/s_outputs/%s_s_%.2fclays' % (outdestination, layer.replace(' ','_'),thickness))
+                    else:                   
+                        np.savetxt('%s/s_outputs/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
 
             
     #         if save_internal_compaction:
