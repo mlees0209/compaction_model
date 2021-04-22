@@ -1470,6 +1470,43 @@ for layer in layer_names:
 
 deformation_OUTPUT['Total']=t_overall
 
+if len(layers_var_thickness)>=1:
+    print('')
+    print('Scaling layer outputs by temporally varying layer thicknesses.')
+    for layer in layers_var_thickness:
+        print('\tScaling SUBLAYER outputs for %s.' % layer)
+        interbeds_tmp=interbeds_distributions[layer]
+        bed_thicknesses_tmp=list(interbeds_tmp.keys())
+        print('\t\t%s is an aquifer with interbedded clays. Scaling thickness of clays: %s' % (layer,bed_thicknesses_tmp))
+        for thickness in bed_thicknesses_tmp:
+    
+
+        
+        
+            prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
+            datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+            logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+            
+            scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
+            deformation_scaled_tmp =  deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp] * scaling_factor_tmp
+    
+            nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
+            nonprekeynames.sort()
+            for key in nonprekeynames:
+                if not key.endswith('-'):
+                    scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                    years_tmp=key.split('-')
+                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                    logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
+                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
+            for key in nonprekeynames:
+                if key.endswith('-'):
+                    scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                    years_tmp=key.split('-')
+                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                    logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
+                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])
+            deformation_OUTPUT['total_%.2f clays' % thickness]=deformation_scaled_tmp
 
 
 
