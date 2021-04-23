@@ -1392,21 +1392,14 @@ for layer in layer_names:
             plt.title('%s' % layer)
             plt.ylabel('Deformation (m)')
             plt.legend()
-            plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox='tight')
+            plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox_inches='tight')
             if np.min(line_tmp.get_xdata()) <= date2num(date(2015,1,1)):
                 for line in l_aqt:
                     line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
-                # # rescale axis
-                # ax = plt.gca()
-                # # recompute the ax.dataLim
-                # ax.relim()
-                # # update ax.viewLim using the new dataLim
-                # ax.autoscale_view()
-                # plt.draw()
     
                 plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
                 
-                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
+                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox_inches='tight')
             plt.close() 
             
             if save_s:
