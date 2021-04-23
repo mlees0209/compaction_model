@@ -1484,7 +1484,8 @@ if len(layers_var_thickness)>=1:
         
         
             prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
-            datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+            #datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+            datetimedates=num2date(t_total_tmp)
             logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
             
             scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
