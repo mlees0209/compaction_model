@@ -652,8 +652,6 @@ if len(layers_requiring_solving)>=0:
             elif groundwater_flow_solver_type[layer] == 'elastic-inelastic':
                 t1_start = process_time() 
                 # hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
-                print('poo poo poo quick print')
-                print(initial_precons)
                 hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((top_head_tmp[::spacing_top,1],bot_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),initial_precons=initial_precons,initial_condition_precons=-initial_condition_precons[layer])
                 t1_stop = process_time() 
                 print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
@@ -1184,38 +1182,6 @@ if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by de
             scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
             deformation_scaled_tmp =  deformation[layer]['total'][1,:][logicaltmp] * scaling_factor_tmp
 
-# if MODE=='resume':
-    # if len(layers_var_thickness)>=1:
-    #     print("MODE IS RESUME, so reading resumed layer thicknesses. If you have an error here, it's either because a) your resume parameter file has layer thicknesses referring to a time before the model resume date or b) because this code is a bit new and has some flaws in it. Good luck!")
-    #     if len(layers_var_thickness)>=1:
-    #         print('')
-    #         print('Scaling TOTAL layer outputs by temporally varying layer thicknesses.')
-    #         for layer in layers_var_thickness:
-    #             print('\tScaling outouts for %s.' % layer)
-    #             prekeyname = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(resume_layer_thicknesses[layer].keys())])[0][0]]
-    #             datetimedates = num2date(deformation[layer]['total'][0,:])
-    #     #        datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
-    #             logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-    #             scaling_factor_tmp = resume_layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
-    #             deformation_scaled_tmp =  deformation[layer]['total'][1,:][logicaltmp] * scaling_factor_tmp
-        
-    #             nonprekeynames = np.array(list(resume_layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(resume_layer_thicknesses[layer].keys())])[0]]
-    #             nonprekeynames.sort()
-    #             for key in nonprekeynames:
-    #                 if not key.endswith('-'):
-    #                     scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-    #                     years_tmp=key.split('-')
-    #                     print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-    #                     logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
-    #                     deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
-    #             for key in nonprekeynames:
-    #                 if key.endswith('-'):
-    #                     scaling_factor_tmp = resume_layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-    #                     years_tmp=key.split('-')
-    #                     print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-    #                     logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-    #                     deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation[layer]['total'][1,:][logicaltmp]- deformation[layer]['total'][1,:][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])    
-
 solving_compaction_stop = process_time()
 solving_compaction_time = solving_compaction_stop - solving_compaction_start
 
@@ -1334,44 +1300,106 @@ for layer in layer_names:
                 os.mkdir('%s/figures/%s' % (outdestination,layer))
                            
             print('\tSaving layer data.')
+            print('')
+            print('printing def output thing')
+            print(deformation_OUTPUT[layer])
+            if len(layers_var_thickness)>=1:
+                if layer in layers_var_thickness:
+                    print('')
+                    print('\tScaling sublayer outputs by temporally varying layer thicknesses.')
+                    interbeds_tmp=interbeds_distributions[layer]
+                    bed_thicknesses_tmp=list(interbeds_tmp.keys())
+                    print('\t\t%s is an aquifer with interbedded clays. Scaling thickness of clays: %s' % (layer,bed_thicknesses_tmp))
+                    print('\t\tFirst scaling the interbeds....')
+                    for thickness in bed_thicknesses_tmp:                
+                        prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
+                        datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
+                        logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1) for datetimedate in datetimedates]
+                        
+                        scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
+                        deformation_scaled_tmp =  deformation_OUTPUT[layer]['total_%.2f clays' % thickness][logicaltmp].values * scaling_factor_tmp
+                        print(deformation_scaled_tmp)
+                        nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
+                        nonprekeynames.sort()
+                        for key in nonprekeynames:
+                            if not key.endswith('-'):
+                                scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                                years_tmp=key.split('-')
+                                print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                                logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1))  for datetimedate in datetimedates]
+                                deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT[layer]['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT[layer]['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
+                        for key in nonprekeynames:
+                            if key.endswith('-'):
+                                scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                                years_tmp=key.split('-')
+                                print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                                logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1) for datetimedate in datetimedates]
+                                deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT[layer]['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT[layer]['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])
+                        deformation_OUTPUT[layer]['total_%.2f clays' % thickness]=deformation_scaled_tmp
+
+                    print('\t\tNow scaling the elastic, and recomputing the total')
+                    scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
+                    logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1) for datetimedate in datetimedates]
+                    deformation_scaled_tmp =  deformation_OUTPUT[layer]['Interconnected Matrix'][logicaltmp].values * scaling_factor_tmp
+                    print(deformation_scaled_tmp)
+                    nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
+                    nonprekeynames.sort()
+                    for key in nonprekeynames:
+                        if not key.endswith('-'):
+                            scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                            years_tmp=key.split('-')
+                            print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                            logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1))  for datetimedate in datetimedates]
+                            deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT[layer]['Interconnected Matrix'][logicaltmp]- deformation_OUTPUT[layer]['Interconnected Matrix'][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
+                    for key in nonprekeynames:
+                        if key.endswith('-'):
+                            scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
+                            years_tmp=key.split('-')
+                            print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
+                            logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1) for datetimedate in datetimedates]
+                            deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT[layer]['Interconnected Matrix'][logicaltmp]- deformation_OUTPUT[layer]['Interconnected Matrix'][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])
+                    deformation_OUTPUT[layer]['Interconnected Matrix']=deformation_scaled_tmp
+
+                    def_tot_tmp = np.zeros_like(deformation_scaled_tmp,dtype='float')               
+            
+                    def_tot_tmp += np.array(deformation_OUTPUT[layer]['Interconnected Matrix'])
+                    for thickness in bed_thicknesses_tmp:
+                        def_tot_tmp += np.array(deformation_OUTPUT[layer]['total_%.2f clays' % thickness])
+                        
+                    deformation_OUTPUT[layer]['total']=def_tot_tmp
+            
             deformation_OUTPUT[layer].to_csv('%s/%s_Total_Deformation_Out.csv' % (outdestination,layer),index=False)
                 
+            
             print('\tSaving layer compaction figure')
             sns.set_style('whitegrid')
             sns.set_context('talk')
             l_aqt=[]
 
             plt.figure(figsize=(18,12))
-            line_tmp, = plt.plot_date(head_series[layer]['Interconnected matrix'][:,0],deformation[layer]['Interconnected matrix'],'-',label='Interconnected matrix')
+            line_tmp, = plt.plot_date(head_series[layer]['Interconnected matrix'][:,0],deformation_OUTPUT[layer]['Interconnected Matrix'],'-',label='Interconnected matrix')
             l_aqt.append(line_tmp)
 
             interbeds_tmp=interbeds_distributions[layer]
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
 
             for thickness in bed_thicknesses_tmp:
-                line_tmp, = plt.plot_date(groundwater_solution_dates[layer]['%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
+                line_tmp, = plt.plot_date(groundwater_solution_dates[layer]['%.2f clays' % thickness],deformation_OUTPUT[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
                 l_aqt.append(line_tmp)
 
-            line_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:],'-',label='total')
+            line_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation_OUTPUT[layer]['total'],'-',label='total')
             l_aqt.append(line_tmp)
             plt.title('%s' % layer)
             plt.ylabel('Deformation (m)')
             plt.legend()
-            plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox='tight')
+            plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox_inches='tight')
             if np.min(line_tmp.get_xdata()) <= date2num(date(2015,1,1)):
                 for line in l_aqt:
                     line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
-                # # rescale axis
-                # ax = plt.gca()
-                # # recompute the ax.dataLim
-                # ax.relim()
-                # # update ax.viewLim using the new dataLim
-                # ax.autoscale_view()
-                # plt.draw()
     
                 plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
                 
-                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox='tight')
+                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox_inches='tight')
             plt.close() 
             
             if save_s:
@@ -1395,39 +1423,6 @@ for layer in layer_names:
                         np.savetxt('%s/s_outputs/%s_s_%.2fclays.csv' % (outdestination, layer.replace(' ','_'),thickness),deformation[layer]['total_%.2f clays' % thickness])
 
             
-    #         if save_internal_compaction:
-    #             print('\tSaving internal compaction plots for clays of thickness ',bed_thicknesses_tmp)
-    #             for thickness in bed_thicknesses_tmp:
-    #                 print('\t\t',thickness)
-    #                 plt.figure(figsize=(18,12))
-    #                 t = groundwater_solution_dates[layer]['%.2f clays' % thickness]
-    #                 x_lims = [np.min(t_gwflow[layer]),np.max(t_gwflow[layer])]
-    #                 y_lims=[min(Z[layer]['%.2f clays' % thickness]),max(Z[layer]['%.2f clays' % thickness])]
-                
-    #                 sns.set_style('white')
-    #                 sns.set_context('talk')
-    #                 plt.figure(figsize=(18,12))
-    #                 plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),vmax=np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])),extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-    #                 plt.gca().xaxis_date()
-    #                 date_format = mdates.DateFormatter('%Y')
-    #                 plt.gca().xaxis.set_major_formatter(date_format)
-    #                 plt.gcf().autofmt_xdate()
-    #                 plt.colorbar(label='db (m)')
-    #                 plt.ylabel('Z (m)')
-    #                 plt.savefig('%s/figures/%s/%sclay_compaction_internal.png' % (outdestination, layer,thickness),bbox_inches='tight')
-    #                 plt.close()
-    #                 plt.figure(figsize=(18,12))
-    #                 plt.imshow(np.array(db[layer]['total_%.2f clays' % thickness]).T,aspect='auto',cmap='RdBu',norm=colors.TwoSlopeNorm(vmin=-np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vcenter=-0.1*np.max(np.abs(np.array(db[layer]['total_%.2f clays' % thickness])[5:,:])), vmax=0)
-    # ,extent = [x_lims[0], x_lims[1],  y_lims[0], y_lims[1]]) # note the min/max are set starting at the 5th timestep because the early timesteps can have large changes due to the initial condition and the boundary condition being discontinuous at these times
-    #                 plt.gca().xaxis_date()
-    #                 date_format = mdates.DateFormatter('%Y')
-    #                 plt.gca().xaxis.set_major_formatter(date_format)
-    #                 plt.gcf().autofmt_xdate()
-    #                 plt.colorbar(label='db (m)')
-    #                 plt.ylabel('Z (m)')
-    #                 plt.savefig('%s/figures/%s/%sclay_compaction_internalHIGCONTRAST.png' % (outdestination, layer,thickness),bbox_inches='tight')
-    #                 plt.close()
-
 print("Creating overall compaction plot and saving deformation series")
 sns.set_style('whitegrid')
 plt.figure(figsize=(18,12))
@@ -1470,49 +1465,52 @@ for layer in layer_names:
 
 deformation_OUTPUT['Total']=t_overall
 
-if len(layers_var_thickness)>=1:
-    print('')
-    print('Scaling layer outputs by temporally varying layer thicknesses.')
-    for layer in layers_var_thickness:
-        print('\tScaling SUBLAYER outputs for %s.' % layer)
-        interbeds_tmp=interbeds_distributions[layer]
-        bed_thicknesses_tmp=list(interbeds_tmp.keys())
-        print('\t\t%s is an aquifer with interbedded clays. Scaling thickness of clays: %s' % (layer,bed_thicknesses_tmp))
-        for thickness in bed_thicknesses_tmp:
-    
+
+
+
+
+
+
+
+
+
+
+
 
         
         
-            prekeyname = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]]
-            #datetimedates = [dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values]
-            datetimedates=num2date(t_total_tmp)
-            logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-            
-            scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
-            deformation_scaled_tmp =  deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp] * scaling_factor_tmp
+
+
+
+
+
+
+
     
-            nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
-            nonprekeynames.sort()
-            for key in nonprekeynames:
-                if not key.endswith('-'):
-                    scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-                    years_tmp=key.split('-')
-                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-                    logicaltmp = [(datetimedate <= dt(int('%s' % years_tmp[1]) ,9,1,tzinfo=datetime.timezone.utc)) and (datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc))  for datetimedate in datetimedates]
-                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp +  deformation_scaled_tmp[-1])
-            for key in nonprekeynames:
-                if key.endswith('-'):
-                    scaling_factor_tmp = layer_thicknesses[layer][key]/initial_thicknesses[layer] 
-                    years_tmp=key.split('-')
-                    print('\t\tScaling years', years_tmp,'by ',scaling_factor_tmp)
-                    logicaltmp = [datetimedate > dt(int('%s' % years_tmp[0]) ,9,1,tzinfo=datetime.timezone.utc) for datetimedate in datetimedates]
-                    deformation_scaled_tmp=np.append(deformation_scaled_tmp,( deformation_OUTPUT['total_%.2f clays' % thickness][logicaltmp]- deformation_OUTPUT['total_%.2f clays' % thickness][np.where(logicaltmp)[0][0]-1])  * scaling_factor_tmp + deformation_scaled_tmp[-1])
-            deformation_OUTPUT['total_%.2f clays' % thickness]=deformation_scaled_tmp
 
 
 
-def_out = pd.DataFrame(deformation_OUTPUT)
-def_out.to_csv('%s/Total_Deformation_Out.csv' % outdestination,index=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 l3, = plt.plot_date(t_total_tmp,t_overall,label='TOTAL def')
 
@@ -1549,121 +1547,124 @@ plt.close()
 
 
 print('Model Run Complete')
-#for line in l_aqf:
-#    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#
-#l3.set_ydata(np.array(l3.get_ydata()) - np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2015,1,1))])
-#
-#plt.ylim([2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))],-0.2*np.array(l3.get_ydata())[np.array(l3.get_xdata())==date.toordinal(date(2020,1,1))]])
-#plt.savefig('%s/figures/total_deformation_figure_20152020zoom.png' % outdestination,bbox_inches='tight')
 
 
-#print("Creating overall compaction % plot")
-#overall_pcs={}
-#
-#
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        dt_tmp = int(maxdt/dt_master[layer])
-#        overall_pcs[layer] = 100*np.array([(deformation[layer]['total'][1,::dt_tmp][i+1] - deformation[layer]['total'][1,::dt_tmp][i])/(t_overall[i+1] - t_overall[i]) for i in range(len(t_overall)-1)])
-#sns.set_style('white')
-#
-#plt.figure(figsize=(18,12))
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        plt.plot_date(date2num(np.array([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]))[:-1][np.abs(overall_pcs[layer])<=200],np.array(overall_pcs[layer])[np.abs(overall_pcs[layer])<=200],'-',label='%s' % layer)
-#
-#ax1 = plt.gca()
-#plt.ylabel('instantaneous % deformation')
-#ax2 = ax1.twinx()
-#line, = ax2.plot_date(date2num([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]),t_overall,'k--',label='TOTAL def')
-#
-#lines, labels = ax1.get_legend_handles_labels()
-#lines2, labels2 = ax2.get_legend_handles_labels()
-#ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#plt.savefig('%s/figures/total_deformation_percentage_figure.png' % outdestination,bbox_inches='tight')
-#
-#plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-## Rezero on jan 2015
-#line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#plt.ylim((1.2*np.min(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]]),1.2*np.max(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]])))
-#plt.ylabel('Total Deformation (m)')
-#plt.savefig('%s/figures/total_deformation_percentage_figure_20152020zoom.png' % outdestination,bbox_inches='tight')
-#
-## Now repeat with 31 day smoothing
-#plt.figure(figsize=(18,12))
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        plt.plot_date(date2num(np.array([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]))[:-1][np.abs(overall_pcs[layer])<=200],convolve(np.array(overall_pcs[layer])[np.abs(overall_pcs[layer])<=200],np.ones((31,))/31),'-',label='%s' % layer)
-#
-#ax1 = plt.gca()
-#plt.ylabel('instantaneous % deformation')
-#ax2 = ax1.twinx()
-#line, = ax2.plot_date(date2num([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]),t_overall,'k--',label='TOTAL def')
-#
-#lines, labels = ax1.get_legend_handles_labels()
-#lines2, labels2 = ax2.get_legend_handles_labels()
-#ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#
-#plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-## Rezero on jan 2015
-#line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#plt.ylim((1.2*np.min(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]]),1.2*np.max(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]])))
-#plt.ylabel('Total Deformation (m)')
-#plt.savefig('%s/figures/total_deformation_percentage_figure_20152020zoom_31daysmooth.png' % outdestination,bbox_inches='tight')
-#
-#
-## Finally do it cumulative
-#
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        dt_tmp = int(maxdt/dt_master[layer])
-#        overall_pcs[layer] = 100*np.array([(deformation[layer]['total'][1,::dt_tmp][i] - deformation[layer]['total'][1,::dt_tmp][0])/(t_overall[i] - t_overall[0]) for i in range(len(t_overall))])
-#sns.set_style('white')
-#
-#plt.figure(figsize=(18,12))
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        plt.plot_date(date2num(np.array([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]))[:],np.array(overall_pcs[layer]),'-',label='%s' % layer)
-#
-#plt.ylim([-10,110])
-#ax1 = plt.gca()
-#plt.ylabel('cumulative % deformation')
-#ax2 = ax1.twinx()
-#line, = ax2.plot_date(date2num([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]),t_overall,'k--',label='TOTAL def')
-#
-#lines, labels = ax1.get_legend_handles_labels()
-#lines2, labels2 = ax2.get_legend_handles_labels()
-#ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#plt.savefig('%s/figures/total_deformation_cum_percentage_figure.png' % outdestination,bbox_inches='tight')
-#
-## Rezero on jan 2015
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        dt_tmp = int(maxdt/dt_master[layer])
-#        arg2015 = np.argwhere(date2num(np.array([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]))==date.toordinal(date(2015,1,1)))[0][0]
-#        overall_pcs[layer] = 100*np.array([(deformation[layer]['total'][1,::dt_tmp][i] - deformation[layer]['total'][1,::dt_tmp][arg2015])/(t_overall[i] - t_overall[arg2015]) for i in range(len(t_overall))])
-#
-#
-#plt.figure(figsize=(18,12))
-#for layer in layer_names:
-#    if layer_compaction_switch[layer]:
-#        plt.plot_date(date2num(np.array([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]))[:],np.array(overall_pcs[layer]),'-',label='%s' % layer)
-#
-#plt.ylim([-10,110])
-#ax1 = plt.gca()
-#plt.ylabel('cumulative % deformation')
-#ax2 = ax1.twinx()
-#line, = ax2.plot_date(date2num([dt.strptime(date, '%d-%b-%Y').date() for date in groundwater_solution_dates[maxdtlayer]]),t_overall,'k--',label='TOTAL def')
-#
-#lines, labels = ax1.get_legend_handles_labels()
-#lines2, labels2 = ax2.get_legend_handles_labels()
-#ax2.legend(lines + lines2, labels + labels2,fancybox=True)
-#plt.savefig('%s/figures/total_deformation_cum_percentage_figure.png' % outdestination,bbox_inches='tight')
-#
-#
-#line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date.toordinal(date(2015,1,1))])
-#plt.xlim([date.toordinal(date(2015,1,1)),date.toordinal(date(2020,1,1))])
-#plt.ylim((1.2*np.min(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]]),1.2*np.max(np.array(line.get_ydata())[np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2015,1,1)))[0][0]:np.argwhere(np.array(line.get_xdata())==date.toordinal(date(2020,1,1)))[0][0]])))
-#plt.ylabel('Total Deformation (m)')
-#plt.savefig('%s/figures/total_deformation_cum_percentage_figure_20152020zoom.png' % outdestination,bbox_inches='tight')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
