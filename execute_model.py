@@ -1384,7 +1384,7 @@ for layer in layer_names:
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
 
             for thickness in bed_thicknesses_tmp:
-                line_tmp, = plt.plot_date(groundwater_solution_dates[layer]['%.2f clays' % thickness],deformation_OUTPUT[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
+                line_tmp, = plt.plot_date([dt.strptime(d,'%d-%b-%Y') for d in deformation_OUTPUT[layer]['dates'].values],deformation_OUTPUT[layer]['total_%.2f clays' % thickness],'-',label='%s_%ix%.2f clays' % (layer,interbeds_distributions[layer][thickness],thickness))
                 l_aqt.append(line_tmp)
 
             line_tmp, = plt.plot_date(deformation[layer]['total'][0,:],deformation_OUTPUT[layer]['total'],'-',label='total')
@@ -1393,13 +1393,13 @@ for layer in layer_names:
             plt.ylabel('Deformation (m)')
             plt.legend()
             plt.savefig('%s/figures/%s/overall_compaction_%s.png' % (outdestination,layer,layer),bbox_inches='tight')
-            if np.min(line_tmp.get_xdata()) <= date2num(date(2015,1,1)):
-                for line in l_aqt:
-                    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
-    
-                plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
-                
-                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox_inches='tight')
+#            if np.min(line_tmp.get_xdata()) <= date2num(date(2015,1,1)):
+#                for line in l_aqt:
+#                    line.set_ydata(np.array(line.get_ydata()) - np.array(line.get_ydata())[np.array(line.get_xdata())==date2num(date(2015,1,1))])
+#    
+#                plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
+#                
+#                plt.savefig('%s/figures/%s/overall_compaction_%s_201520.png' % (outdestination,layer,layer),bbox_inches='tight')
             plt.close() 
             
             if save_s:
