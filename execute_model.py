@@ -660,26 +660,27 @@ if len(layers_requiring_solving)>=0:
             inelastic_flag[layer] = inelastic_flag_tmp
             effective_stress[layer] = np.tile(overburden_data_tmp, (np.shape(hmat_tmp)[0],1)) -  rho_w*g*hmat_tmp 
 
-            if np.size(inelastic_flag_tmp) >= 3e6:
-                if gmt:
-                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
-                    print('\t\t\t\tConverting to netCDF format. Command is:')
-                    cmd_tmp="gmt xyz2grd %s/head_outputs/%sinelastic_flag_GWFLOW -G%s/head_outputs/%sinelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
-                    
-                    print(cmd_tmp)
-                    subprocess.call(cmd_tmp,shell=True)
-                    os.remove('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
-
+            if save_output_head_timeseries:            
+                if np.size(inelastic_flag_tmp) >= 3e6:
+                    if gmt:
+                        print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                        inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+                        print('\t\t\t\tConverting to netCDF format. Command is:')
+                        cmd_tmp="gmt xyz2grd %s/head_outputs/%sinelastic_flag_GWFLOW -G%s/head_outputs/%sinelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),dt_master[layer],np.diff(Z[layer])[0],np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                        
+                        print(cmd_tmp)
+                        subprocess.call(cmd_tmp,shell=True)
+                        os.remove('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+    
+                    else:
+                        print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                        inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
+    
+    
                 else:
-                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
-
-
-            else:
-                with open('%s/head_outputs/%sinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
-                    csvWriter = csv.writer(myCsv, delimiter=',')
-                    csvWriter.writerows(inelastic_flag_tmp)
+                    with open('%s/head_outputs/%sinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_')), "w+") as myCsv:
+                        csvWriter = csv.writer(myCsv, delimiter=',')
+                        csvWriter.writerows(inelastic_flag_tmp)
 
 
 
@@ -866,26 +867,27 @@ if len(layers_requiring_solving)>=0:
                         t_gwflow[layer]['%.2f clays' % thickness] = t_interp_new
                         Z[layer]['%.2f clays' % thickness]=z_tmp
 
-                        if np.size(inelastic_flag_tmp) >= 3e6:
-                            if gmt:
-                                print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                                inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
-                                print('\t\t\t\tConverting to netCDF format. Command is:')
-                                cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),'%.2f' % thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
-                                
-                                print(cmd_tmp)
-                                subprocess.call(cmd_tmp,shell=True)
-                                os.remove('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
+                        if save_output_head_timeseries:
+                            if np.size(inelastic_flag_tmp) >= 3e6:
+                                if gmt:
+                                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
+                                    print('\t\t\t\tConverting to netCDF format. Command is:')
+                                    cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%.3f/%.5f -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),'%.2f' % thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                    
+                                    print(cmd_tmp)
+                                    subprocess.call(cmd_tmp,shell=True)
+                                    os.remove('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
+    
+                                else:
+                                    print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
+                                    inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
+    
 
                             else:
-                                print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
-                                inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
-
-
-                        else:
-                            with open('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness), "w+") as myCsv:
-                                csvWriter = csv.writer(myCsv, delimiter=',')
-                                csvWriter.writerows(inelastic_flag_tmp)
+                                with open('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.csv' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness), "w+") as myCsv:
+                                    csvWriter = csv.writer(myCsv, delimiter=',')
+                                    csvWriter.writerows(inelastic_flag_tmp)
 
                         #dateslist = [x.strftime('%d-%b-%Y') for x in num2date(t_interp_new)]
                         groundwater_solution_dates[layer]['%.2f clays' % thickness]=t_interp_new
@@ -1242,8 +1244,9 @@ for layer in layer_names:
             # print('\tSaving s_elastic timeseries')
             # np.savetxt('%s/%s_s_elastic.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['elastic'])
     
-            print('\tSaving s timeseries')
-            np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
+            if save_s:        
+                print('\tSaving s timeseries')
+                np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
     
 #            
     if layer_types[layer]=='Aquifer':
