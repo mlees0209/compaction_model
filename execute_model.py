@@ -1467,8 +1467,8 @@ for layer in layer_names:
         t_overall = t_overall + newtot
 
 deformation_OUTPUT['Total']=t_overall
-
-
+def_out = pd.DataFrame(deformation_OUTPUT)
+def_out.to_csv('%s/Total_Deformation_Out.csv' % outdestination,index=False)
 
 
 
