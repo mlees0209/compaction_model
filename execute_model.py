@@ -1092,12 +1092,12 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
                 else:
-                    db[layer]['total_%.2f clays' % thickness],deformation[layer]['total_%.2f clays' % thickness],deformation[layer]['elastic_%.2f clays' % thickness],deformation[layer]['inelastic_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
-                deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
-                deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
+                # deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
+                # deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
             # Now collect the results at the max timestep
             dt_sand_tmp=np.diff(head_data[layer][:,0])[0]
             print('\tSumming deformation for layer %s. dts are %.2f and %.2f.' % (layer, dt_sand_tmp,dt_master[layer]))
@@ -1142,11 +1142,11 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic'],inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
 
                 else:
-                    db[layer],totdeftmp,deformation[layer]['elastic'],deformation[layer]['inelastic'],inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
@@ -1209,8 +1209,8 @@ for layer in layer_names:
             t = groundwater_solution_dates[layer]
             
             plt.plot_date(t,deformation[layer]['total'][1,:])
-            plt.plot_date(t,deformation[layer]['elastic'],label='elastic')
-            plt.plot_date(t,deformation[layer]['inelastic'],label='inelastic')
+            # plt.plot_date(t,deformation[layer]['elastic'],label='elastic')
+            # plt.plot_date(t,deformation[layer]['inelastic'],label='inelastic')
             plt.legend()
             plt.savefig('%s/figures/compaction_%s.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
@@ -1252,29 +1252,29 @@ for layer in layer_names:
     if layer_types[layer]=='Aquifer':
         if layer_compaction_switch[layer]:
             if save_internal_compaction:
-                print('\tSaving db')
-                interbeds_tmp=interbeds_distributions[layer]
-                bed_thicknesses_tmp=list(interbeds_tmp.keys())
+            #     print('\tSaving db')
+            #     interbeds_tmp=interbeds_distributions[layer]
+            #     bed_thicknesses_tmp=list(interbeds_tmp.keys())
 
-                for thickness in bed_thicknesses_tmp:
+            #     for thickness in bed_thicknesses_tmp:
 
-                    if np.size(db[layer]['total_%.2f clays' % thickness]) >= 1e6:
-                        if gmt:
-                            print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
-                            np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.single).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
-                            print('\t\t\t\tConverting to netCDF format. Command is:')
-                            Z_midpoints_tmp = [(Z[layer]['%.2f clays' % thickness][i] + Z[layer]['%.2f clays' % thickness][i+1])/2 for i in range(len(Z[layer]['%.2f clays' % thickness])-1)]
-                            cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_%sclay_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZLTf" % (outdestination, layer.replace(' ','_'),thickness, outdestination, layer.replace(' ','_'),'%.2f' % thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]) - np.diff(t_gwflow[layer]['%.2f clays' % thickness])[0] ,np.min(Z_midpoints_tmp),np.max(Z_midpoints_tmp))
+            #         if np.size(db[layer]['total_%.2f clays' % thickness]) >= 1e6:
+            #             if gmt:
+            #                 print('\t\t\tdb has more than 1 million entries; saving as 32 bit floats.')
+            #                 np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.single).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
+            #                 print('\t\t\t\tConverting to netCDF format. Command is:')
+            #                 Z_midpoints_tmp = [(Z[layer]['%.2f clays' % thickness][i] + Z[layer]['%.2f clays' % thickness][i+1])/2 for i in range(len(Z[layer]['%.2f clays' % thickness])-1)]
+            #                 cmd_tmp="gmt xyz2grd %s/s_outputs/%s_%sclay_db -G%s/s_outputs/%s_%sclay_db.nc -I%.2f/%.5f -R%.2ft/%.2ft/%.2f/%.2f -ZLTf" % (outdestination, layer.replace(' ','_'),thickness, outdestination, layer.replace(' ','_'),'%.2f' % thickness,dt_master[layer],np.diff(Z[layer]['%.2f clays' % thickness])[0],np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]) - np.diff(t_gwflow[layer]['%.2f clays' % thickness])[0] ,np.min(Z_midpoints_tmp),np.max(Z_midpoints_tmp))
                             
-                            print(cmd_tmp)
-                            subprocess.call(cmd_tmp,shell=True)
-                            if os.path.isfile('%s/s_outputs/%s_%sclay_db.nc' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness)):
-                                os.remove('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
-                            else:
-                                print('\t\t\tSomething went wrong, .nc file not found, keeping 32 bit floats file.')
-                        else:
-                            print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
-                            np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.half).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
+            #                 print(cmd_tmp)
+            #                 subprocess.call(cmd_tmp,shell=True)
+            #                 if os.path.isfile('%s/s_outputs/%s_%sclay_db.nc' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness)):
+            #                     os.remove('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
+            #                 else:
+            #                     print('\t\t\tSomething went wrong, .nc file not found, keeping 32 bit floats file.')
+            #             else:
+            #                 print('\t\t\tdb has more than 1 million entries; saving as 16 bit floats.')
+            #                 np.array(db[layer]['total_%.2f clays' % thickness]).astype(np.half).tofile('%s/s_outputs/%s_%sclay_db' % (outdestination, layer.replace(' ','_'),thickness))
     
                     if np.size(inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]) >= 3e6:
                         if gmt:

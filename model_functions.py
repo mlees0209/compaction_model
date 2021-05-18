@@ -431,28 +431,37 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
     if TESTn != 1:
         dz = dz/(2*TESTn)
 
-    print('doing db')
-    db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    print('doing ds')
-    ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    print('doing ds elastic')
-    ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    print('doing ds inelastic')
-    ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]))  for i in range(np.shape(stress_midpoints)[1]-1)]
+    # print('doing db')
+    # db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
+    # print('doing ds')
+    # ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
+    # print('doing ds elastic')
+    # ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
+    # print('doing ds inelastic')
+    # ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]))  for i in range(np.shape(stress_midpoints)[1]-1)]
 
-    s = np.zeros(np.shape(hmat)[1])
-    s_elastic = np.zeros(np.shape(hmat)[1])
-    s_inelastic = np.zeros(np.shape(hmat)[1])
+    # s = np.zeros(np.shape(hmat)[1])
+    # s_elastic = np.zeros(np.shape(hmat)[1])
+    # s_inelastic = np.zeros(np.shape(hmat)[1])
 
-    print('\tIntegrating deformation over time.')
-    for i in range(1,np.shape(hmat)[1]):
-        if i % (int(np.shape(hmat)[1]/20)) == 0:
-            printProgressBar(i,np.shape(hmat)[1]-1)
-        s[i] = s[i-1]-ds[i-1]
-        s_elastic[i] = s_elastic[i-1]-ds_elastic[i-1]
-        s_inelastic[i] = s_inelastic[i-1]-ds_inelastic[i-1]
+    # print('\tIntegrating deformation over time.')
+    # for i in range(1,np.shape(hmat)[1]):
+    #     if i % (int(np.shape(hmat)[1]/20)) == 0:
+    #         printProgressBar(i,np.shape(hmat)[1]-1)
+    #     s[i] = s[i-1]-ds[i-1]
+    #     s_elastic[i] = s_elastic[i-1]-ds_elastic[i-1]
+    #     s_inelastic[i] = s_inelastic[i-1]-ds_inelastic[i-1]
 
-    return db,s,s_elastic,s_inelastic,inelastic_flag_midpoints
+    b = np.zeros(np.shape(hmat)[1])
+    for ti in range(1,np.shape(hmat)[1]):
+        if ti % (int(np.shape(hmat)[1]/20)) == 0:
+            printProgressBar(ti,np.shape(hmat)[1]-1)
+        b[ti] = dz * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
+    
+    b = -1 * np.array(b)
+
+#    return db,s,s_elastic,s_inelastic,inelastic_flag_midpoints
+    return b,inelastic_flag_midpoints
 
 def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100,startyear=None,endyear=None,datelabels='year'):
     # I think delt is in units of days; see what happens with the variable t_jumps below. startyear and endyear should be YYYY. datelabels can be 'year' or 'monthyear' and changes the title of the plots.
