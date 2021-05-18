@@ -229,7 +229,7 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
 
 
 
-def read_parameter(name,typ,length,paramfilelines):
+def read_parameter(name,typ,length,paramfilelines,printlots=True):
     '''Reads in a parameter from paramfilelines. 
     name=parameter name
     typ=parameter type (str,int,float). if length>1 this is the type that each entry in the list/dictionary will be.
@@ -244,7 +244,8 @@ def read_parameter(name,typ,length,paramfilelines):
         else:
             print("\t\tReading parameters error: WARNING. No '%s' found in parameter file. Using default value." % name)
             par=Default_Values[name]
-            print('\t%s=%s' % (name,par))
+            if printlots:
+                print('\t%s=%s' % (name,par))
             return par
         
     par=par_paramfile[0].split('#')[0].split('=')[1]
@@ -282,7 +283,8 @@ def read_parameter(name,typ,length,paramfilelines):
             else: 
                 par=typ(par)
 
-    print('\t%s=%s' % (name,par))
+    if printlots:
+        print('\t%s=%s' % (name,par))
     
     if length==1:
         if type(par) != dict:
