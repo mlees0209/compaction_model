@@ -269,7 +269,7 @@ if len(layers_var_thickness)>=1:
         initial_thicknesses[layer] = layer_thicknesses[layer][prekeyname]
     print('\tInitial thicknesses for varying aquifer thicknesses are %s.' % initial_thicknesses)
 
-if mode=='resume':
+if MODE=='resume':
     print('\t MODE is RESUME, therefore overriding original layer thicknesses with resume layer thicknesses.')
     layer_thicknesses = resume_layer_thicknesses
 
