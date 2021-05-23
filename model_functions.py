@@ -306,7 +306,7 @@ def read_parameter(name,typ,length,paramfilelines,printlots=True):
 
     return par
 
-def read_parameter_layerthickness_multitype(name,paramfilelines):
+def read_parameter_layerthickness_multitype(name,paramfilelines,printlots=True):
       par_out = {}
       par_paramfile=[x for x in paramfilelines if x.replace(' ','').startswith('%s=' % name)]
       par=par_paramfile[0].split('#')[0].split('=')[1]
@@ -333,7 +333,8 @@ def read_parameter_layerthickness_multitype(name,paramfilelines):
       nondict_par = np.array(par)[nondict_idxs]
       for i_tmp in range(int(len(nondict_par)/2)):
           par_out[nondict_par[2*i_tmp]]=float(nondict_par[2*i_tmp+1])
-      print('\t%s=%s' % (name,par_out))
+      if printlots:
+          print('\t%s=%s' % (name,par_out))
       return par_out
 
 def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_precons=False,ic_precons=[]):
