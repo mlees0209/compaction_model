@@ -272,7 +272,7 @@ if len(layers_var_thickness)>=1:
 if MODE=='resume':
     print('\t MODE is RESUME, therefore overriding original layer thicknesses with resume layer thicknesses.')
     layer_thicknesses = resume_layer_thicknesses
-
+    layers_var_thickness=[]
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
 
