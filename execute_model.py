@@ -273,6 +273,7 @@ if MODE=='resume':
     print('\t MODE is RESUME, therefore overriding original layer thicknesses with resume layer thicknesses.')
     layer_thicknesses = resume_layer_thicknesses
     layers_var_thickness=[]
+    
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
 
@@ -1078,7 +1079,7 @@ for layer in layer_names:
             elif layer_thickness_types[layer]=='step_changes':
                 layer_sand_thickness_tmp = initial_thicknesses[layer] - np.sum([list(interbeds_distributions[layer].keys())[i] * list(interbeds_distributions[layer].values())[i] for i in range(len(interbeds_distributions[layer]))])
                 print('\tInitial total sand thickness in aquifer is %.2f m.' % layer_sand_thickness_tmp)
-            deformation[layer]['Interconnected matrix']=[-1 * layer_sand_thickness_tmp*(sand_Sse[layer]-compressibility_of_water)*(head_series[layer]['Interconnected matrix'][i,1] - head_series[layer]['Interconnected matrix'][0,1]) for i in range(len(head_series[layer]['Interconnected matrix'][:,1]))]
+            deformation[layer]['Interconnected matrix']=[layer_sand_thickness_tmp*(sand_Sse[layer]-compressibility_of_water)*(head_series[layer]['Interconnected matrix'][i,1] - head_series[layer]['Interconnected matrix'][0,1]) for i in range(len(head_series[layer]['Interconnected matrix'][:,1]))]
             interbeds_tmp=interbeds_distributions[layer]
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
             print('\t\t%s is an aquifer with interbedded clays. Thicknesses of clays to solve compaction are %s' % (layer,bed_thicknesses_tmp))
