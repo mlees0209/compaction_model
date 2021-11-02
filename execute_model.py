@@ -262,6 +262,7 @@ for layer in layers_var_thickness:
             print("\tERROR:terminal. %s is variable thickness but doesn't have a pre entry. Needs fixing!." % layer)
             sys.exit(1)
 
+
 if len(layers_var_thickness)>=1:
     initial_thicknesses={}
     for layer in layers_var_thickness:
@@ -415,6 +416,15 @@ plt.savefig('%s/input_data/input_head_timeseries.pdf' % outdestination)
 #plt.savefig('%s/input_data/input_head_timeseries.svg' % outdestination)
 plt.close()
 sns.set_style('white')
+
+# Check there are no inconsistencies with any aquifers which change thickness
+layers_var_thickness = [k for k,v in layer_thickness_types.items() if v != 'constant']
+if len(layers_var_thickness)>=1:
+    for layer in layers_var_thickness:
+        firstyear_thickness = int(np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' in key for key in list(layer_thicknesses[layer].keys())])[0][0]].split('-')[1])
+        if date2num(datetime.datetime(firstyear_thickness,9,1)) < starttime:
+            print('\t\tReading head dates error: TERMINAL. The layer %s changes thickness in %i, but the model starts in %s. Please check the layer_thicknesses variable and/or the input head.' % (layer,firstyear_thickness,num2date(starttime).strftime('%Y')))
+            sys.exit(1)
 
 reading_head_stop = process_time()
 reading_head_time = reading_head_stop - reading_head_start
