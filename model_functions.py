@@ -130,6 +130,11 @@ def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):
 
 
 def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[],initial_precons=False,initial_condition_precons=[]):        
+    '''This is the main solver of the diffusion equation for effective stress, with an elastic/inelastic switch for K. Description of (some-incomplete) options:
+        - initial_precons: BOOL flag to indicate whether the initial stress condition and the preconsolidation stress are equivalent.
+        - initial_condition_precons: FLOAT ARRAY: Only used if initial_precons is false, in which case it gives the initial stress value above which inelastic behaviour will occur. Useful if you are resuming a model run.
+    '''
+    
     print ( '' )
     print ( '\t\t\tFD1D_HEAT_EXPLICIT_ELASTICINELASTIC_Ssk:' )
     print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
