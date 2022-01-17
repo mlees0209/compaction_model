@@ -1,5 +1,7 @@
 \documentclass{article}
 
+
+
 \usepackage[margin=1.00in]{geometry}
 
 \usepackage{listings}
@@ -33,6 +35,10 @@
 \usepackage{gensymb}
 \usepackage{url}
 
+\DeclareUnicodeCharacter{FB00}{ff}
+\DeclareUnicodeCharacter{FB03}{ffi}
+\DeclareUnicodeCharacter{0394}{$\Delta$}
+
 \begin{document}
 
 
@@ -40,325 +46,82 @@
 \normalsize
 
 \today
-\author{Matt Lees}
+\author{Matt Lees\n mlees0209@gmail.com}
 
-\abstract Currently preliminary, keeping track of what my compaction model does.
-
-%\begin{appendix}
-%	\listoffigures
-%\end{appendix}
+\abstract Brief documentation to accompany the 1D compaction code used for the publication of \textit{Modeling 65 Years of Land Subsidence in California’s San Joaquin Valley} For additional questions or errors, please contact M Lees at mlees@stanford.edu or mlees0209@gmail.com.
 
 \tableofcontents
 
-\section{Installation}
+\section{Installation and execution}
 
-I am hosting these codes on Git. To install, you will use the command:
+The model runs on Python and, optionally, GMT. The code is hosted on Github. To install, you will use the command:
 
-\verb|git clone https://github.com/mlees0209/compaction_model.git|
+\verb|git clone https://github.com/mlees0209/compaction_model_StaticPaperVersion|
 
-To run, you use the command:
+To execute the code, you must create a parameter file and use the command:
 
 \verb|python execute_model.py PARAMFILE.par|
 
-And for the run to be successful, the following Python packages must be installed:
+For examples of how to create a parameter file, see \textit{EXAMPLE\_paramfile.par}, where all the options are described.
+
+For the run to be successful, you need Python 3 and the following Python packages to be installed:
 \begin{itemize}
 \item matplotlib
-\item seaborn
+\item datetime
+\item csv
+\item subprocess
 \item scipy
-\item numpy
+\item operator
 \item astropy
-\item pandas
+\item netcdf4
+\item seaborn
 \end{itemize}
 
-Additionally, output can be saved as the highly efficient netCDF format if GMT is installed. There is an option to turn GMT off in the parameter file (I think!).
+Additionally, output can be saved as the highly efficient netCDF format if GMT is installed; install instructions can be found at  \href{https://www.generic-mapping-tools.org/}{the GMT website}. If GMT is not/cannot be installed, there is an option to turn GMT off in "execute\_model.py".
 
-Disclaimer: following these steps allowed me to successfully run and execute the script on Bletchley, using a conda environment with the above listed packages installed in addition to gmt. I can't guarantee this will always work.
+Disclaimer: following these steps allowed me to successfully run and execute the script using a conda environment with the above listed packages installed in addition to GMT, on a Mac OS operating system. I have not tested this on other operating systems. Please contact me at \textit{mlees@stanford.edu} if you need help.
 
 \section{Fundamental Equations and Math}
+
+The model solves two governing equations: the evolution of effective stress, and the resulting compaction. In both cases, head is converted to effective stress using $\Delta \sigma' = \Delta \sigma - \rho g \Delta h$, as described in Methods 2 of the paper \textit{Modeling 65 Years of Land Subsidence in California’s San Joaquin Valley}.
 
 \subsection{Diffusion Equation in Clays}
 \label{sec:diffusion}
 
-In order to calculate compaction, I first need to know the changing hydraulic head within all layers. In sand layers, I measure the changing head. However in clay layers I do not, and we have to calculate the evolution of head according to the 1D groundwater flow equation. The full equation which should be solved is shown neatly in \cite{helm_one-dimensional_1975} and reproduced here in Equation \ref{eq:diffusion-eqn}.
+The evolution of effective stress is governed by Equation \ref{eq:diffusion-eqn}. This equation is a form of the diffusion equation encountered in many physical situations. However, in this context, the specific storage value is a function of stress history, as described in the Methods section of the paper \textit{Modeling 65 Years of Land Subsidence in California’s San Joaquin Valley}. The model solves this equation by a finite difference method in all clay layers (interbeds and aquitards). The solver is found in the function called \textit{solve\_head\_equation\_elasticinelastic} defined in \textit{model\_functions.py}.
 
 \begin{equation}
-\frac{K_v}{S_s} \frac{\partial^2h}{\partial z^2} = \frac{\partial h}{\partial t} - \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}
+\frac{K_v}{S_s} \frac{\partial^2\sigma'}{\partial z^2} = \frac{\partial \sigma'}{\partial t}
 \label{eq:diffusion-eqn}
 \end{equation}
-$K_v$ is the vertical hydraulic conductivity, $S_s$ is the specific storage, $ h$ is hydraulic head, $z$ is the spatial dimension, $ t$ is time, $ \rho$ is the density of water, $ g $ is the gravitational constant and $\sigma$ is the overburden stress. Note that here, overburden stress refers to stress initiating \textit{above} that layer, so is not a function of the head in the layer itself. See \cite{helm_one-dimensional_1975} for discussion of this; it can be confusing because in the compaction equations, overburden stress does change with head within the layer.
 
-There are various elements to this equation and its solution (including initial conditions and boundary conditions) which I can have as options in my code. I summarize these in Table \ref{table:diffn-options}. Note that the options I actually code up may change over time as priorities shift.
+In Equation \ref{eq:diffusion-eqn}, $K_v$ is the vertical hydraulic conductivity, $S_s$ is the specific storage, $ \sigma'$ is effective stress, $z$ is the spatial dimension, and $ t$ is time.
 
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|p{4cm}|} 
-\hline
-\textbf{Aspect} & \textbf{Option(s)} & \textbf{Options Included?} \\ 
-\hline
-Overburden term & Include / ignore & Yes\\
-Variability of $S_s$ & None / elastic-inelastic / continuous & Yes, first do none then elastic-inelastic then continuous \\
-Interbed thicknesses & Equivalent thickness / Exact thicknesses  & No. Always do exact thicknesses.\\
-Interbed solution method & Analytic / Finite Difference & No. Always finite difference.  \\
-Initial Condition & Constant head / other & No. Always constant head, model must be run for long enough that IC isn't important. \\ 
-\hline 
-\end{tabular}
-\caption{Options for solving the diffusion equation within clays.}
-\label{table:diffn-options}
-\end{table}
-
-
-\subsubsection{Existing Codes}
-
-MODFLOW has two packages which calculate subsidence: the Subsidence and Aquifer-System Compaction (SUB) package and the Subsidence and Aquifer-System Compaction Package for Water-Table Aquifers. My principle is to always include as much detail as these packages, if not more. In the future, I may therefore note here what options they offer/require with regards to TABLE above.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|p{4cm}|} 
-\hline
-\textbf{Aspect} & \textbf{Option(s)} & \textbf{SUB} \\ 
-\hline
-Overburden term & Include / ignore & Ignore \\
-Variability of $S_s$ & None / elastic-inelastic / continuous & Elastic-inelastic  \\
-Interbed thicknesses & Equivalent thickness / Exact thicknesses & Equivalent thicknesses for clays with the same K and S values \\
-Interbed solution method & Analytic / Finite Difference & Finite difference \\
-Initial Condition & Constant head / other & Constant head \\ 
-\hline 
-\end{tabular}
-\caption{Options the various MODFLOW sub packages include.}
-\label{table:diffn-options}
-\end{table}
-
-\subsubsection{Convergence of Explicit Finite Difference Solvers}
+\subsubsection{Convergence Criteria}
 \label{sec:Convergence_gwflow}
 
-The simplest method to solve Equation \ref{eq:diffusion-eqn} numerically will be by an explicit finite different approximation. In this case, there are requirements on the temporal and spatial discretisation, as well as the value of the diffusivity parameter, for the solution to be convergent. Although this problem does not seem to have been extensively studied in the case of heterogeneous diffusivity, I found one example giving a guide for the stability criteria. In the example, the diffusion equation is written general as in Equation \ref{eq:diffusion-eqn-general}. Then, the criteria for convergence is given in Equation \ref{eq:convergence-criterium}.
+The converge of finite difference methods to solve Equation \ref{eq:diffusion-eqn} does not seem to have been extensively studied where there is spatially and temporally varying diffusivity. However, one literature source showed the condition in Equation \ref{eq:convergence-criterium} to be a necessary one for convergence (\citep{lee_stability_2017}). Hence, if this condition is violated, the model exits with an error. The user is advised to refine resolution carefully, as there may be numerical errors present even when this criterion is satisfied.
 
 \begin{equation}
-\frac{\partial u}{\partial t} = \nabla \cdot (k(x) \nabla u)
-\label{eq:diffusion-eqn-general}
-\end{equation}
-
-\begin{equation}
-\frac{\Delta t}{\Delta x ^2} < \frac{1}{2 max(k)}
+\frac{\Delta t}{\Delta x ^2} < \frac{1}{2 max(\frac{K_v}{S_s})}
 \label{eq:convergence-criterium}
 \end{equation}
-where $\Delta t$ is the timestep and $\Delta x$ is the discretisation in the spatial dimension.
+In Equation \ref{eq:convergence-criterium}, $\Delta t$ is the timestep and $\Delta x$ is the discretisation in the spatial dimension.
 
-This criterion may seem counter intuitive at first, as it means that a larger $\Delta x$ gives better convergence for a fixed $\Delta t$. The way to think of this is as a trade-off: it is hardest to have both good spatial and temporal resolution simultaneously.
+\subsection{Compaction Equation}
 
-\subsubsection{Impact of allowing overburden stress to change}
-\label{sec:overburden-gwflow}
-
-Overburden stress is a term included in Equation \ref{eq:diffusion-eqn}, but most groundwater flow models assume this term to be zero. In the scenario seen in Kaweah, where the water table changes by several metres every year, there is a substantial resulting overburden stress on the confined aquifer and it is correct to include the impact of the changing water table in the unconfined on groundwater flow in the confined. (There is also an effect on the compaction in the confined; see Section \ref{sec:overburden-compaction} for discussion of that).
-
-The final term in Equation \ref{eq:diffusion-eqn} is in terms of stress. To convert the head (water table) in the unconfined aquifer to a stress, I use the relation $\Delta \sigma = \rho_w g S_y \Delta h$ where $\rho_w$ is the density of water, $g$ is gravitational acceleration and $S_y$ is specific yield. Since the term required in Equation \ref{eq:diffusion-eqn} is the temporal derivative of this stress, I approximate this derivative to be $\frac{d\sigma}{dt} \approx \frac{\sigma_{i+1} - \sigma_{i}}{\Delta t}$. In the numerical solver, this term is actually multiplied by $\Delta t$ anyway, so the derivative drops out. I arbitrarily set $\sigma_0 = 0$ since we only ever use changes in stress, rather than the absolute value. 
-
-A careful consideration of how we expect Equation \ref{eq:diffusion-eqn} to behave reveals that overburden stress (or, head in the unconfined) should alter head in the same direction as stress in the confined. That is, an increase in head in the confined aquifer will make $\frac{\partial{h}}{\partial{t}}$ increase, which is the same as an increase in overburden stress (equivalent to an increase in head in the unconfined aquifer). To understand this, focus on the right hand side of the equation, and consider an instantaneous point in time. If head is increasing at a point in the clay layer, so $\frac{\partial{h}}{\partial{t}}$ is positive, then a large value of $ \frac{1}{\rho g} \frac{\partial \sigma}{\partial t}$ will mean that $\frac{\partial{h}}{\partial{t}}$ has to be even more positive for LHS = RHS to hold. Hence we see that increasing overburden stress exacerbates existing increases in head, and the reverse also holds. We can rationalise this by understanding that an increase in overburden stress compacts the aquifer, which reduces slightly the saturated volume, which compresses the water, which results in an increase in hydraulic head. Although I have not been able to estimate the size of this effect using back-of-envelope sums regarding the compaction and change in head (not withstanding significant efforts), I am able to estimate its magnitude based on studying Equation \ref{eq:diffusion-eqn}. In the centre of thick clay layers, it can be assumed that the first term of that Equation is almost zero as there is little curvature in the head field. Here, we can therefore assume that $  \frac{\partial h}{\partial t} \approx \frac{1}{\rho g} \frac{\partial \sigma}{\partial t} $. Integrating these terms and substituting $ \Delta \sigma = \rho g \Delta h_{unconfined} $, I can plug in values for the typical seasonal change in head in the unconfined (5m) to see that we expect about 1 m of seasonal head change due to overburden effects, which is indeed what we see in Figure \ref{fig:overburden3}.
-
-In general, it can be said that I see only small changes in head histories for including/neglecting overburden stress when all deformation is elastic. See Figures \ref{fig:overburden1}, 
-\ref{fig:overburden2} and \ref{fig:overburden3}. 
-
-\begin{figure}
-\includegraphics[width=\linewidth]{BasicIllustration.pdf}
-\caption{Evolution of head with time at node 21 with and without the impacts of overburden. Red and blue lines are essentially indistinguishable}
-\label{fig:overburden1}
-\end{figure}
-
-\begin{figure}
-\includegraphics[width=\linewidth]{BasicIllustration_ZOOM.pdf}
-\caption{Evolution of head with time at node 21 with and without the impacts of overburden. Red and blue lines are now distinguishable as we've zoomed in on a decade}
-\label{fig:overburden2}
-\end{figure}
-
-\begin{figure}
-\includegraphics[width=\linewidth]{BasicIllustration_Timeevolution.pdf}
-\caption{Evolution of head with time at node all nodes; 5 timesteps presented. At any given time, the difference (or residual) between the two cases vary with the node. This means that although the overburden stress is applied identically at each node, vertical flow makes the change in head differ spatially.}
-\label{fig:overburden3}
-\end{figure}
-
-There is a more complex affect which is that the changing overburden stress will alter the timing at which aquifer compaction becomes inelastic. The equations for effective stress (Eq \ref{eqn:effective-stress}) contain both the head and the overburden stress, and hence these two quantities decide whether we use an elastic or inelastic compressibility value (Eq \ref{eq:compressibility-clays}). It seems that this interplay can be somewhat important, and depends on the thickness of the clay lens. In a thin clay lens, the head changes and the overburden changes are approximately in phase, so the overburden stress and head both drop simultaneously. These changes cancel each other out and make it less likely to enter inelastic behaviour than if overburden was not included (Figure \ref{fig:overburden4}). However, for a thick clay lens, head and overburden may no longer be in phase, and in the case that they are substantially out of phase this makes elastic behaviour more common, and hence results in larger head drops (Figure \ref{fig:overburden5}).
-
-\begin{figure}
-\includegraphics[width=\linewidth]{BasicIllustration_ElasticInelastic_n5.pdf}
-\caption{At node 5, overburden and head are roughly in sync, so including overburden stresses makes only a small difference..}
-\label{fig:overburden4}
-\end{figure}
-
-\begin{figure}
-\includegraphics[width=\linewidth]{BasicIllustration_ElasticInelastic_n21.pdf}
-\caption{At node 21, the overburden and head are largely out of sync, which means the overburden stress makes inelastic behaviour less common. Hence, we see a much larger drop in head in the overburden case, as rapid elastic changes are more common. Note the period during the 2000s, when they are in sync again. Here the amplitude of the oscillations in the overburden case is approximately $S_y$ times the oscillations in the upper aquifer head. This reassures me that my code is correctly solving the equations here.}
-\label{fig:overburden5}
-\end{figure}
-
-\paragraph{Loading efficiency and other details of using overburden in the groundwater flow equation}
-
-The formulation given above assumes that the entirety of the overburden stresses are taken up by the solid matrix, and none by the water itself. In past work, usually focusing on the impact of tidal loading, authors have used a loading efficiency parameter to account for how much stress is carried by the water and the solid matrix. For my purposes, I will note that this is a possibility, but will acknowledge that my model will not account for this. See references: \cite{burgess_terrestrial_2017} and \cite{reeves_incorporation_2000}.
-
-Using equation 13 in \cite{rojstaczer_influence_1989}, I can actually derive how the loading efficiency parameter can be estimated in terms of properties of the liquid and solid.
+The governing equation for the resulting compaction is given in Equation \ref{eq:compaction-eqn}. This is computed directly by the model, using the midpoints of the nodes used for solution of Equation \ref{eq:diffusion-eqn}. The effective stress values at midpoints are calculated by linear interpolation. For a description of the terms in Equation \ref{eq:compaction-eqn}, see the text preceding and following Equation M3 in the paper \textit{Modeling 65 Years of Land Subsidence in California’s San Joaquin Valley}.
 
 \begin{equation}
-\label{eq:loading-efficiency}
-\gamma = \frac{1 + \nu_u}{3 (1 + \phi \frac{\alpha_w}{\alpha_s}) (1 - \nu_u)}
+\label{eq:compaction-eqn}
+b(t_i) = \frac{\Delta z}{\rho g} \Big[ S_{skv} \sum\limits_{j=1}^{J-1} \max_{n \leq i} (\sigma_j'^n) - \sigma_j'^0) - S_{ske} \sum\limits_{j=1}^{J-1} \max_{n \leq i} (\sigma_j'^n) - \sigma_j'^i) \Big]
 \end{equation}
 
-I can use a simple approximation to rewrite this as:
-\begin{equation}
-\label{eq:loading-efficiency-approx}
-\gamma \approx A \bigg( 1 - \phi \frac{\alpha_w}{\alpha_s} \bigg)
-\end{equation}
-where A is a constant (or almost a constant) given by $A = \frac{1+\nu_u}{3(1-\nu_u)}$. The Poisson's ratio is different for clay and sand, but this will do. The A term comes out as between 0.6 and 1. I can therefore see that, for a clay where the ratio of compresibilities is 1/500, $\gamma$ is going to be almost 1, whereas for a sand where the ratio of compressibilities is now 1/2, $\gamma$ will be nearer 0.5. If I actually plug some numbers in, I can get $\gamma_{clay} = 0.87$ and $\gamma_{sand} = 0.58$. This is consistent to \cite{burgess_terrestrial_2017} who used an empirical method to estimate $\gamma = 0.75$ in the Bengal aquifer system. 
+In the coarse-dominated parts of the aquifers (sands and gravels), effective stress history is calculated from head, and the compaction is then calculated using Equation  \ref{eq:compaction-eqn} with $S_{skv} = 0$ and an elastic value of $S_{ske}$ for coarse-dominated material. The code uses a single ‘node’ of thickness $/Delta z$ equal to the aquifer layer thickness minus the total thickness of clay interbeds within the aquifer.
 
-\subsection{Compaction Equations}
+\subsection{Specific Storage}
 
-When depth is discretised as $(z_0, z_1, ..., z_n)$ and time as $(t_0, t_1, ..., t_m)$, the governing equation for observed surface deformation $s$ is given in Equation \ref{eq:compaction-governing-eqn}.
-
-\begin{equation}
-s_k = s(t_k) = s_0 + \sum_{i=0}^{i=k} (s_{i+1} - s_i)
-\label{eq:compaction-governing-eqn}
-\end{equation}
-where $s_0$, the surface deformation at $t_0$, is hereafter set to be zero.
-
-The term $s_{i+1} - s_i$ is equal to the sum across all depths of the product of compressibility $\alpha$ and change in effective stress $\sigma'$:
-
-\begin{equation}
-s_{i+1} - s_i = \sum_{j=0}^{n} \alpha(z_j,t_i) [\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) ] \Delta z_j
-\label{eq:ds-governing-eqn}
-\end{equation}
-where compressibility and effective stress are both in general functions of space and time.
-
-Equations \ref{eq:compaction-governing-eqn} and \ref{eq:ds-governing-eqn} can be combined to give the overall governing equation:
-
-\begin{equation}
-s(t_k) = \sum_{i=0}^{i=k} \bigg(  \sum_{j=0}^{n} \alpha(z_j,t_i) [\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) ] \Delta z_j \bigg)
-\label{eq:compaction-overall-governing-eqn}
-\end{equation}
-
-Although Equation \ref{eq:compaction-overall-governing-eqn} is the most general governing equation, for different layers and under different assumptions about variability of compressibility and effective stress, the equation is solved in different forms. A summary of different layers and different solution approaches is given in Table \ref{table:compaction-options}, whilst an explanation of some of the terms are given in the following two sections, `Effective Stress' and `Compressibility'.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|p{9cm}|} 
-\hline
-\textbf{Layer type} & \textbf{Soln treatment} \\ 
-\hline
-Aquifer (connected matrix) & Effective stress as in Equation \ref{eqn:effective-stress} and overburden as in Equation \ref{eq:overburden} if not uppermost layer. Cst head wrt depth, so Equation \ref{eq:compaction-overall-governing-eqn} collapses with n=1. Compressibility constant.\\
-\hline 
-Aquifer (interbedded clays) & Effective stress as in Equation \ref{eqn:effective-stress} and overburden as in Equation \ref{eq:overburden} even if uppermost layer. Compressibility varies as in Equation \ref{eq:compressibility-clays}.\\
-\hline 
-Aquitard & Effective stress as in Equation \ref{eqn:effective-stress} and overburden as in Equation \ref{eq:overburden} even if uppermost layer. Compressibility varies as in Equation \ref{eq:compressibility-clays}.\\
-\hline 
-\end{tabular}
-\caption{Summary of compaction equation in different layer types.}
-\label{table:compaction-options}
-\end{table}
-
-
-\subsubsection{Effective stress}
-
-Effective stress $\sigma'$ is the difference between overburden stress and pore fluid pressure. Using the relations between pore fluid pressure and hydraulic head in confined and unconfined aquifers respectively, we can write the effective stress term in Equation \ref{eq:compaction-overall-governing-eqn} as follows:
-
-\begin{equation}
-\label{eqn:effective-stress} 
-\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) =
-\begin{cases}
-\bigg( \sigma (t_{i+1}) - \sigma(t_i) \bigg) - \rho g \big( h(z_j,t_{i+1}) - h(z_j,t_i) \big) & \text{Confined Aquifer} \\
-\bigg( \sigma (t_{i+1}) - \sigma(t_i) \bigg) - \rho g \big( h(z_j,t_{i+1}) - h(z_j,t_i) \big)(1-S_y) & \text{Unconfined Aquifer} \\
-\end{cases}
-\end{equation}
-
-Note that here, consistent with the groundwater flow equation, the overburden stress $sigma$ is the stress originating above the layer in question. However, we now account for a pressure change due to the changing head in the layer itself; this is only significant in the unconfined aquifer, where it is included as the $(1-S_y)$ term. I neglect the equivalent term for a confined aquifer, which would be $(1-S_s)$, because $S_s << 1$. See \cite{poland_land_1969} for derivations of these. 
-
-Overburden stress varies in general due to any changing mass in layers above the aquifer. We only consider the significant overburden stress of changing saturation in the unconfined aquifer. Mathematically, we can write this as:
-
-\begin{equation}
-\label{eq:overburden}
-\sigma (t_{i+1}) - \sigma(t_i) = \rho g S_y \big( h^{unconfined}_{i+1} - h^{unconfined}_i \big)
-\end{equation}
-
-Note that the code never requires the user to specify which aquifer is confined or unconfined. Instead, it assumes that if the topmost layer is an aquifer, it is unconfined.
-
-\paragraph{Expected effect of including overburden stress}
-\label{sec:overburden-compaction}
-
-This section is written prior to coding  up the impact of overburden stress, such that I have an intuition of how the code should respond to the inclusion of overburden stress. 
-
-First, including overburden stresses will alter the groundwater flow equation. For discussion of this, see Section \ref{sec:overburden-gwflow}.
-
-%It will not alter this equation in the unconfined aquifer, since there is no overburden stress above it. However, it will alter things in the confined aquifer. If I assume both aquifers have head levels changing in the same direction, but with the unconfined seeing changes about a third of those in the confined, then a head drop in the confined aquifer will have a corresponding head drop as third as large in the unconfined aquifer. The former drop will encourage water to flow out of confined clays, but the second change will reduce the pressure they experience and therefore somewhat reduce the tendency for water to flow from the clays. Hence, I expect overburden stresses to generally mute the drainage of clays in the confined layers; however, this will be a relatively small impact because the effect will be a third times by $(1-S_y)$, so something like $\frac{2}{9}$ reduction. 
-
-Second, including overburden stresses will alter the compaction equations. This will occur in both the unconfined and confined aquifer, as well as the aquitard. In the unconfined, compaction is simply reduced by a factor of $(1-S_y)$. In the confined and aquitard layers, things are rather more complicated. I use the same logic as before about head in the confined and unconfined showing the same trends but the former having 3x larger magnitude. In this case, a head drop in the confined will, by itself, lead to compaction; however, it will have a smaller head drop in the unconfined to go with it, which will reduce pressure and retard compaction. The size of this effect should be the same as in the above paragraph, so something like a $\frac{2}{9}$ reduction. In the aquitard, we will see similar reductions, although it is harder to think about this and probably not very important. However, there is an additional complexity which arises because the elastic vs inelastic condition is also impacted by the overburden stress. My anticipation is that this won't change too much, but I am not sure. It is hard to get a sense of this. 
-
-%In most applications, overburden stress is assumed constant so Equation \ref{eq:compaction-overall-governing-eqn} is solved with $\sigma'(z_j,t_{i+1}) - \sigma'(z_j,t_i) = \rho g \big( h(z_j,t_{i+1}) - h(z_j,t_i) \big)$.
-
-\subsubsection{Compressibility}
-
-Although in Equation \ref{eq:compaction-overall-governing-eqn}, compressibility varies with time, for most sediment types, it can be considered a constant. The exception to this rule is clays, which can deform both elastically and inelastically depending on the effective stress history they have experienced. This is a complex, non-linear and hysteretic variation, which can nonetheless be written down mathematically and modelled \cite{helm_one-dimensional_1976}. Here, we approximate the behaviour into two classes, elastic and inelastic:
-
-\begin{equation}
-\label{eq:compressibility-clays}
-\alpha = 
-\begin{cases}
-\alpha_{ke} & \sigma' < max(\sigma') \\
-\alpha_{kv} & \sigma' > max(\sigma') \\
-\end{cases}
-\end{equation}
-Note that $alpha_{kv}$ is much larger (often an order of magnitude) than $alpha_{ke}$. Also note that, when combined with Equations \ref{eqn:effective-stress} and \ref{eq:compaction-overall-governing-eqn}, we often use the skeletal specific storage values rather than compressibilities, since these are related by:
-
-\begin{equation}
-\label{eq:skeletal-specific-storage}
-\alpha = 
-\begin{cases}
-S_{ske} = \rho g \alpha_{ke} & \text{Elastic} \\
-S_{skv} = \rho g \alpha_{kv} & \text{Inelastic} \\
-\end{cases}
-\end{equation}
-
-\subsubsection{Comments on solution}
-\label{sec:Convergence-compaction}
-
-\textbf{Solving at midpoints}
-
-In the case of aquitards and interbedded clays, head and therefore effective stress will vary at every node throughout the clay. In Section \ref{sec:diffusion}, the details of how head is calculated at these nodes are reported. However, in these solutions, the topmost and bottommost nodes are boundary conditions with predetermined head values representing the adjacent interconnected aquifer(s). The head at these nodes does not represent the head in the clay layers, and hence should not be used for compaction calculations. I have `solved' this problem by solving the compaction equation \ref{eq:compaction-overall-governing-eqn} at midpoints between the nodes from the head equation. Hence, the first step in solving the compaction equation in aquitards and interbedded clays is the interpolate (linearly) between nodes in the head equation. This means that I solve the compaction equations over twice as many nodes as I solve the groundwater flow equation. This problem does not arise in interconnected coarse layers because these have constant head throughout.
-
-In the aquitards and interbedded clays, Equation \ref{eq:compaction-overall-governing-eqn} is solved as stated in Table \ref{table:compaction-options}, with the proviso as mentioned above that the nodes are the midpoints of the head solution. 
-
-\textbf{How many nodes?}
-The number of nodes required for convergence of the groundwater flow equation is detailed in Section \label{sec:Convergence_gwflow}; here I discuss convergence of the compaction equation.
-
-When solving the compaction equation, I integrate over the entire clay layer to convert $ db $ into a single $ s $ value of subsidence. This 'integration' is not fancy and my code simply uses the Rectangle Rule (or more specifically, the Left Riemann sum; see Wikipedia: \href{https://en.wikipedia.org/wiki/Riemann_sum#Left_Riemann_sum}{Riemann sum}). This method gives an error which scales as the inverse of the number of nodes squared, stated mathematically in Equation \ref{eq:intergral-convergence}.
-
-\begin{equation}
-E \leq  \frac{M_1 t^2}{2n}
-\label{eq:intergral-convergence}
-\end{equation}
-where $E$ is the sum of the error across all nodes, $M_1$ is the maximum value of the absolute value of the gradient over the interval, $t$ is the interval size and $n$ is the number of nodes. 
-
-I would clearly see a substantial and cheap improvement in performance by switching to a more advanced method, such as the trapezium rule. However, for now I note that agreement with the analytic solution for a 10 m clay experiencing a 50 m head drop is not seen until 16 head nodes (and therefore 32 midpoint nodes) are used. However, see Section \ref{sec:convergence-all} for more detail on how changing the timestep can also help.
-
-\begin{figure}
-\includegraphics[width=\linewidth]{Benchmark_Output_Comparisons_StepDrop.pdf}
-\caption{1 cm agreement with the analytic solution is not seen until 16 head nodes are used. This equated to a node spacing dz of 0.666.}
-\label{fig:overburden1}
-\end{figure}
-
-OLD COMMENTS:
-Experimenting with a 1m thick clay lens led me to believe that you need at least 5 nodes in the groundwater solver equation to get a convergent solution for the compaction equation. If I have time, I will put some images here to that effect.
-
-A more detailed investigation compares my solution with the analytic solution in the situation of a step head drop over a single clay layer; see \cite{hoffmann_inverse_2003} for derivation of the analytic solution. The 
-
-\subsection{Summary comments on convergence}
-\label{sec:convergence-all}
-
-I have previously discussed convergence of the groundwater flow (diffusion) equation in Section \ref{sec:Convergence_gwflow} and convergence of the compaction solver in Section \ref{sec:Convergence_compaction}. Although these sections provide a guide on the accuracy of the solutions, a more practical approach may be to 'try it and see'. I can benchmark solutions with different timesteps and different numbers of nodes against the Hoffman analytic solution, the results of which are seen in Figure \ref{fig:benchmarking_convergence_all}. 
-
-\begin{figure}
-\center
-\includegraphics[height=\textheight]{Benchmark_Output_Comparisons_StepDrop2.png}
-\caption{Showing how the percentage error varies with dt and dz for different clay thicknesses. Error is defined as the percentage difference between simulated and Hoffman after the passing of three time constants, for fixed $S_skv$ and $K_v$.}
-\label{fig:benchmarking_convergence_all}
-\end{figure}
-
-Although this provides an excellent guide for the accuracy of the solver in the case of a step head drop, it is not necessarily true that the same level of error would be observed for the actual input time series. Hence I have also tested these clay thicknesses against the Poland2 time series. This work is not written up, but it is included in the code \path{estimate_errors_for_characteristic_clay_thicknesses_POLAND.py} in the Benchmarking folder. It seems that slightly finer time resolution is required for the real case than the simple example shown in Figure \ref{fig:benchmarking_convergence_all}.
+Skeletal specific storage, and therefore specific storage, takes different values depending on stress history if solver mode is 'elastic-inelastic'. This is governed by Equation M2 in the paper \textit{Modeling 65 Years of Land Subsidence in California’s San Joaquin Valley}. The model code keeps track of effective stress history at each timestep and sets the skeletal specific storage at the next timestep accordingly.
 
 \section{Input Head Timeseries}
 
@@ -370,72 +133,11 @@ DATE should be a string of any format and MEASUREMENT should be a number given t
 
 Internally, the model uses Python's Datetime module, and dates are stored as numerically as a number of days since 0000-12-31 using the datetime.date2num method. See \url{https://www.w3schools.com/python/python_datetime.asp} and \url{https://matplotlib.org/3.1.1/api/dates_api.html\#matplotlib.dates.date2num}.
 
-There are some potential issues with future head projections beyond the year 2069, as for certain situations Datetime seems to interpret XX69 as 1969 no matter what XX is. If this occurs, you may need to go into the code and manually specify a date format or parser, which is included as a commented out line/lines in the execute model code.
+There are some potential issues with future head projections beyond the year 2069, as for certain situations Datetime seems to interpret XX69 as 1969 no matter what XX is. If this occurs, you may need to go into the code and manually specify a date format or parser.
 
-\section{Suggested Hydraulic Parameters}
+\section{Code benchmarking and validation}
 
-For convenience, I am keeping a note of suggested hydraulic parameters here. 
-
-\subsection{Specific Storage Values}
-
-This section describes values of Specific Storage $S_s$ which are used in solving the groundwater flow equation (note these will be slightly different to values of skeletal specific storage used for solving the compaction equation). Values are notated in Table \ref{table:Ss-values}.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|p{4cm}|} 
-\hline
-\textbf{Source} & \textbf{Variable} & \textbf{Value(s)}\\ 
-\hline
-\cite{faunt_groundwater_2009} & Elastic $S_s$, coarse material, lab and field values & $3.3 \times 10^{-6}$ m$^{-1}$ \\
-\hline 
-\cite{faunt_groundwater_2009} & Elastic $S_s$, coarse material, values from prev models & $4.6 \times 10^{-6}$ m$^{-1}$\\
-\hline
-\cite{faunt_groundwater_2009} & Elastic $S_s$, coarse material, value from their model & $3.3 \times 10^{-6}$ m$^{-1}$ \\
-\hline
-\cite{faunt_groundwater_2009} & Elastic $S_s$, fine material, value from their model & $1.5 \times 10^{-5}$ m$^{-1}$ \\
-\hline
-\cite{faunt_groundwater_2009} & Elastic $S_s$, fine material, largest value from field/lab studies & $2.5 \times 10^{-5}$ m$^{-1}$ \\
-\hline
-\cite{faunt_groundwater_2009} & Inelastic $S_s$, fine material, value from their model & $4.6 \times 10^{-4}$ m$^{-1}$ \\
-\hline
-\cite{faunt_groundwater_2009} & Inelastic $S_s$, fine material, largest value from field/lab studies & $2.2 \times 10^{-3}$ m$^{-1}$ \\
-\hline 
-\cite{faunt_groundwater_2009} & Inelastic $S_s$, fine material, "previously simulated values" & $9.8 \times 10^{-4}$ m$^{-1}$ \\
-\hline 
-\cite{smith_modeling_2019} & Inelastic $S_{skv}$, fine material, MAP (median value?) & $1.8 \times 10^{-3}$ m$^{-1}$ \\
-\hline
-\cite{sneed_hydraulic_2001} & Elastic $S_s$, fine material, mean value from calibrated models & $1.5 \times 10^{-5}$ m$^{-1}$ \\
-\hline
-\cite{sneed_hydraulic_2001} & Elastic $S_s$, coarse material, values from aquifer tests & $1 \times 10^{-6}$ m$^{-1}$\\
-\hline
-\cite{sneed_hydraulic_2001} & Inelastic $S_s$, fine material, mean value from calibrated models & $1.0 \times 10^{-3}$ m$^{-1}$ \\
-\hline
-\cite{sneed_hydraulic_2001} & Inelastic $S_s$, fine material, value from laboratory testing & Approximately half that of model values \\
-\hline
-\cite{sneed_hydraulic_2001} & Inelastic $S_s$, Corcoran Clay, value from laboratory testing & In 2 of 3 cases, the C-clay was more compressible (larger Ss) than other clays. \\
-\hline
-\end{tabular}
-\caption{Specific storage values reported in various sources for various lithologies in both elastic and inelastic conditions.}
-\label{table:Ss-values}
-\end{table}
-
-
-\section{Validating Results}
-
-\subsection{Existing subsidence data}
-
-Comparing modelled subsidence curves with observational data is one way of confirming the model is behaving reasonably. The TRE Altamira, Envisat and other InSAR datasets are not mentioned here, as I assume that I have documentation on those elsewhere. However, there are a few other datasources which give an indication of whether the model is behaving reasonably.
-
-First, the levelling surveys of the 50s, 60s and 70s can be used to check that the start of the model is behaving sensibly. \cite{poland_land_1975} give data of elevation change of benchmark Y286, near to Hanford, at a third of a foot per year for the 3.6 years prior to 1970. I read these values off Figure 11 using a ruler! 
-
-Second, the California Dept of Transportation and the National Geodetic Survey performed geodetic surveys along Highway 198 in the ''1960s'' and 2004. These data are reported in \cite{sneed_land_2018}; the location is given in Figure 15 and the data in Figure 16. I estimate that my stud site is about halfway between the pentagons at Armona and the ones to the right, so I took an elevation change of 2.5 metres accordingly.
-
-Thirdly, there is a very elusive comment in \cite{swanson_land_1998}, which says: ``Between 1980 and 1993, there was a subsidence differential of up to 2 ft along the canal'', referring to the Homeland Canal which runs a little distance south of Hanford. This datapoint is therefore extemely loose, but gives an idea of the rough amount of subsidence expected in the region in the 80s and early 90s. 
-
-\section{Random notes}
-
-CLAUDIA FAUNT SAID IN A MEETING WITH MEREDITH THAT WHEN THEY STARTED PUMPING CV (1950s???), 30\% OF RECHARGE CAME FROM DRAINAGE OF CLAYS. I have since found this repeated in \cite{sneed_hydraulic_2001} on page 11. Good to know!
-
+The code was validated against an analytic solution for a step head drop. Additionally, the code was benchmarked against an independent code for the scenario of a more complicated head time series. Please contact the code author (mlees@stanford.edu) for more information on the benchmarking process.
 
 \bibliographystyle{plainnat}
 \bibliography{Manual3}
