@@ -18,7 +18,6 @@ import scipy
 from datetime import date
 import matplotlib.colors as colors
 import operator
-from astropy.convolution import convolve
 from netCDF4 import Dataset
 
 t_total_start = process_time()
