@@ -134,12 +134,9 @@ def read_parameters_noadmin(paramfilelines):
     layer_thicknesses=read_parameter_layerthickness_multitype('layer_thicknesses',paramfilelines)
     layer_compaction_switch=read_parameter('layer_compaction_switch',bool,no_layers,paramfilelines)
     interbeds_switch=read_parameter('interbeds_switch',bool,list(layer_types.values()).count('Aquifer'),paramfilelines)
-    preconsolidation_head_type=read_parameter('preconsolidation_head_type',str,1,paramfilelines)
-    if preconsolidation_head_type=='initial_plus_offset':
-        preconsolidation_head_offset = read_parameter('preconsolidation_head_offset',float,no_aquifers,paramfilelines)
-    else:
-        preconsolidation_head_offset=False
-    #interbeds_type=read_parameter('interbeds_type',str,list(layer_types.values()).count('Aquifer'),paramfilelines)
+    initial_stress_type=read_parameter('initial_stress_type',str,no_layers,paramfilelines)
+    initial_stress_offset=read_parameter('initial_stress_offset',float,no_aquifers,paramfilelines)
+    initial_stress_unit=read_parameter('initial_stress_offset_unit',str,1,paramfilelines)
     # Import interbeds_distributions -- an awkward parameter as its a dictionary of dictionaries!
     interbeds_distributions1=read_parameter('interbeds_distributions',dict,sum(interbeds_switch.values()),paramfilelines)
     interbeds_distributions1=np.array(interbeds_distributions1)
@@ -192,7 +189,7 @@ def read_parameters_noadmin(paramfilelines):
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset,save_s
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s
 
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
@@ -230,7 +227,14 @@ if MODE=='resume':
     print('')
 
 
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,preconsolidation_head_type,preconsolidation_head_offset,save_s = read_parameters_noadmin(paramfilelines)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,dt_master,dz_clays,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s = read_parameters_noadmin(paramfilelines)
+
+if MODE=='resume':
+    print('Mode=RESUME, therefore setting initial_stress_type to preset for ALL LAYERS.')
+    for layer in layer_names:
+        initial_stress_type[layer] = 'preset'
+    print('\tInitial_stress_type=%s' % initial_stress_type)
+
 
 # Check that the layer thicknesses were correctly imported
 print()
@@ -425,8 +429,14 @@ if len(layers_var_thickness)>=1:
             print('\t\tReading head dates error: TERMINAL. The layer %s changes thickness in %i, but the model starts in %s. Please check the layer_thicknesses variable and/or the input head.' % (layer,firstyear_thickness,num2date(starttime).strftime('%Y')))
             sys.exit(1)
 
-reading_head_stop = process_time()
-reading_head_time = reading_head_stop - reading_head_start
+# Convert the stress-head units for offsets if needed
+print()
+if initial_stress_unit=='stress':
+    print('Initial stress unit is STRESS. Converting to head.')
+    for layer in aquifer_layer_names:
+        initial_stress_offset[layer] = initial_stress_offset[layer] / (rho_w*g)
+    print('\tDONE.')
+    
 
 print()
 if len(layers_requiring_solving)>= 0:
@@ -470,7 +480,11 @@ if len(layers_requiring_solving)>= 0:
     plt.ylabel('Number of layers')
     plt.savefig('%s/input_data/clay_distributions.png' % outdestination,bbox_inches='tight')
     plt.close()
-   
+
+reading_head_stop = process_time()
+reading_head_time = reading_head_stop - reading_head_start
+
+
 #%% New section, head solver.
 print()
 print()
@@ -499,7 +513,7 @@ t_gwflow={}
 
 head_series=copy.deepcopy(head_data)
 
-initial_condition_precons={}
+initial_maxstress={}
 #if save_output_head_timeseries:
 #    os.mkdir('%s/head_outputs' % outdestination)
 
@@ -513,7 +527,7 @@ if len(layers_requiring_solving)>=0:
             aquitard_position= layer_names.index(layer)
             top_boundary = layer_names[aquitard_position-1]
             bot_boundary = layer_names[aquitard_position+1]
-            initial_condition_precons[layer]=np.array([])
+            initial_maxstress[layer]=np.array([])
             print('\t\tHead time series required for overlying layer %s and lower layer %s.' % (top_boundary,bot_boundary))
             if top_boundary in head_data.keys() and bot_boundary in head_data.keys():
                 print('\t\t\tHead time series found.')
@@ -591,20 +605,20 @@ if len(layers_requiring_solving)>=0:
             else:
                 overburden_data_tmp = [0]
             
-            if preconsolidation_head_type=='initial_plus_offset':
-                initial_precons=False
-                print('\t\tHead initial condition is initial_plus_offset, so a constant head initial condition will be applied. Constant value is mean of surrounding aquifers.')
-                #initial_condition_precons[layer]= (((top_head_tmp[0,1] + top_head_tmp[0,1]) / 2) * np.ones_like(z) + preconsolidation_head_offset) * rho_w * g
-                initial_condition_precons[layer]=np.array([])
-                initial_condition_tmp = ((top_head_tmp[0,1] + bot_head_tmp[0,1]) / 2) * np.ones_like(z) + (preconsolidation_head_offset[top_boundary] + preconsolidation_head_offset[bot_boundary]) / 2
+            if initial_stress_type[layer]=='initial_constant':
+                preset_initial_maxstress=False
+                print('\t\Initial stress type is initial_constant, so a constant stress initial condition will be applied. Constant value is mean of surrounding aquifers.')
+                initial_maxstress[layer]=np.array([])
+                initial_condition_tmp = ((top_head_tmp[0,1] + bot_head_tmp[0,1]) / 2) * np.ones_like(z) 
                 print('\t\t\tinitial head value is %.2f' % initial_condition_tmp[0])
-#                print('\t\t\tinitial stress value is %.2f' % initial_condition_precons[layer][0])
-            else:
-                initial_precons=False
-                initial_condition_tmp = (top_head_tmp[0,1] + top_head_tmp[0,1]) / 2
-            
+            elif initial_stress_type[layer]=='initial_equilibrium':
+                print("\tInitial stress type is equilibrium_initial, so a linear initial stress condition will be applied.")
+                # print('top head is %.2f' % top_head_tmp[0,1] + initial_stress_offset[top_boundary])                                 
+                # print('bot head is %.2f' % bot_head_tmp[0,1]          
+                # print('m is %.2f' % ((bot_head_tmp[0,1] - top_head_tmp[0,1]) / np.max(z)))                       
+
+                initial_condition_tmp = ((bot_head_tmp[0,1] + initial_stress_offset[bot_boundary] - top_head_tmp[0,1] - initial_stress_offset[top_boundary]) / np.max(z)) * z + top_head_tmp[0,1] + initial_stress_offset[top_boundary]
             if MODE=='resume':
-                initial_precons=True
                 print('\t\tMode is resume. Looking for initial condition in directory %s/head_outputs.' % resume_directory)
                 if os.path.isfile("%s/head_outputs/%s_head_data.nc" % (resume_directory,layer.replace(' ','_'))):
                     print('Head found as .nc file. Reading.')
@@ -657,7 +671,7 @@ if len(layers_requiring_solving)>=0:
 
                 
                 initial_condition_tmp = head_bc_tmp[:,idx_bc_tmp][::-1] # The [::-1] is because aquitard head is saved upside down
-                initial_condition_precons[layer] = np.max(teff_bc_tmp[:,:idx_teff_bc_tmp+1],axis=1)[::-1]
+                initial_maxstress[layer] = np.max(teff_bc_tmp[:,:idx_teff_bc_tmp+1],axis=1)[::-1]
 
             
             if groundwater_flow_solver_type[layer] == 'singlevalue':
@@ -665,7 +679,7 @@ if len(layers_requiring_solving)>=0:
             elif groundwater_flow_solver_type[layer] == 'elastic-inelastic':
                 t1_start = process_time() 
                 # hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
-                hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((top_head_tmp[::spacing_top,1],bot_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),initial_precons=initial_precons,initial_condition_precons=-initial_condition_precons[layer])
+                hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_in,dz_clays[layer],z,np.vstack((top_head_tmp[::spacing_top,1],bot_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]) #!!! HERE
                 t1_stop = process_time() 
                 print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
 
@@ -764,7 +778,7 @@ if len(layers_requiring_solving)>=0:
                 Z[layer]={}
                 t_gwflow[layer]={}
                 effective_stress[layer]={}
-                initial_condition_precons[layer]={}
+                initial_maxstress[layer]={}
                 print('\t\t%s is an aquifer.' % layer)
                 if interbeds_switch[layer]:
                     interbeds_tmp=interbeds_distributions[layer]
@@ -782,21 +796,13 @@ if len(layers_requiring_solving)>=0:
                         f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp,h_aquifer_tmp)
                         h_aquifer_tmp_interpolated = np.array([t_interp_new,f_tmp(t_interp_new)]).T
 
-                        if preconsolidation_head_type=='initial_plus_offset':
-                            print('\t\tHead initial condition is initial_plus_offset, so a constant head initial condition will be applied.')
-                            initial_precons=False
-                            initial_condition_tmp = h_aquifer_tmp[0] * np.ones_like(z_tmp) + preconsolidation_head_offset[layer]
-                            initial_condition_precons[layer]['%.2f clays' % thickness]=np.array([])
+                        if initial_stress_type[layer]=='initial_equilibrium' or initial_stress_type[layer]=='initial_constant':
+                            print('\t\tHead initial condition is %s, so a constant head initial condition will be applied. Offset is %.2f.' % (initial_stress_type[layer],initial_stress_offset[layer]))
+                            preset_initial_maxstress=False
+                            initial_condition_tmp = h_aquifer_tmp[0] * np.ones_like(z_tmp) + initial_stress_offset[layer]
+                            initial_maxstress[layer]['%.2f clays' % thickness]=np.array([])
                             print('\t\tinitial head value is %.2f' % initial_condition_tmp[0])
-                         #   print('\t\tinitial stress value is %.2f' % initial_condition_precons[layer]['%.2f clays' % thickness][0])
-
-                        else:
-                            initial_precons=False
-                            initial_condition_precons[layer]['%.2f clays' % thickness]=np.array([])
-                            initial_condition_tmp=h_aquifer_tmp[0]
-
                         if MODE=='resume':
-                            initial_precons=True
                             print('\t\tMode is resume. Looking for initial condition in directory %s/head_outputs.' % resume_directory)
                             if os.path.isfile("%s/head_outputs/%s_%sclay_head_data.nc" % (resume_directory,layer.replace(' ','_'),'%.2f' % thickness)):
                                 print('Head found as .nc file. Reading.')
@@ -846,7 +852,7 @@ if len(layers_requiring_solving)>=0:
 
                             
                             initial_condition_tmp = head_bc_tmp[:,idx_bc_tmp]
-                            initial_condition_precons[layer]['%.2f clays' % thickness] = np.max(teff_bc_tmp[:,:idx_teff_bc_tmp+1],axis=1)
+                            initial_maxstress[layer]['%.2f clays' % thickness] = np.max(teff_bc_tmp[:,:idx_teff_bc_tmp+1],axis=1)
                             
                         if overburden_stress_gwflow:
                             if layer != unconfined_aquifer_name:
@@ -872,7 +878,7 @@ if len(layers_requiring_solving)>=0:
                             overburden_data_tmp=[0]
 
                         t1_start = process_time() 
-                        hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),initial_precons=initial_precons,initial_condition_precons=-initial_condition_precons[layer]['%.2f clays' % thickness])
+                        hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]['%.2f clays' % thickness]) #!! HERE
                         t1_stop = process_time() 
                         print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
                         head_series[layer]['%.2f clays' % thickness]=hmat_tmp
@@ -1068,10 +1074,6 @@ deformation={}
 db={}
 deformation_OUTPUT={}
 compacting_layers = [name for name,value in layer_compaction_switch.items() if value==True]
-if MODE=='resume':
-    preset_precons = True
-else:
-    preset_precons = False
 
 
 for layer in layer_names:
@@ -1105,9 +1107,9 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
                 else:
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],endnodes=compaction_solver_debug_include_endnodes,preset_precons=preset_precons,ic_precons=initial_condition_precons[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
                 # deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
                 # deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
@@ -1155,11 +1157,11 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
 
                 else:
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_precons=preset_precons,ic_precons=initial_condition_precons[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),dz_clays[layer],preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
@@ -1496,7 +1498,7 @@ t_total_stop = process_time()
 t_total = t_total_stop - t_total_start
 
 plt.figure(figsize=(18,18))
-plt.pie(np.abs([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time,t_total - np.sum([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time])]),labels=['param_read_time', 'solving_compaction_time', 'saving_head_time', 'reading_head_time', 'solving_head_time', 'saving_compaction_time','misc'],autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * t_total/100))
+plt.pie(np.abs([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time,t_total - np.sum([param_read_time, solving_compaction_time, saving_head_time, reading_head_time, solving_head_time, saving_compaction_time])]),labels=['param_read_time', 'solving_compaction_time', 'saving_head_time', 'reading_inputs_time', 'solving_head_time', 'saving_compaction_time','misc'],autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * t_total/100))
 plt.title('Total runtime = %i seconds' % t_total)
 plt.savefig('%s/figures/runtime_breakdown.png' % outdestination,bbox_inches='tight')
 plt.close()
