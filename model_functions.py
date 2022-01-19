@@ -78,7 +78,6 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):        
     print ( '' )
     print ( '\t\t\tFD1D_HEAT_EXPLICIT_SINGLEVALUE_Ssk:' )
-    print ( '\t\t\t  Python version: %s' % ( platform.python_version ( ) ) )
     print ( '\t\t\t  Compute an approximate solution to the time-dependent' )
     print ( '\t\t\t  one dimensional heat equation:' )
     print ( '' )
@@ -129,10 +128,10 @@ def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):
     return hmat
 
 
-def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[],initial_precons=False,initial_condition_precons=[]):        
+def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,overburdenstress=False,overburden_data=[],preset_initial_maxstress=False,initial_maxstress=[]):        
     '''This is the main solver of the diffusion equation for effective stress, with an elastic/inelastic switch for K. Description of (some-incomplete) options:
-        - initial_precons: BOOL flag to indicate whether the initial stress condition and the preconsolidation stress are equivalent.
-        - initial_condition_precons: FLOAT ARRAY: Only used if initial_precons is false, in which case it gives the initial stress value above which inelastic behaviour will occur. Useful if you are resuming a model run.
+        - preset_initial_maxstress: BOOL flag to indicate whether the initial stress condition and the preconsolidation stress are equivalent.
+        - initial_condition_maxstress: FLOAT ARRAY: Only used if preset_initial_maxstress is false, in which case it gives the initial stress value above which inelastic behaviour will occur. Useful if you are resuming a model run.
     '''
     
     print ( '' )
@@ -151,11 +150,11 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
         overburden_data = np.zeros_like(t)
     
     h_precons = np.zeros ( ( len(x), len(t) ) )
-    if not initial_precons:
+    if not preset_initial_maxstress:
         h_precons[:,0] = ic
     else:
-        print('\t\t\t preset preconsolidation stress found to be',initial_condition_precons)
-        h_precons[:,0]=initial_condition_precons
+        print('\t\t\t preset max stress found to be',initial_maxstress)
+        h_precons[:,0]=initial_maxstress
     inelastic_flag = np.zeros ( ( len(x), len(t) ) ) 
 
     cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence 
@@ -342,7 +341,7 @@ def read_parameter_layerthickness_multitype(name,paramfilelines,printlots=True):
           print('\t%s=%s' % (name,par_out))
       return par_out
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_precons=False,ic_precons=[]):
+def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_initial_maxstress=False,ic_maxstress=[]):
     ### TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum.
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
@@ -390,10 +389,10 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
     
     stress_midpoints_precons = np.zeros_like(hmat_midpoints)
     inelastic_flag_midpoints = np.zeros_like(hmat_midpoints)
-    if preset_precons:
+    if preset_initial_maxstress:
         print('preset precons found. interpolating to midpoints.')
-        print('starting with',ic_precons)
-        a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),ic_precons)
+        print('starting with',ic_maxstress)
+        a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),ic_maxstress)
         ic_precons_interp = a(0.001* np.arange(0,1000* ((np.shape(hmat)[0] - 1)*dz)+1,1000*dz/(2*TESTn)))
         ic_precons_initial = ic_precons_interp[1::2]
         print('interpoolated to',ic_precons_initial)
