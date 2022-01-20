@@ -88,7 +88,7 @@ def make_output_folder(outdestination,overwrite):
                 os.mkdir('%s/s_outputs' % outdestination)
                 os.mkdir('%s/head_outputs' % outdestination)
             else:
-                print('\t\tNot overwriting. Aborting.' % check)
+                print('\t\tNot overwriting. Aborting.')
                 sys.exit(1)
     #    OVERWRITE = input("\t\tOutput directory %s already exists. Do you want to overwrite this directory? WARNING: may delete existing data." % (outdestination))
     
@@ -803,6 +803,7 @@ if len(layers_requiring_solving)>=0:
                             initial_maxstress[layer]['%.2f clays' % thickness]=np.array([])
                             print('\t\tinitial head value is %.2f' % initial_condition_tmp[0])
                         if MODE=='resume':
+                            preset_initial_maxstress=True
                             print('\t\tMode is resume. Looking for initial condition in directory %s/head_outputs.' % resume_directory)
                             if os.path.isfile("%s/head_outputs/%s_%sclay_head_data.nc" % (resume_directory,layer.replace(' ','_'),'%.2f' % thickness)):
                                 print('Head found as .nc file. Reading.')
@@ -878,7 +879,7 @@ if len(layers_requiring_solving)>=0:
                             overburden_data_tmp=[0]
 
                         t1_start = process_time() 
-                        hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]['%.2f clays' % thickness]) #!! HERE
+                        hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]['%.2f clays' % thickness])
                         t1_stop = process_time() 
                         print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
                         head_series[layer]['%.2f clays' % thickness]=hmat_tmp
