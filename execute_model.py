@@ -274,9 +274,11 @@ if len(layers_var_thickness)>=1:
     print('\tInitial thicknesses for varying aquifer thicknesses are %s.' % initial_thicknesses)
 
 if MODE=='resume':
-    print('\t MODE is RESUME, therefore overriding original layer thicknesses with resume layer thicknesses.')
+    print('\t MODE is RESUME, therefore overriding original layer thicknesses with resume layer thicknesses. Currently, resume does not allow for varying layer thicknesses.')
     layer_thicknesses = resume_layer_thicknesses
     layers_var_thickness=[]
+    for layer in layer_names:
+        layer_thickness_types[layer]='constant'
     
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
