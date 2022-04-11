@@ -174,7 +174,7 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     print ( '\t\t\t  CFL elastic coefficient = %g' % ( cfl_elastic ) )
     print ( '\t\t\t  CFL inelastic coefficient = %g' % ( cfl_inelastic ) )
     
-    if ( 0.5 <= cfl_elastic ):
+    if ( 0.5 <= max(cfl_elastic,cfl_inelastic) ):
         print ( '\t\t\tFD1D_HEAT_EXPLICIT_CFL - Fatal error!' )
         print ( '\t\t\t  CFL condition failed.' )
         print ( '\t\t\t  0.5 <= K * dT / dX / dX = %f' % max(cfl_elastic,cfl_inelastic))
