@@ -31,13 +31,17 @@
 \usepackage{enumitem}
 \usepackage{relsize}
 \usepackage{movie15}
-\usepackage{natbib}
-\usepackage{gensymb}
+\usepackage[
+    backend=biber
+  ]{biblatex}\usepackage{gensymb}
 \usepackage{url}
+\usepackage[utf8]{inputenc}
 
 \DeclareUnicodeCharacter{FB00}{ff}
 \DeclareUnicodeCharacter{FB03}{ffi}
 \DeclareUnicodeCharacter{0394}{$\Delta$}
+
+\addbibresource{Manual3.bib}
 
 \begin{document}
 
@@ -99,7 +103,7 @@ In Equation \ref{eq:diffusion-eqn}, $K_v$ is the vertical hydraulic conductivity
 \subsubsection{Convergence Criteria}
 \label{sec:Convergence_gwflow}
 
-The converge of finite difference methods to solve Equation \ref{eq:diffusion-eqn} does not seem to have been extensively studied where there is spatially and temporally varying diffusivity. However, one literature source showed the condition in Equation \ref{eq:convergence-criterium} to be a necessary one for convergence (\citep{lee_stability_2017}). Hence, if this condition is violated, the model exits with an error. The user is advised to refine resolution carefully, as there may be numerical errors present even when this criterion is satisfied.
+The converge of finite difference methods to solve Equation \ref{eq:diffusion-eqn} does not seem to have been extensively studied where there is spatially and temporally varying diffusivity. However, one literature source showed the condition in Equation \ref{eq:convergence-criterium} to be a sufficient one for convergence (\cite{lee_stability_2017}). If this condition is violated, the model exits with an error; although the condition is sufficient, rather than necessary, we were unable to find a necessary condition for convergence so we use this stricter sufficient condition. The user is not able to use coarser resolution than provided by this criteria at present, although such a flag may be added in future.
 
 \begin{equation}
 \frac{\Delta t}{\Delta x ^2} < \frac{1}{2 max(\frac{K_v}{S_s})}
@@ -138,6 +142,5 @@ There are some potential issues with future head projections beyond the year 206
 
 The code was validated against an analytic solution for a step head drop. Additionally, the code was benchmarked against an independent code for the scenario of a more complicated head time series. Please contact the code author (mlees@stanford.edu) for more information on the benchmarking process.
 
-\bibliographystyle{plainnat}
-\bibliography{Manual3}
+\printbibliography
 \end{document}
