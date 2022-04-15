@@ -1,14 +1,55 @@
-\begin{thebibliography}{1}
-\providecommand{\natexlab}[1]{#1}
-\providecommand{\url}[1]{\texttt{#1}}
-\expandafter\ifx\csname urlstyle\endcsname\relax
-  \providecommand{\doi}[1]{doi: #1}\else
-  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.9 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
 
-\bibitem[Lee(2017)]{lee_stability_2017}
-Jordan Lee.
-\newblock Stability of {Finite} {Diﬀerence} {Schemes} on the {Diﬀusion}
-  {Equation} with {Discontinuous} {Coeﬃcients}.
-\newblock page~21, 2017.
 
-\end{thebibliography}
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{lee_stability_2017}{article}{}
+      \name{author}{1}{}{%
+        {{hash=6dbe3b3f24c68e21a359cc366709cf2c}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Jordan},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {en}%
+      }
+      \strng{namehash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \strng{fullhash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \strng{bibnamehash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \strng{authorbibnamehash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \strng{authornamehash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \strng{authorfullhash}{6dbe3b3f24c68e21a359cc366709cf2c}
+      \field{sortinit}{L}
+      \field{sortinithash}{2c7981aaabc885868aba60f0c09ee20f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{The mathematical model of diﬀusion has been commonly used to analyze heat and mass transport in various materials. In media with variable diﬀusivity, numerical approximation techniques, such as the ﬁnite diﬀerence method, can be used to calculate solutions of the diﬀusion equation. However, when a medium’s diﬀusivity varies drastically, approximation errors may be greatly ampliﬁed. It has not been rigorously shown that these numerical approximation techniques, under drastically variable diﬀusivity conditions, would accurately converge to the correct values.}
+      \field{title}{Stability of {Finite} {Diﬀerence} {Schemes} on the {Diﬀusion} {Equation} with {Discontinuous} {Coeﬃcients}}
+      \field{year}{2017}
+      \field{pages}{21}
+      \range{pages}{1}
+      \verb{file}
+      \verb Lee_2017_Stability of Finite Diﬀerence Schemes on the Diﬀusion Equation with.pdf:/Users/mlees/Dropbox/ZoteroFilesInDropbox/Lee_2017_Stability of Finite Diﬀerence Schemes on the Diﬀusion Equation with.pdf:application/pdf
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
