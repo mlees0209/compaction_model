@@ -65,6 +65,10 @@ Sentinel_rezeroed = np.array(0.1 * rezero_series(InSAR_H,datesinsarH,'Aug-2015')
 
 Sentinel_rezeroed_primary = Sentinel_rezeroed[np.isin(datesinsarH,datesinsarH_primaryperiod)]
 
+Poland_75_dates = date2num([dt(1954,1,1),dt(1957,1,1),dt(1958,7,1),dt(1962,1,1),dt(1966,4,1),dt(1970,1,1)])
+Poland_75_data = -30.48*  np.array([0,0.83,1.34,3.25,4.92,6.31])
+Poland_6670_rate = 365 * (Poland_75_data[-1] - Poland_75_data[-2]) / (Poland_75_dates[-1] - Poland_75_dates[-2])
+
 Highway_198_dates = date2num([date(1972,6,1),date(2004,1,1)])
 
 #%%
@@ -74,7 +78,7 @@ Highway_198_dates = date2num([date(1972,6,1),date(2004,1,1)])
 model_runs= next(os.walk(sweep_directory))[1]
 model_runs = [run for run in model_runs if run.startswith('C')]
 
-results = pd.DataFrame(columns=['RunID','Runname','Clay','Sskv','Sske','Kv','d_i','Sentinel RMS Misfit (cm)','Highway 198 modelled subsidence (cm)','ALOS subsidence rate (cm/yr)','Period15-17 average rate (cm/yr)','Period07-09 average rate (cm/yr)'])
+results = pd.DataFrame(columns=['RunID','Runname','Clay','Sskv','Sske','Kv','d_i','precons','Poland 66-70 rate (cm/yr)','Highway 198 modelled subsidence (cm)','ALOS subsidence rate (cm/yr)','Period15-17 average rate (cm/yr)','Period07-09 average rate (cm/yr)'])
 
 #run = model_runs[0]
 
@@ -101,7 +105,11 @@ for run in model_runs:
     clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
     clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
     clay_value = run.split('y')[1].split('S')[0]  
-    di_value = run.split('di')[1]
+    di_value = run.split('di')[1].split('pre')[0]
+    if 'preconshead' in run:
+        precons_value = run.split('preconshead')[1]
+    else:
+        precons_value=0
     
     vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
 
@@ -113,9 +121,12 @@ for run in model_runs:
         
         # primary_RMS = np.sqrt(np.mean( (100*Deformation_Out_primaryperiodtmp-Sentinel_rezeroed_primary)**2))
         # print('Sentinel RMS = %.2f cm' % primary_RMS)
-        primary_RMS='NA'
-        Period1517_dates = np.arange(date2num(datetime.date(2015,9,1)),date2num(datetime.date(2017,9,1)),step=1)
+        PolandPeriod_dates = np.arange(Poland_75_dates[-2],Poland_75_dates[-1],step=1)
+        PolandPeriod_modelled_average_rate = 365 * np.polyfit(PolandPeriod_dates,100*Deformation_Out_tmp['Total'][np.isin(date2num(Deformation_Out_tmp['dates']),PolandPeriod_dates)],1)[0] # get the linear modelled rate over the envisat period.
+        print('1966-1970 average rate = %.2f cm/yr' % PolandPeriod_modelled_average_rate)
 
+
+        Period1517_dates = np.arange(date2num(datetime.date(2015,3,1)),date2num(datetime.date(2017,3,1)),step=1)
         Period1517_modelled_average_rate = 365 * np.polyfit(Period1517_dates,100*Deformation_Out_tmp['Total'][np.isin(date2num(Deformation_Out_tmp['dates']),Period1517_dates)],1)[0] # get the linear modelled rate over the envisat period.
         print('2015-17 average rate = %.2f cm/yr' % Period1517_modelled_average_rate)
 
@@ -140,7 +151,7 @@ for run in model_runs:
         print('2007-09 average rate = %.2f cm/yr' % Period0709_modelled_average_rate)
 
 
-        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,primary_RMS,deformation_modelled_Highway198_tmp[0],ALOS_modelled_average_rate,Period1517_modelled_average_rate,Period0709_modelled_average_rate]
+        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,precons_value,PolandPeriod_modelled_average_rate,deformation_modelled_Highway198_tmp[0],ALOS_modelled_average_rate,Period1517_modelled_average_rate,Period0709_modelled_average_rate]
         print('i=%i' % i)
         print('')
         print('')
@@ -148,7 +159,7 @@ for run in model_runs:
         i+=1
 
     else:
-        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,'NA','NA','NA','NA','NA']
+        results.loc[len(results.index)] = [i,run,clay_value,clay_Ssv['Upper Aquifer'],clay_Sse['Upper Aquifer'],vertical_conductivity['Upper Aquifer'],di_value,precons_value,'NA','NA','NA','NA','NA']
 
         i+=1
 
