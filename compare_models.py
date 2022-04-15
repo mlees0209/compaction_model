@@ -115,11 +115,11 @@ plt.savefig('%s_STARTYEAR%s.pdf' % (s,startyear), bbox_inches='tight')
 plt.savefig('%s_STARTYEAR%s.svg' % (s,startyear), bbox_inches='tight')
 
 # Do 2015-2020 version
-yrange = 10
-plt.ylim([100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2019,6,1)))[0][0]]-yrange,100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2015,1,1)))[0][0]]+yrange])
+#yrange = 10
+#plt.ylim([100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2019,6,1)))[0][0]]-yrange,100*rezero_series(Data[run]['Total'],np.array([date2num(date) for date in Data[run]['dates']]),'Sep-%s' % startyear)[np.argwhere(date2num(Data[run]['dates']) == date2num(dt(2015,1,1)))[0][0]]+yrange])
     
-plt.xlim([date(2015,1,1),date(2020,1,1)])
-plt.savefig('%s_STARTYEAR%s_20152020.pdf' % (s,startyear), bbox_inches='tight')
+#plt.xlim([date(2015,1,1),date(2020,1,1)])
+#plt.savefig('%s_STARTYEAR%s_20152020.pdf' % (s,startyear), bbox_inches='tight')
 
 
 os.chdir(cwd)
