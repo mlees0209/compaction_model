@@ -347,8 +347,8 @@ def read_parameter_layerthickness_multitype(name,paramfilelines,printlots=True):
           print('\t%s=%s' % (name,par_out))
       return par_out
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_initial_maxstress=False,ic_maxstress=[]):
-    ''' TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum.'''
+def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_initial_maxstress=False,ic_maxstress=[]):
+    ''' TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum. NOTE AS OF Apr 2022, this no longer works.'''
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
         if not unconfined:
@@ -366,17 +366,17 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
         for i in range(np.shape(hmat)[1]):
             if i % (int(np.shape(hmat)[1]/20)) == 0:
                 printProgressBar(i,np.shape(hmat)[1])
-            if len(hmat[:,i]) != len( 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz)):
-                print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
-                print(0.001*np.arange(0,1000* (np.shape(hmat_interp)[0]+1)*(dz/(2*TESTn))-0.00001,1000*dz/(2*TESTn)))
-                sys.exit(1)
-            a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),hmat[:,i],kind='linear')
+            # if len(hmat[:,i]) != len( 0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz)):
+            #     print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
+            #     print(0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz))
+            #     sys.exit(1)
+            a = scipy.interpolate.interp1d(np.linspace(0,b0,n_z),hmat[:,i],kind='linear')
 #            print(np.arange(0,np.shape(hmat)[0]*dz,dz))
 ##            print(np.shape(hmat_interp)[0])
 ##            print(dz)
 ##            print(np.shape(a))
 #            print(np.arange(0,np.shape(hmat_interp)[0]*(dz/2),(dz/2)))
-            hmat_interp[:,i] = a(0.001* np.arange(0,1000* ((np.shape(hmat)[0] - 1)*dz)+1,1000*dz/(2*TESTn))) # again the 1000 and 0.001 is to ensure against np.arange's bad rounding with non integers
+            hmat_interp[:,i] = a(np.linspace(0,b0,2*n_z-1))
         if TESTn != 1:
             hmat_midpoints = hmat_interp[1:-1,:]
         else:
@@ -398,8 +398,8 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
     if preset_initial_maxstress:
         print('preset precons found. interpolating to midpoints.')
         print('starting with',ic_maxstress)
-        a = scipy.interpolate.interp1d(0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz),ic_maxstress)
-        ic_precons_interp = a(0.001* np.arange(0,1000* ((np.shape(hmat)[0] - 1)*dz)+1,1000*dz/(2*TESTn)))
+        a = scipy.interpolate.interp1d(np.linspace(0,b0,n_z),ic_maxstress)
+        ic_precons_interp = a(np.linspace(0,b0,n_z*2-1))
         ic_precons_initial = ic_precons_interp[1::2]
         print('interpoolated to',ic_precons_initial)
         stress_midpoints_precons[:,0] = ic_precons_initial
@@ -439,9 +439,6 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
     
     inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
 
-    if TESTn != 1:
-        dz = dz/(2*TESTn)
-
     # print('doing db')
     # db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
     # print('doing ds')
@@ -467,7 +464,7 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,dz,TESTn=1,overbu
     for ti in range(1,np.shape(hmat)[1]):
         if ti % (int(np.shape(hmat)[1]/20)) == 0:
             printProgressBar(ti,np.shape(hmat)[1]-1)
-        b[ti] = dz * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
+        b[ti] = b0/n_z * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
     
     b = -1 * np.array(b)
 
