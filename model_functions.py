@@ -464,7 +464,7 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
     for ti in range(1,np.shape(hmat)[1]):
         if ti % (int(np.shape(hmat)[1]/20)) == 0:
             printProgressBar(ti,np.shape(hmat)[1]-1)
-        b[ti] = b0/n_z * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
+        b[ti] = b0/(n_z-1) * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
     
     b = -1 * np.array(b)
 
