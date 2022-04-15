@@ -11,7 +11,7 @@ After the fact: creates a head video for a given layer.
 
 import sys
 
-if len(sys.argv) <= 2:
+if len(sys.argv) <= 1:
     print('create_head_video_layer.py error; terminal. Incorrect number of input arguments. Correct usage: python create_head_video_layer.py layername dt=XXXX. Layername should be fmt LAYER_THICKclay; dt=DAYS')
     sys.exit(1)
 
