@@ -1,118 +1,0 @@
-
-
-********************************************************************************
-*****************************  READING PARAMETERS  *****************************
-********************************************************************************
-
-Reading parameters from file: parameter_files/params_test01_elasticinelastic.par
-	internal_time_delay=0.1
-	overwrite=True
-	run_name=Test01_inelasticflow
-	output_folder=/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/outputs
-		Output folder /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/MODEL/outputs/Test01_inelasticflow already exists and overwrite flag specified. Overwriting.
-	save_output_head_timeseries=True
-	no_layers=3
-	layer_names=['Upper Aquifer', 'Corcoran Clay', 'Lower Aquifer']
-	layer_types={'Upper Aquifer': 'Aquifer', 'Corcoran Clay': 'Aquitard', 'Lower Aquifer': 'Aquifer'}
-		Number of aquifer layers calculated to be 2.
-		Number of aquitard layers calculated to be 1.
-	layer_thicknesses={'Upper Aquifer': 100.0, 'Corcoran Clay': 40.0, 'Lower Aquifer': 100.0}
-	layer_compaction_switch={'Upper Aquifer': False, 'Corcoran Clay': True, 'Lower Aquifer': False}
-	interbeds_switch={'Upper Aquifer': False, 'Lower Aquifer': False}
-	interbeds_type={'Upper Aquifer': 'Equivalent', ' Lower Aquifer': 'Equivalent'}
-		Number of layers containing clay calculated to be 1.
-	groundwater_flow_solver_type={'Corcoran Clay': 'elastic-inelastic'}
-	Reading parameters: NOTICE. No 'clay_Ssk' found in parameter file and no default set.
-	clay_Sske={'Corcoran Clay': 1e-06}
-	clay_Sskv={'Corcoran Clay': 5e-05}
-	clay_porosity={'Corcoran Clay': 0.5}
-	sand_Ssk={'Upper Aquifer': 0.0, 'Lower Aquifer': 0.0}
-	compressibility_of_water=4.4e-10
-	dt_master={'Corcoran Clay': 1.0}
-	dz_clays={'Corcoran Clay': 2.0}
-	vertical_conductivity={'Corcoran Clay': 1e-06}
-	initial_condition=45.0
-
-
-********************************************************************************
-*****************************  READING HEAD DATA  ******************************
-********************************************************************************
-
-Preparing to read in head data. Aquifers for which head data is required are: Lower Aquifer, Upper Aquifer.
-	head_data_files={'Upper Aquifer': '/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Shallow_Timeseries_truncatedfrom1970.csv', 'Lower Aquifer': '/Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Deep_Timeseries.csv'}
-	File for Lower Aquifer specified as /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Deep_Timeseries.csv. Looking for file.
-		File /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Deep_Timeseries.csv exists. Storing copy in output folder.
-		Reading in head time series.
-		Successfully read in. Head data for Lower Aquifer printing now.
-[[7.19169000e+05 4.03204201e+01]
- [7.19170000e+05 4.03091278e+01]
- [7.19171000e+05 4.02978045e+01]
- ...
- [7.37500000e+05 5.66195436e+00]
- [7.37501000e+05 5.64252449e+00]
- [7.37502000e+05 5.62296997e+00]]
-	File for Upper Aquifer specified as /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Shallow_Timeseries_truncatedfrom1970.csv. Looking for file.
-		File /Users/mlees/Documents/RESEARCH/Land_Subsidence/Local_Scale/Head_TimeSeries/compare_H_to_nearby/WellH_Interpolated_Shallow_Timeseries_truncatedfrom1970.csv exists. Storing copy in output folder.
-		Reading in head time series.
-		Successfully read in. Head data for Upper Aquifer printing now.
-[[7.19169000e+05 5.79906610e+01]
- [7.19170000e+05 5.79965677e+01]
- [7.19171000e+05 5.80024150e+01]
- ...
- [7.37500000e+05 3.35262098e+01]
- [7.37501000e+05 3.35276572e+01]
- [7.37502000e+05 3.35291140e+01]]
-	Reading head data complete.
-
-
-********************************************************************************
-****************  SOLVING FOR HEAD TIME SERIES IN CLAY LAYERS  *****************
-********************************************************************************
-
-Hydrostratigraphy:
-------------------------------------------------------------
-                  Upper Aquifer (Aquifer)                   
-------------------------------------------------------------
-                  Corcoran Clay (Aquitard)                  
-------------------------------------------------------------
-                  Lower Aquifer (Aquifer)                   
-------------------------------------------------------------
-
-
-Head time series to be solved within the following layers: ['Corcoran Clay']
-	Beginning solving process for layer Corcoran Clay.
-		Corcoran Clay is an aquitard.
-		Head time series required for overlying layer Upper Aquifer and lower layer Lower Aquifer.
-			Head time series found.
-			Time series found with correct dt and over same timespan.
-
-			FD1D_HEAT_EXPLICIT_ELASTICINELASTIC_Ssk:
-			  Python version: 3.7.1
-			  Compute an approximate solution to the time-dependent
-			  one dimensional heat equation:
-
-			    dH/dt - K * d2H/dx2 = f(x,t)
-
-			  Number of X nodes = 20
-			  X interval is [0.000000,38.000000]
-			  X spacing is 2.000000
-			  Number of T values = 18334
-			  T interval is [719169.000000,737502.000000]
-			  T spacing is 1.000000
-			  Elastic K = 1
-			  Inelastic K = 0.02
-			  CFL elastic coefficient = 0.25
-			  CFL inelastic coefficient = 0.005
- |----------------------------------------------------------------------------------------------------| 0.0%  |████------------------------------------------------------------------------------------------------| 5.0%  |█████████-------------------------------------------------------------------------------------------| 10.0%  |██████████████--------------------------------------------------------------------------------------| 15.0%  |███████████████████---------------------------------------------------------------------------------| 20.0%  |████████████████████████----------------------------------------------------------------------------| 25.0%  |█████████████████████████████-----------------------------------------------------------------------| 30.0%  |██████████████████████████████████------------------------------------------------------------------| 35.0%  |███████████████████████████████████████-------------------------------------------------------------| 40.0%  |████████████████████████████████████████████--------------------------------------------------------| 45.0%  |█████████████████████████████████████████████████---------------------------------------------------| 50.0%  |██████████████████████████████████████████████████████----------------------------------------------| 55.0%  |███████████████████████████████████████████████████████████-----------------------------------------| 60.0%  |████████████████████████████████████████████████████████████████------------------------------------| 65.0%  |█████████████████████████████████████████████████████████████████████-------------------------------| 69.9%  |██████████████████████████████████████████████████████████████████████████--------------------------| 74.9%  |███████████████████████████████████████████████████████████████████████████████---------------------| 79.9%  |████████████████████████████████████████████████████████████████████████████████████----------------| 84.9%  |█████████████████████████████████████████████████████████████████████████████████████████-----------| 89.9%  |██████████████████████████████████████████████████████████████████████████████████████████████------| 94.9%  |███████████████████████████████████████████████████████████████████████████████████████████████████-| 99.9%  
-			 SOLVER COMPLETE
- 
-
-
-********************************************************************************
-***********************  SAVING HEAD TIMESERIES OUTPUTS  ***********************
-********************************************************************************
-
-save_output_head_timeseries = True. Saving head timeseries for all layers.
-	Saving head timeseries for Upper Aquifer.
-	Saving head timeseries for Corcoran Clay.
-	Saving head timeseries for Lower Aquifer.
