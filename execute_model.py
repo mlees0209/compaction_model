@@ -143,7 +143,26 @@ def read_parameters_noadmin(paramfilelines):
     layer_compaction_switch=read_parameter('layer_compaction_switch',bool,no_layers,paramfilelines)
     interbeds_switch=read_parameter('interbeds_switch',bool,list(layer_types.values()).count('Aquifer'),paramfilelines)
     initial_stress_type=read_parameter('initial_stress_type',str,no_layers,paramfilelines)
-    initial_stress_offset=read_parameter('initial_stress_offset',float,no_aquifers,paramfilelines)
+    no_layers_with_past_stepdrop_initialstress = np.sum(np.isin(list(initial_stress_type.values()),'past_stepdrop'))
+    layers_with_past_stepdrop = np.array(list((initial_stress_type.keys())))[np.where(np.isin(list(initial_stress_type.values()),'past_stepdrop'))]
+    if no_layers_with_past_stepdrop_initialstress >= 1:
+        print('\t\tFound %i layers with past_stepdrop initial stress. Reading additional related parameters initial_stress_paststepdrop_size and initial_stress_paststepdrop_time.' % no_layers_with_past_stepdrop_initialstress)
+        initial_stress_paststepdrop_size = read_parameter('initial_stress_paststepdrop_size',float,no_layers_with_past_stepdrop_initialstress,paramfilelines)
+        for layer in layers_with_past_stepdrop:
+            if layer not in initial_stress_paststepdrop_size:
+                print('READ PARAMETERS ERROR: TERMINAL. Layer %s with past_stepdrop does not have initial_stress_paststepdrop_size. Check the input paramfile.' % layer)
+                sys.exit()
+        initial_stress_paststepdrop_time = read_parameter('initial_stress_paststepdrop_time',float,no_layers_with_past_stepdrop_initialstress,paramfilelines)
+
+        for layer in layers_with_past_stepdrop:
+            if layer not in initial_stress_paststepdrop_time:
+                print('READ PARAMETERS ERROR: TERMINAL. Layer %s with past_stepdrop does not have initial_stress_paststepdrop_time. Check the input paramfile.' % layer)
+                sys.exit()
+    else:
+        initial_stress_paststepdrop_time=None
+        initial_stress_paststepdrop_size=None
+
+    initial_stress_offset=read_parameter('initial_stress_offset',float,no_aquifers,paramfilelines)        
     initial_stress_unit=read_parameter('initial_stress_offset_unit',str,1,paramfilelines)
     # Import interbeds_distributions -- an awkward parameter as its a dictionary of dictionaries!
     interbeds_distributions1=read_parameter('interbeds_distributions',dict,sum(interbeds_switch.values()),paramfilelines)
@@ -199,7 +218,7 @@ def read_parameters_noadmin(paramfilelines):
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size
 
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
@@ -237,7 +256,7 @@ if MODE=='resume':
     print('')
 
 
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s = read_parameters_noadmin(paramfilelines)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size = read_parameters_noadmin(paramfilelines)
 
 if MODE=='resume':
     print('Mode=RESUME, therefore setting initial_stress_type to preset for ALL LAYERS.')
@@ -807,7 +826,7 @@ if len(layers_requiring_solving)>=0:
                     dz_tmp = np.diff(z_tmp)[0]
                     dz_head_solver[layer]['%.2f clays' % thickness] = dz_tmp
 
-                    # At this point, calculate the timestep to give a CTL condition just greater than 0.5
+                    # At this point, calculate the timestep to give a CTL condition just greater than the CTL value.
                     # Assume it will only be the elastic that matters.
                     if clay_Sse[layer] < clay_Ssv[layer]:
                         print('\t\t\tFinding a good timestep at which to solve...')
@@ -843,10 +862,10 @@ if len(layers_requiring_solving)>=0:
                                     
                     if dt_tmp > max_solver_dt:
                         max_solver_dt = dt_tmp
-                    B_tmp =  (max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp
-                    if not B_tmp.is_integer():
-                        print("\t\tIF THIS ISN'T A WHOLE NUMBER, written as a float, YOU MAY BE IN TROUBLE! WARNING!" )
-                        print((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp)
+                    # B_tmp =  (max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp
+                    # if not B_tmp.is_integer():
+                    #     print("\t\tIF THIS ISN'T A WHOLE NUMBER, written as a float, YOU MAY BE IN TROUBLE! WARNING!" )
+                    #     print((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp)
                     t_interp_new = np.linspace(min(t_aquifer_tmp),min(t_aquifer_tmp) + int((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp) * dt_tmp ,num=int((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp)+1)
                     f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp,h_aquifer_tmp) # linear interpolation of input head
                     h_aquifer_tmp_interpolated = np.array([t_interp_new,f_tmp(t_interp_new)]).T
@@ -857,6 +876,12 @@ if len(layers_requiring_solving)>=0:
                         initial_condition_tmp = h_aquifer_tmp[0] * np.ones_like(z_tmp) + initial_stress_offset[layer]
                         initial_maxstress[layer]['%.2f clays' % thickness]=np.array([])
                         print('\t\tinitial head value is %.2f' % initial_condition_tmp[0])
+                    elif initial_stress_type[layer]=='past_stepdrop':
+                        print('\t\tInitial stress condition is past_stepdrop; calculating initial stress accordingly.')
+                        preset_initial_maxstress=False
+                        initial_condition_tmp = hoffman_subsidence(initial_stress_paststepdrop_time[layer],thickness,h_aquifer_tmp[0] + initial_stress_paststepdrop_size[layer],-initial_stress_paststepdrop_size[layer],clay_Ssv[layer],vertical_conductivity[layer],n_z=n_z)
+                        initial_maxstress[layer]['%.2f clays' % thickness]=np.array([])
+                        print('Initial condition precalculated to be ',initial_condition_tmp)
                     if MODE=='resume':
                         preset_initial_maxstress=True
                         print('\t\tMode is resume. Looking for initial condition in directory %s/head_outputs.' % resume_directory)
