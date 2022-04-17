@@ -27,7 +27,7 @@ import math
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False,'resume_date':False,'layer_thickness_types':True,'compaction_solver_compressibility_type':False,'save_s':True,'initial_stress_type':False,'initial_stress_offset':False,'initial_stress_offset_unit':True,'n_z':True,'CTL_value':True} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False,'resume_date':False,'layer_thickness_types':True,'compaction_solver_compressibility_type':False,'save_s':True,'initial_stress_type':False,'initial_stress_offset':False,'initial_stress_offset_unit':True,'n_z':True,'CTL_value':True,'initial_stress_paststepdrop_size':False,'initial_stress_paststepdrop_time':False} # Define which variables have pre-defined defaults
 
 Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False,'save_internal_compaction':False,'mode':'Normal','layer_thickness_types':'constant','save_s':False,'initial_stress_offset_unit':'stress','n_z':12,'CTL_value':0.5}
 
@@ -78,6 +78,25 @@ def round_to_multiple(number, multiple, direction='nearest'):
         return multiple * math.floor(number / multiple)
     else:
         return multiple * round(number / multiple)
+
+def hoffman_tau(b0,Skv,Kv,k):
+    tau = ((b0/2)**2 * Skv) / (Kv*(2*k+1)**2)
+    return tau
+
+def hoffman_subsidence(t,b0,h0,dh,Skv,Kv,n_z=10,kmax=25):
+    '''Give the final time after a head drop, and the initial head, and this function gives the analytic expression for the head distribution in a clay of thickness b0 and n_z nodes.'''
+    if (n_z % 2) != 0:
+        print('ERROR: terminal. The selected initial condition only works with n_z even. Check n_z and try again.')
+        sys.exit()
+    x = np.linspace(0,b0,num=n_z)
+    Sum = np.zeros_like(x)
+    for k in range(kmax):
+        Sum += (-1)**k * (np.exp(-(np.pi**2)/4 * t/hoffman_tau(b0,Skv,Kv,k))) / (2*k+1) * np.cos((2*k+1)*np.pi * x/b0)
+#        print(Sum)
+    h = h0 + dh - 4*dh/np.pi * Sum
+    h = h[:int(n_z/2)]
+    h_return = np.append(h[::-1],h)
+    return h_return
 
 
 def solve_head_equation_singlevalue(dt,t,dx,x,bc,ic,k):        
