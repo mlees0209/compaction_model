@@ -1184,9 +1184,20 @@ for layer in layer_names:
                 layer_sand_thickness_tmp = initial_thicknesses[layer] - np.sum([list(interbeds_distributions[layer].keys())[i] * list(interbeds_distributions[layer].values())[i] for i in range(len(interbeds_distributions[layer]))])
                 print('\tInitial total sand thickness in aquifer is %.2f m.' % layer_sand_thickness_tmp)
             deformation[layer]['Interconnected matrix']=[layer_sand_thickness_tmp*(sand_Sse[layer]-compressibility_of_water)*(head_series[layer]['Interconnected matrix'][i,1] - head_series[layer]['Interconnected matrix'][0,1]) for i in range(len(head_series[layer]['Interconnected matrix'][:,1]))]
+            
+            # Now find the timestep at which to solve
+            dt_sand_tmp=np.diff(head_data[layer][:,0])[0]
+            if dt_sand_tmp > max_solver_dt:
+                max_solver_dt = dt_sand_tmp
+            print('\tCalculating deformation for layer %s. dt is %.2f.' % (layer, max_solver_dt))
+            dt_max_tmp = max_solver_dt
+            t_total_tmp = np.linspace(np.min(head_data[layer][:,0]),np.min(head_data[layer][:,0]) + int((np.max(head_data[layer][:,0])-np.min(head_data[layer][:,0]))/dt_max_tmp) * dt_max_tmp,num=int((np.max(head_data[layer][:,0])-np.min(head_data[layer][:,0]))/dt_max_tmp)+1) # this is the master t which will apply for all the solved layers. Note that, for certain dt_max_tmp which are larger than 1, the finish value may be smaller than the greatest input time.
+            
             interbeds_tmp=interbeds_distributions[layer]
             bed_thicknesses_tmp=list(interbeds_tmp.keys())
             print('\t\t%s is an aquifer with interbedded clays. Thicknesses of clays to solve compaction are %s' % (layer,bed_thicknesses_tmp))
+
+
             for thickness in bed_thicknesses_tmp:
                 print('\t\t\tSolving for thickness %.2f.' % thickness)
                 
@@ -1199,21 +1210,18 @@ for layer in layer_names:
                         overburden_dates_tmp = groundwater_solution_dates[layer]['%.2f clays' % thickness]
                     else:
                         overburden_data_tmp = overburden_data
-
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
+                    
+                    print(np.shape(head_series[layer]['%.2f clays' % thickness]))
+                    print(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp))
+                    print(np.shape(np.where(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp))))
+                    print(np.shape(np.tile(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp),reps=[n_z,1])))
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
                 else:
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
                 # deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
                 # deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
             # Now collect the results at the max timestep
-            dt_sand_tmp=np.diff(head_data[layer][:,0])[0]
-            if dt_sand_tmp > max_solver_dt:
-                max_solver_dt = dt_sand_tmp
-            print('\tSumming deformation for layer %s. dt is %.2f.' % (layer, max_solver_dt))
-            dt_max_tmp = max_solver_dt
-
-            t_total_tmp = np.linspace(np.min(head_data[layer][:,0]),np.min(head_data[layer][:,0]) + int((np.max(head_data[layer][:,0])-np.min(head_data[layer][:,0]))/dt_max_tmp) * dt_max_tmp,num=int((np.max(head_data[layer][:,0])-np.min(head_data[layer][:,0]))/dt_max_tmp)+1) # this is the master t which will apply for all the solved layers. Note that, for certain dt_max_tmp which are larger than 1, the finish value may be smaller than the greatest input time.
 
 
             deformation_OUTPUT_tmp={}
@@ -1224,15 +1232,14 @@ for layer in layer_names:
             
             def_tot_tmp += np.array(deformation[layer]['Interconnected matrix'])[np.where(np.isin(head_data[layer][:,0],t_total_tmp))]
             for thickness in bed_thicknesses_tmp:
-                def_tot_tmp += np.array(deformation[layer]['total_%.2f clays' % thickness])[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)]
-                ting=np.array(deformation[layer]['total_%.2f clays' % thickness])[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)]
-                deformation_OUTPUT_tmp['total_%.2f clays' % thickness]=ting
+                def_tot_tmp += np.array(deformation[layer]['total_%.2f clays' % thickness])
+                deformation_OUTPUT_tmp['total_%.2f clays' % thickness]=np.array(deformation[layer]['total_%.2f clays' % thickness])
             
             
             deformation[layer]['total'] = np.array([t_total_tmp,def_tot_tmp])
             deformation_OUTPUT_tmp['total']=def_tot_tmp
             deformation_OUTPUT[layer] = pd.DataFrame(deformation_OUTPUT_tmp)
-
+            
 
 
     if layer_types[layer]=='Aquitard':
