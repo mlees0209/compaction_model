@@ -1211,10 +1211,6 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
                     
-                    print(np.shape(head_series[layer]['%.2f clays' % thickness]))
-                    print(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp))
-                    print(np.shape(np.where(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp))))
-                    print(np.shape(np.tile(np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp),reps=[n_z,1])))
                     deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
                 else:
                     deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
@@ -1248,7 +1244,11 @@ for layer in layer_names:
         if layer_compaction_switch[layer]:
             if compaction_solver_compressibility_type[layer]=='elastic-inelastic':
                 deformation[layer]={}
-                
+                # Find the timestep at which to solve
+                print('\tCalculating deformation for layer %s. dt is %.2f.' % (layer, max_solver_dt))
+                dt_max_tmp = max_solver_dt
+                t_total_tmp = np.linspace(np.min(t_gwflow[layer]),np.min(t_gwflow[layer]) + int((np.max(t_gwflow[layer])-np.min(t_gwflow[layer]))/dt_max_tmp) * dt_max_tmp,num=int((np.max(t_gwflow[layer])-np.min(t_gwflow[layer]))/dt_max_tmp)+1) # this is the master t which will apply for all the solved layers. Note that, for certain dt_max_tmp which are larger than 1, the finish value may be smaller than the greatest input time.
+
                 if overburden_stress_compaction:
                     unconfined_tmp = unconfined_aquifer_name==layer
                     print('UNCONFINED STATUS = %s' % unconfined_tmp)
@@ -1260,11 +1260,11 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
 
                 else:
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer])
                     deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
