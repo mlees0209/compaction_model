@@ -593,7 +593,7 @@ if len(layers_requiring_solving)>=0:
                     dt_tmp = dt_aquitard_tmp
                 elif A_tmp < 1:
                     dt_tmp = 1/(np.ceil(1/A_tmp))
-                print('\t\t\t\t\tSelected to use timestep of %.2f.' % dt_tmp)
+                print('\t\t\t\t\tSelected to use timestep of %.4f.' % dt_tmp)
             else: 
                 print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                 sys.exit()
@@ -855,7 +855,7 @@ if len(layers_requiring_solving)>=0:
                                 print("WARNING: timestep is tiny, such that rounding errors are likely. Continuing but setting dt_tmp to %.10f as the smallest value which doesn't result in rounding errors." % dt_tmp)
                             else:
                                 dt_tmp = 1/(np.ceil(1/A_tmp))
-                        print('\t\t\t\t\tSelected to use timestep of %.2f.' % dt_tmp)
+                        print('\t\t\t\t\tSelected to use timestep of %.4f.' % dt_tmp)
                     else: 
                         print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                         sys.exit()
