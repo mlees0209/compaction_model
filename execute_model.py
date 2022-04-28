@@ -1389,7 +1389,6 @@ for layer in layer_names:
                         
                         scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
                         deformation_scaled_tmp =  deformation_OUTPUT[layer]['total_%.2f clays' % thickness][logicaltmp].values * scaling_factor_tmp
-                        print(deformation_scaled_tmp)
                         nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
                         nonprekeynames.sort()
                         for key in nonprekeynames:
@@ -1412,7 +1411,6 @@ for layer in layer_names:
                     scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
                     logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1) for datetimedate in datetimedates]
                     deformation_scaled_tmp =  deformation_OUTPUT[layer]['Interconnected Matrix'][logicaltmp].values * scaling_factor_tmp
-                    print(deformation_scaled_tmp)
                     nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
                     nonprekeynames.sort()
                     for key in nonprekeynames:
