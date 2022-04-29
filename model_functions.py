@@ -169,8 +169,6 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     print ( '' )
     if overburdenstress:
         print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
-        print('\t\t\tOverburden data read in as ')
-        print(overburden_data)
     else:
         overburden_data = np.zeros_like(t)
     
@@ -372,8 +370,6 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
     if overburden:
         if not unconfined:
             print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
-            print('\t\t\tOverburden data read in as ')
-            print(overburden_data)
         else:
             print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
             print('\t\t\tThis aquifer is unconfined. ')
