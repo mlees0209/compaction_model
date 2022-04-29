@@ -207,8 +207,9 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     hmat = np.zeros ( ( len(x), len(t) ) ) # running the code creates an output matrix of heads at each position and time
 
     for j in range ( 0, len(t) ):
-        if j % (int(len(t)/20)) == 0:
-            printProgressBar(j,len(t))
+        if len(t) >= 20: # If there are more than 20 t's, then do a progress bar every 20. 
+            if j % (int(len(t)/20)) == 0:
+                printProgressBar(j,len(t))
         if ( j == 0 ):
             h = ic*np.ones(len(x))
             h[0] = bc[0,0]
@@ -379,8 +380,9 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
     if not endnodes:
         hmat_interp = np.zeros((np.shape(hmat)[0]*(2*TESTn)-(2*TESTn-1),np.shape(hmat)[1]))
         for i in range(np.shape(hmat)[1]):
-            if i % (int(np.shape(hmat)[1]/20)) == 0:
-                printProgressBar(i,np.shape(hmat)[1])
+            if np.shape(hmat)[1] >= 20: # if there are more than 20 to do, then print the progress bar
+                if i % (int(np.shape(hmat)[1]/20)) == 0:
+                    printProgressBar(i,np.shape(hmat)[1])
             # if len(hmat[:,i]) != len( 0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz)):
             #     print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
             #     print(0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz))
@@ -422,8 +424,9 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
         stress_midpoints_precons[:,0] = overburden_data_midpoints[:,0] - hmat_midpoints[:,0]
     
     for i in range(np.shape(stress_midpoints)[1]-1):
-        if i % (int((np.shape(stress_midpoints)[1]-1)/20)) == 0:
-            printProgressBar(i,np.shape(stress_midpoints)[1])        
+        if np.shape(stress_midpoints)[1] >= 21: # only do a progress bar if more than 20 timesteps to do! 
+            if i % (int((np.shape(stress_midpoints)[1]-1)/20)) == 0:
+                printProgressBar(i,np.shape(stress_midpoints)[1])        
         for j in range(np.shape(stress_midpoints)[0]):
             if stress_midpoints[j,i] > stress_midpoints_precons[j,i]:
                 stress_midpoints_precons[j,i+1]=stress_midpoints[j,i]
@@ -477,8 +480,9 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
 
     b = np.zeros(np.shape(hmat)[1])
     for ti in range(1,np.shape(hmat)[1]):
-        if ti % (int(np.shape(hmat)[1]/20)) == 0:
-            printProgressBar(ti,np.shape(hmat)[1]-1)
+        if np.shape(hmat)[1] >= 20: # do a progress bar only if more than 20 timesteps
+            if ti % (int(np.shape(hmat)[1]/20)) == 0:
+                printProgressBar(ti,np.shape(hmat)[1]-1)
         b[ti] = b0/(n_z-1) * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
     
     b = -1 * np.array(b)
