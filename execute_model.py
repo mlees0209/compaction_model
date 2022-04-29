@@ -323,7 +323,7 @@ if MODE=='resume':
     
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
-sys.exit()
+
 
 #%% Next section is "READING INPUT DATA MODULE"
 print()
@@ -610,12 +610,13 @@ if len(layers_requiring_solving)>=0:
             else: 
                 print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                 sys.exit()
-            if dt_tmp > max_solver_dt:
-                max_solver_dt = dt_tmp
-            
+
             if dt_tmp > maxdt_ManualCap:
                 print('WARNING: selected dt exceeds maxdt input variable. Solving at the smaller, maxdt input instead.')
                 dt_tmp = maxdt_ManualCap
+
+            if dt_tmp > max_solver_dt:
+                max_solver_dt = dt_tmp
             
             dt_head_solver[layer] = dt_tmp
             dz_head_solver[layer] = dz_tmp
@@ -877,8 +878,14 @@ if len(layers_requiring_solving)>=0:
                         print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                         sys.exit()
                                     
+                    if dt_tmp > maxdt_ManualCap:
+                        print('WARNING: selected dt exceeds maxdt input variable. Solving at the smaller, maxdt input instead.')
+                        dt_tmp = maxdt_ManualCap
+
+
                     if dt_tmp > max_solver_dt:
-                        max_solver_dt = dt_tmp
+                        max_solver_dt = dt_tmp                        
+    
                     # B_tmp =  (max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp
                     # if not B_tmp.is_integer():
                     #     print("\t\tIF THIS ISN'T A WHOLE NUMBER, written as a float, YOU MAY BE IN TROUBLE! WARNING!" )
