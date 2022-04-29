@@ -1261,11 +1261,11 @@ for layer in layer_names:
                         overburden_data_tmp = overburden_data
 
                     totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer])
-                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])
+                    deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])
 
                 else:
                     totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer])
-                    deformation[layer]['total'] = np.array([groundwater_solution_dates[layer],totdeftmp])          
+                    deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
     if len(layers_var_thickness)>=1:
@@ -1325,8 +1325,7 @@ for layer in layer_names:
             sns.set_context('talk')
             plt.figure(figsize=(18,12))
             t = groundwater_solution_dates[layer]
-            
-            plt.plot_date(t,deformation[layer]['total'][1,:])
+            plt.plot_date(deformation[layer]['total'][0,:],deformation[layer]['total'][1,:])
             # plt.plot_date(t,deformation[layer]['elastic'],label='elastic')
             # plt.plot_date(t,deformation[layer]['inelastic'],label='inelastic')
             plt.legend()
