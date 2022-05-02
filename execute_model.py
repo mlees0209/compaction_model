@@ -210,6 +210,7 @@ def read_parameters_noadmin(paramfilelines):
     #dz_clays = read_parameter('dz_clays',float,no_layers_containing_clay,paramfilelines)
     n_z = read_parameter('n_z',int,1,paramfilelines)
     CTL_value = read_parameter('CTL_value',float,1,paramfilelines)
+    maxdt_ManualCap = read_parameter('maxdt',int,1,paramfilelines)
     vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
     overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
     #overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
@@ -218,7 +219,7 @@ def read_parameters_noadmin(paramfilelines):
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size
 
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
@@ -256,7 +257,7 @@ if MODE=='resume':
     print('')
 
 
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size = read_parameters_noadmin(paramfilelines)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size = read_parameters_noadmin(paramfilelines)
 
 if MODE=='resume':
     print('Mode=RESUME, therefore setting initial_stress_type to preset for ALL LAYERS.')
@@ -294,6 +295,17 @@ for layer in layers_var_thickness:
             print("\tERROR:terminal. %s is variable thickness but doesn't have a pre entry. Needs fixing!." % layer)
             sys.exit(1)
 
+# Check maxdt is a multiple of 2
+
+print('Checking maxdt is set to acceptable value.')
+if maxdt_ManualCap > 1:
+    remainder_tmp = np.log2(maxdt_ManualCap)
+    if int(remainder_tmp)!=remainder_tmp:
+        print('\tERROR:terminal. maxdt is %i, which is neither <1 nor a multiple of 2. Change maxdt and try again.' % maxdt_ManualCap)
+        sys.exit(1)
+    else:
+        print('\tMaxdt value is fine.')
+
 
 if len(layers_var_thickness)>=1:
     initial_thicknesses={}
@@ -311,6 +323,7 @@ if MODE=='resume':
     
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
+
 
 #%% Next section is "READING INPUT DATA MODULE"
 print()
@@ -593,13 +606,18 @@ if len(layers_requiring_solving)>=0:
                     dt_tmp = dt_aquitard_tmp
                 elif A_tmp < 1:
                     dt_tmp = 1/(np.ceil(1/A_tmp))
-                print('\t\t\t\t\tSelected to use timestep of %.2f.' % dt_tmp)
+                print('\t\t\t\t\tSelected to use timestep of %.4f.' % dt_tmp)
             else: 
                 print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                 sys.exit()
+
+            if dt_tmp > maxdt_ManualCap:
+                print('WARNING: selected dt exceeds maxdt input variable. Solving at the smaller, maxdt input instead.')
+                dt_tmp = maxdt_ManualCap
+
             if dt_tmp > max_solver_dt:
                 max_solver_dt = dt_tmp
-
+            
             dt_head_solver[layer] = dt_tmp
             dz_head_solver[layer] = dz_tmp
 
@@ -855,13 +873,19 @@ if len(layers_requiring_solving)>=0:
                                 print("WARNING: timestep is tiny, such that rounding errors are likely. Continuing but setting dt_tmp to %.10f as the smallest value which doesn't result in rounding errors." % dt_tmp)
                             else:
                                 dt_tmp = 1/(np.ceil(1/A_tmp))
-                        print('\t\t\t\t\tSelected to use timestep of %.2f.' % dt_tmp)
+                        print('\t\t\t\t\tSelected to use timestep of %.4f.' % dt_tmp)
                     else: 
                         print('ERROR: terminal. Sse greater than ssv. Code not yet set up to calculate the CTL condition in that cirumstance. EXITING!.')
                         sys.exit()
                                     
+                    if dt_tmp > maxdt_ManualCap:
+                        print('WARNING: selected dt exceeds maxdt input variable. Solving at the smaller, maxdt input instead.')
+                        dt_tmp = maxdt_ManualCap
+
+
                     if dt_tmp > max_solver_dt:
-                        max_solver_dt = dt_tmp
+                        max_solver_dt = dt_tmp                        
+    
                     # B_tmp =  (max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp
                     # if not B_tmp.is_integer():
                     #     print("\t\tIF THIS ISN'T A WHOLE NUMBER, written as a float, YOU MAY BE IN TROUBLE! WARNING!" )
@@ -1322,23 +1346,22 @@ for layer in layer_names:
             print('Saving data for aquitard layer %s.' % layer)
             print('\tMaking deformation figure')
             sns.set_style('darkgrid')
-            sns.set_context('talk')
+            sns.set_context('talk')            
             # plt.figure(figsize=(18,12))
             # plt.plot_date(deformation[layer]['total'][0],deformation[layer]['total'][1])
             # # plt.plot_date(t,deformation[layer]['elastic'],label='elastic')
             # # plt.plot_date(t,deformation[layer]['inelastic'],label='inelastic')
-            # plt.legend()
             # plt.savefig('%s/figures/compaction_%s.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
+            # plt.legend()
             # plt.xlim(date2num([date(2015,1,1),date(2020,1,1)]))
-            # plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             # plt.close()
+            # plt.savefig('%s/figures/compaction_%s_20152020.png' % (outdestination, layer.replace(' ','_')),bbox_inches='tight')
             
     
             if save_s:        
                 print('\tSaving s timeseries')
                 np.savetxt('%s/%s_s.csv' % (outdestination, layer.replace(' ','_')),deformation[layer]['total'])
     
-#            
     if layer_types[layer]=='Aquifer':
         if layer_compaction_switch[layer]:
             if save_internal_compaction:   
@@ -1387,7 +1410,6 @@ for layer in layer_names:
                         
                         scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
                         deformation_scaled_tmp =  deformation_OUTPUT[layer]['total_%.2f clays' % thickness][logicaltmp].values * scaling_factor_tmp
-                        print(deformation_scaled_tmp)
                         nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
                         nonprekeynames.sort()
                         for key in nonprekeynames:
@@ -1410,7 +1432,6 @@ for layer in layer_names:
                     scaling_factor_tmp = layer_thicknesses[layer][prekeyname]/initial_thicknesses[layer] 
                     logicaltmp = [datetimedate <= dt(int('%s' % prekeyname.split('-')[1]) ,9,1) for datetimedate in datetimedates]
                     deformation_scaled_tmp =  deformation_OUTPUT[layer]['Interconnected Matrix'][logicaltmp].values * scaling_factor_tmp
-                    print(deformation_scaled_tmp)
                     nonprekeynames = np.array(list(layer_thicknesses[layer].keys()))[np.where(['pre' not in key for key in list(layer_thicknesses[layer].keys())])[0]]
                     nonprekeynames.sort()
                     for key in nonprekeynames:

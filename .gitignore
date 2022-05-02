@@ -5,3 +5,5 @@ debug
 debug/*
 parameter_files
 parameter_files/*
+
+__pycache__/
