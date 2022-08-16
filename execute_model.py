@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-### This is the main model script. This is where all the "under the hood" operations occur. Do not edit unless you know what you are doing!! The correct call should be: python execute_model.py parameter_file.par
+### This is the main model script. This is where all the "under the hood" operations occur. Do not edit unless you know what you are doing!! The correct call should be: python execute_model.py parameter_file.par [logfileon=True]
 
 #from __future__ import print_function
 from model_functions import *
@@ -34,13 +34,38 @@ gmt=True # If this is true, head outputs can be saved as .netCDF grid files whic
 
 sns.set_context('talk')
 
-output_folder='.'
-run_name='.'
-sys.stdout = Logger(output_folder,run_name)
-
 if len(sys.argv) != 2:
-    print('Execute model error; terminal. Incorrect number of input arguments. Correct usage: python execute_model.py parameter_file.par')
-    sys.exit(1)
+    if len(sys.argv)==3:
+        logfileon= sys.argv[2]
+        if '=' in logfileon:
+            if logfileon.split('=')[0]=='logfileon':
+                if logfileon.split('=')[1]=='True':
+                    logfileon=True
+                elif logfileon.split('=')[1]=='False':
+                    logfileon=False
+                else:
+                    print('Execute model error; terminal. 3rd input argument is not being understood. Check if it looks correct; it is %s.' % sys.argv[2])
+                    sys.exit(1)
+            else:
+                print('Execute model error; terminal. 3rd input argument is not being understood. Check if it looks correct; it is %s.' % sys.argv[2])
+                sys.exit(1)
+        else:
+            print('Execute model error; terminal. 3rd input argument is not being understood. Check if it looks correct; it is %s.' % sys.argv[2])
+            sys.exit(1)
+
+
+    else:
+        print('Execute model error; terminal. Incorrect number of input arguments. Correct usage: python execute_model.py parameter_file.par [logfileon=True]')
+        sys.exit(1)
+else:
+    logfileon=True
+
+if logfileon:
+    output_folder='.'
+    run_name='.'
+    sys.stdout = Logger(output_folder,run_name)
+else:
+    print('\tOption %s detected. No log file being produced.' % sys.argv[2])
 
 param_filename=sys.argv[1]
 
@@ -100,8 +125,8 @@ def make_output_folder(outdestination,overwrite):
                 sys.exit(1)
     #    OVERWRITE = input("\t\tOutput directory %s already exists. Do you want to overwrite this directory? WARNING: may delete existing data." % (outdestination))
     
-    
-    shutil.move('logfile.log','%s/logfile.log' % outdestination)
+    if logfileon:
+        shutil.move('logfile.log','%s/logfile.log' % outdestination)
     if os.path.exists(param_filename):
         copy2(param_filename,"%s/paramfile.par" % outdestination)
     else:
