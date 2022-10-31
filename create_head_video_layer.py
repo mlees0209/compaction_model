@@ -82,13 +82,21 @@ elif os.path.isfile("head_outputs/%s_head_data.csv" % layername):
     z = np.linspace(start=0,stop=zmax,num=np.shape(head)[0])
 else:
     print('\tUnable to find head file as .nc or .csv. Something has gone wrong; aborting.')
-    sys.exit(1)    
+    sys.exit(1)   
 
 print('Reading inelastic flag...')
 if os.path.isfile("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername):
     print('\tFound as .nb file. Reading in...')
     InelasticFlagDat = Dataset("head_outputs/%sinelastic_flag_GWFLOW.nb" % layername, "r", format="CF-1.7")     
-    inelasticflag = InelasticFlagDat.variables['z'][:]
+    if 'z' in list(InelasticFlagDat.variables.keys()):
+        inelasticflag = InelasticFlagDat.variables['z'][:]
+    elif 'W.nb' in list(InelasticFlagDat.variables.keys()):
+        inelasticflag = InelasticFlagDat.variables['W.nb'][:]
+    else:
+        print('ERROR: cannot find variable name for Inelastic Flag. They are:. Quitting...')
+        print(InelasticFlagDat.variables.keys())
+        sys.exit(1)
+
 elif os.path.isfile("head_outputs/%sinelastic_flag_GWFLOW.csv" % layername):
     print('\tFound as .csv file. Reading in...')
     inelasticflag = np.genfromtxt('head_outputs/%sinelastic_flag_GWFLOW.csv' % layername,delimiter=',')
