@@ -766,10 +766,12 @@ if len(layers_requiring_solving)>=0:
                         print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
                         inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
                         print('\t\t\t\tConverting to netCDF format. Command is:')
-                        cmd_tmp="gmt xyz2grd %s/head_outputs/%sinelastic_flag_GWFLOW -G%s/head_outputs/%sinelastic_flag_GWFLOW.nb -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                        #cmd_tmp="gmt xyz2grd %s/head_outputs/%sinelastic_flag_GWFLOW -G%s/head_outputs/%sinelastic_flag_GWFLOW.nb -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                        #print(cmd_tmp)
+                        #subprocess.call(cmd_tmp,shell=True)
                         
-                        print(cmd_tmp)
-                        subprocess.call(cmd_tmp,shell=True)
+                        pygmt.xyz2grd(data='%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%sinelastic_flag_GWFLOW.nb' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLc')
+                        
                         os.remove('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
     
                     else:
@@ -1023,10 +1025,13 @@ if len(layers_requiring_solving)>=0:
                                 print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
                                 inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
                                 print('\t\t\t\tConverting to netCDF format. Command is:')
-                                cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),'%.2f' % thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclayinelastic_flag_GWFLOW -G%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),'%.2f' % thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                # print(cmd_tmp)
+                                # subprocess.call(cmd_tmp,shell=True)
                                 
-                                print(cmd_tmp)
-                                subprocess.call(cmd_tmp,shell=True)
+                                pygmt.xyz2grd(data='%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness),outgrid='%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW.nb' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness),spacing='%i+n/%i+n' % (len(t_gwflow[layer]['%.2f clays' % thickness]),n_z),region=[str(np.min(t_gwflow[layer]['%.2f clays' % thickness]))+'t',str(np.max(t_gwflow[layer]['%.2f clays' % thickness]))+'t',np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness])],convention='TLc')
+
+                                
                                 os.remove('%s/head_outputs/%s_%sclayinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness))
 
                             else:
@@ -1119,10 +1124,13 @@ if save_output_head_timeseries:
                             head_series[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
                             print('\t\t\t\tConverting to netCDF format. Command is:')
                             print()
-                            cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                            # print(cmd_tmp)
+                            # subprocess.call(cmd_tmp,shell=True)
+                            pygmt.xyz2grd(data='%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness),outgrid='%s/head_outputs/%s_%sclay_head_data.nc' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness),spacing='%i+n/%i+n' % (len(t_gwflow[layer]['%.2f clays' % thickness]),n_z),region=[str(np.min(t_gwflow[layer]['%.2f clays' % thickness]))+'t',str(np.max(t_gwflow[layer]['%.2f clays' % thickness]))+'t',np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness])],convention='TLf')
+
                             
-                            print(cmd_tmp)
-                            subprocess.call(cmd_tmp,shell=True)
+                            
                             os.remove('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
                         else:
                             print('\t\t\tHead has more than 1 million entries; saving as 16 bit floats.')
@@ -1144,10 +1152,11 @@ if save_output_head_timeseries:
                     print('\t\t\tHead has more than 1 million entries; saving as 32 bit floats.')
                     head_series[layer].astype(np.single).tofile('%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')))
                     print('\t\t\t\tConverting to netCDF format. Command is:')
-                    cmd_tmp="gmt xyz2grd %s/head_outputs/%s_head_data -G%s/head_outputs/%s_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
-                    
-                    print(cmd_tmp)
-                    subprocess.call(cmd_tmp,shell=True)
+                    # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_head_data -G%s/head_outputs/%s_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
+                    # print(cmd_tmp)
+                    # subprocess.call(cmd_tmp,shell=True)
+                    pygmt.xyz2grd(data='%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%s_head_data.nc' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLf')
+
                     os.remove('%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')))
                 else:
                     print('\t\t\tHead has more than 1 million entries; saving as 16 bit floats.')
