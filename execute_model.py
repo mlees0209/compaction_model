@@ -1134,7 +1134,7 @@ if save_output_head_timeseries:
                 with open('%s/head_outputs/%s_%sclay_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness), 'w') as myfile:
                     wr = csv.writer(myfile)
                     #res = list(groundwater_solution_dates[layer].keys())[0] 
-                    wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer]['%.2d clays' % thickness])])
+                    wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer]['%.2f clays' % thickness])])
 
             
         if layer_types[layer]=='Aquitard':
