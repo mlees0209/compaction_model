@@ -760,7 +760,7 @@ if len(layers_requiring_solving)>=0:
                         #print(cmd_tmp)
                         #subprocess.call(cmd_tmp,shell=True)
                         
-                        pygmt.xyz2grd(data='%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%sinelastic_flag_GWFLOW.nb' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLc',verbose='l')
+                        pygmt.xyz2grd(data='%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%sinelastic_flag_GWFLOW.nb' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLc')
                         
                         os.remove('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
     
@@ -1117,7 +1117,7 @@ if save_output_head_timeseries:
                             # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                             # print(cmd_tmp)
                             # subprocess.call(cmd_tmp,shell=True)
-                            pygmt.xyz2grd(data='%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness),outgrid='%s/head_outputs/%s_%sclay_head_data.nc' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness),spacing='%i+n/%i+n' % (len(t_gwflow[layer]['%.2f clays' % thickness]),n_z),region=[str(np.min(t_gwflow[layer]['%.2f clays' % thickness]))+'t',str(np.max(t_gwflow[layer]['%.2f clays' % thickness]))+'t',np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness])],convention='TLf',verbose='l')
+                            pygmt.xyz2grd(data='%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness),outgrid='%s/head_outputs/%s_%sclay_head_data.nc' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness),spacing='%i+n/%i+n' % (len(t_gwflow[layer]['%.2f clays' % thickness]),n_z),region=[str(np.min(t_gwflow[layer]['%.2f clays' % thickness]))+'t',str(np.max(t_gwflow[layer]['%.2f clays' % thickness]))+'t',np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness])],convention='TLf')
 
                             
                             
@@ -1145,7 +1145,7 @@ if save_output_head_timeseries:
                     # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_head_data -G%s/head_outputs/%s_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
                     # print(cmd_tmp)
                     # subprocess.call(cmd_tmp,shell=True)
-                    pygmt.xyz2grd(data='%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%s_head_data.nc' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLf',verbose='l')
+                    pygmt.xyz2grd(data='%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%s_head_data.nc' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLf')
 
                     os.remove('%s/head_outputs/%s_head_data' % (outdestination, layer.replace(' ','_')))
                 else:
