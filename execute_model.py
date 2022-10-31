@@ -1108,12 +1108,13 @@ if save_output_head_timeseries:
             if interbeds_switch[layer]:
                 interbeds_tmp=interbeds_distributions[layer]
                 for thickness in list(interbeds_tmp.keys()):
+                    print('\t\tSaving for thickness %.2f.' % thickness)
                     if np.size(head_series[layer]['%.2f clays' % thickness]) >= 1e6:
                         if gmt:
                             print('\t\t\tHead has more than 1 million entries; saving as 32 bit floats.')
                             head_series[layer]['%.2f clays' % thickness].astype(np.single).tofile('%s/head_outputs/%s_%sclay_head_data' % (outdestination, layer.replace(' ','_'),thickness))
-                            print('\t\t\t\tConverting to netCDF format. Command is:')
-                            print()
+                #            print('\t\t\t\tConverting to netCDF format. Command is:')
+                #            print()
                             # cmd_tmp="gmt xyz2grd %s/head_outputs/%s_%sclay_head_data -G%s/head_outputs/%s_%sclay_head_data.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                             # print(cmd_tmp)
                             # subprocess.call(cmd_tmp,shell=True)
@@ -1133,7 +1134,6 @@ if save_output_head_timeseries:
             
                 with open('%s/head_outputs/%s_%sclay_groundwater_solution_dates.csv' % (outdestination, layer.replace(' ','_'),'%.2f' % thickness), 'w') as myfile:
                     wr = csv.writer(myfile)
-                    #res = list(groundwater_solution_dates[layer].keys())[0] 
                     wr.writerow([x.strftime('%c') for x in num2date(groundwater_solution_dates[layer]['%.2f clays' % thickness])])
 
             
