@@ -8,7 +8,6 @@ from model_functions import *
 import datetime
 import csv
 import distutils.util as ut
-from datetime import date
 from netCDF4 import Dataset
 import time
 import shutil
@@ -17,6 +16,12 @@ from shutil import copy2
 import pandas as pd
 import copy
 import pygmt
+from time import process_time 
+import seaborn as sns
+import sys
+import os
+import numpy as np
+import scipy
 
 t_total_start = process_time()
 
