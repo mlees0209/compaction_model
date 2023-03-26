@@ -342,7 +342,7 @@ def read_parameter_layerthickness_multitype(name,paramfilelines,printlots=True):
       # Find if there are any dictionaries
       contains_dict = ['{' in s or '}' in s for s in par]
       if sum(contains_dict) % 2 != 0:
-          print('\tERROR: odd number of { or } brackets found.' % (name,par))          
+          print('\tERROR: odd number of { or } brackets found.')          
           print('\t\tReading parameters error: terminal. %s should have even number of { } brackets.' % name)
       elif sum(contains_dict) > 0:
           for i_tmp in range(int(len(np.where(contains_dict)[0])/2)):
