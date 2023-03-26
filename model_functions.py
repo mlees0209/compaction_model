@@ -23,7 +23,6 @@ import seaborn as sns
 import subprocess
 import scipy
 import glob
-import math
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
@@ -68,16 +67,6 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     # Print New Line on Complete
     if iteration == total: 
         print()
-
-def round_to_multiple(number, multiple, direction='nearest'):
-    if direction == 'nearest':
-        return multiple * round(number / multiple)
-    elif direction == 'up':
-        return multiple * math.ceil(number / multiple)
-    elif direction == 'down':
-        return multiple * math.floor(number / multiple)
-    else:
-        return multiple * round(number / multiple)
 
 def hoffman_tau(b0,Skv,Kv,k):
     tau = ((b0/2)**2 * Skv) / (Kv*(2*k+1)**2)
