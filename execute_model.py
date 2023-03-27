@@ -1331,10 +1331,18 @@ for layer in layer_names:
                         overburden_dates_tmp = groundwater_solution_dates[layer]['%.2f clays' % thickness]
                     else:
                         overburden_data_tmp = overburden_data
+                        
+                    # Prepare sskv
+                    if sskv_type=='constant':
+                        sskv_inelastic_tmp = (clay_Ssv[layer]-compressibility_of_water)*np.ones(len(t_total_tmp))
+                    elif sskv_type=='prescribed-temporal':
+                        t_aquifer_tmp_sskv=sskv_data[layer][:,0]
+                        f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
+                        sskv_inelastic_tmp =np.array(f_tmp(t_total_tmp)).T - compressibility_of_water
                     
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),sskv_inelastic_tmp,np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
                 else:
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),sskv_inelastic_tmp,np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
                 # deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
                 # deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
@@ -1381,11 +1389,19 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer],sskv_type=sskv_type)
+                    # Prepare sskv
+                    if sskv_type=='constant':
+                        sskv_inelastic_tmp = (clay_Ssv[layer]-compressibility_of_water)*np.ones(len(t_total_tmp))
+                    elif sskv_type=='prescribed-temporal':
+                        t_aquifer_tmp_sskv=sskv_data[layer][:,0]
+                        f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
+                        sskv_inelastic_tmp =np.array(f_tmp(t_total_tmp)).T - compressibility_of_water
+
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),sskv_inelastic_tmp,np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer],sskv_type=sskv_type)
                     deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])
 
                 else:
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer],sskv_type=sskv_type)
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),sskv_inelastic_tmp,np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer],sskv_type=sskv_type)
                     deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
