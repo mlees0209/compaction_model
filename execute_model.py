@@ -85,11 +85,6 @@ paramfilelines = [line.strip() for line in paramfilelines]
 paramfilelines = [x for x in paramfilelines if not x.startswith('#')]
 paramfilelines[:] = [x for x in paramfilelines if x]
 
-#print(paramfilelines) # bugfix line; remove later
-
-
-# Read in parameters
-
 def make_output_folder(outdestination,overwrite):
     # Function which makes the output folder, and copies across the paramfile; I just defined this as a function for neatness.
     if not os.path.isdir(outdestination):
@@ -201,7 +196,6 @@ def read_parameters_noadmin(paramfilelines):
     aquitards = [name for name,value in layer_types.items() if value=='Aquitard']
     interbedded_layers= [name for name,value in interbeds_switch.items() if value==True]
     no_layers_containing_clay = len(aquitards) + len(interbedded_layers)
-    #no_layers_containing_clay = list(layer_types.values()).count('Aquitard') + sum(list(interbeds_switch.values()))
     print('\t\tNumber of layers containing clay calculated to be %i.' % no_layers_containing_clay)
     
     layers_requiring_solving = interbedded_layers + aquitards
@@ -213,34 +207,38 @@ def read_parameters_noadmin(paramfilelines):
     overburden_stress_gwflow = read_parameter('overburden_stress_gwflow',bool,1,paramfilelines)
     compaction_solver_compressibility_type = read_parameter('compaction_solver_compressibility_type',str,1,paramfilelines)
     compaction_solver_debug_include_endnodes = read_parameter('compaction_solver_debug_include_endnodes',bool,1,paramfilelines)
-        
+    
+    sskv_type = read_parameter('sskv_type',str,1,paramfilelines)
     clay_Ssk = read_parameter('clay_Ssk',float,sum(value == 'singlevalue' for value in groundwater_flow_solver_type.values()),paramfilelines)
     clay_Sse = read_parameter('clay_Sse',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
-    clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
+    if sskv_type=='constant':
+        clay_Ssv = read_parameter('clay_Ssv',float,sum(groundwater_flow_solver_type[layer]=='elastic-inelastic' or compaction_solver_compressibility_type[layer]=='elastic-inelastic' for layer in layer_names),paramfilelines)
+    elif sskv_type=='prescribed-temporal':
+        clay_Ssv = {} # to be populated later
+    else:
+        print("\t\tReading parameters error: terminal. Only sskv_type of 'prescribed_temporal' or 'elastic-constant' currently supported.")
+        sys.exit(1)
     sand_Sse = read_parameter('sand_Sse',float,no_aquifers,paramfilelines)
     
     time_unit = read_parameter('time_unit',str,1,paramfilelines)
     
-    #clay_porosity = read_parameter('clay_porosity',float,no_layers_containing_clay,paramfilelines)
     sand_Ssk = read_parameter('sand_Ssk',float,no_aquifers,paramfilelines)
     compressibility_of_water = read_parameter('compressibility_of_water',float,1,paramfilelines)
     rho_w = read_parameter('rho_w',float,1,paramfilelines)
     g = read_parameter('g',float,1,paramfilelines)
-    #dt_master = read_parameter('dt_master',float,no_layers_containing_clay,paramfilelines)
-    #dz_clays = read_parameter('dz_clays',float,no_layers_containing_clay,paramfilelines)
     n_z = read_parameter('n_z',int,1,paramfilelines)
     CTL_value = read_parameter('CTL_value',float,1,paramfilelines)
     maxdt_ManualCap = read_parameter('maxdt',int,1,paramfilelines)
     vertical_conductivity = read_parameter('vertical_conductivity',float,len(layers_requiring_solving),paramfilelines)
     overburden_stress_compaction = read_parameter('overburden_stress_compaction',bool,1,paramfilelines)
-    #overburden_compaction = read_parameter('overburden_compaction',bool,1,paramfilelines)
     save_s = read_parameter('save_s',bool,1,paramfilelines)
     if overburden_stress_gwflow or overburden_stress_compaction: # Only used if we're doing overburden anywhere
         specific_yield = read_parameter('specific_yield',float,1,paramfilelines)
     else:
         specific_yield=None
-    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size
+    return save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,sskv_type,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size
 
+# Read in parameters (admin)
 internal_time_delay,overwrite,run_name,output_folder,outdestination = read_parameters_admin(paramfilelines)
 
 
@@ -276,8 +274,8 @@ if MODE=='resume':
     paramfilelines[:] = [x for x in paramfilelines if x]
     print('')
 
-
-save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size = read_parameters_noadmin(paramfilelines)
+# Read in parameters (all)
+save_output_head_timeseries,save_effective_stress,save_internal_compaction,no_layers,layer_names,layer_types,no_aquifers,no_aquitards,layer_thickness_types,layer_thicknesses,layer_compaction_switch,interbeds_switch,interbeds_distributions,aquitards,interbedded_layers,no_layers_containing_clay,layers_requiring_solving,create_output_head_video,groundwater_flow_solver_type,overburden_stress_gwflow,compaction_solver_compressibility_type,compaction_solver_debug_include_endnodes,sskv_type,clay_Sse,clay_Ssv,clay_Ssk,sand_Sse,time_unit,sand_Ssk,compressibility_of_water,rho_w,g,n_z,CTL_value,maxdt_ManualCap,vertical_conductivity,overburden_stress_compaction,specific_yield,initial_stress_type,initial_stress_offset,initial_stress_unit,save_s,initial_stress_paststepdrop_time,initial_stress_paststepdrop_size = read_parameters_noadmin(paramfilelines)
 
 if MODE=='resume':
     print('Mode=RESUME, therefore setting initial_stress_type to preset for ALL LAYERS.')
@@ -341,6 +339,9 @@ if MODE=='resume':
     for layer in layer_names:
         layer_thickness_types[layer]='constant'
     
+# Maybe check that Sskv and h are the size size if you have a 'prescribed-temporal' sskv value??
+print("Maybe insert a check here that Sskv and h are the size size if you have a 'prescribed-temporal' sskv value??")    
+
 param_read_stop = process_time()
 param_read_time = param_read_start - param_read_stop
 
@@ -355,13 +356,15 @@ print()
 reading_head_start = process_time()
 time.sleep(internal_time_delay)
 
-
-
+# Generate some useful lists of layer names
 aquifer_layer_names = [name for name, layer_type in layer_types.items() if layer_type=='Aquifer']
+aquitard_layer_names = [name for name, layer_type in layer_types.items() if layer_type=='Aquitard']
 compactable_aquifers_names = [name for name, switch in layer_compaction_switch.items() if name in aquifer_layer_names if switch==True]
 aquitard_locations = [layer_names.index(name) for name, layer_type in layer_types.items() if layer_type=='Aquitard']
 aquifers_above_aquitards = [layer_names[i-1] for i in aquitard_locations]
 aquifers_below_aquitards = [layer_names[i+1] for i in aquitard_locations]
+
+# First, read head data
 all_aquifers_needing_head_data = list(set(aquifers_below_aquitards +aquifers_above_aquitards + compactable_aquifers_names))
 dt_headseries={}
 print('Preparing to read in head data. Aquifers for which head data is required are: '+', '.join(map(str,all_aquifers_needing_head_data))+'.')
@@ -379,11 +382,8 @@ if len(all_aquifers_needing_head_data) >=0:
             print('\t\tFile %s exists. Storing copy in output folder.' % fileloc)
             print('\t\tReading in head time series.')
             copy2(fileloc,'%s/input_data/%s' % (outdestination,fileloc.split('/')[-1]))
-            #dateparse = lambda x: pd.datetime.strptime(x, '%Y-%m-%d') # IF you have trouble reading dates in, use these lines!
             try:
-                #data=pd.read_csv(fileloc,parse_dates=[0],date_parser=dateparse) # IF you have trouble reading dates in, use these lines!
                 data=pd.read_csv(fileloc,parse_dates=[0])
-
             except Exception:
                 print('\t\tReading head data error: terminal. Input file does not seem to be valid csv format. Format expected is two columns, date then measurement. Date should be "dd-MMM-YYYY".')
                 sys.exit(1)
@@ -408,31 +408,85 @@ if len(all_aquifers_needing_head_data) >=0:
     print('\tReading head data complete.')
 else:
     print('\tNo aquifers requiring head data; skipping reading head data.')
+
+# Now read sskv data, if needed
+if sskv_type =='prescribed-temporal':
+    all_layers_needing_sskv_data = list(set(compactable_aquifers_names + aquitard_layer_names))
+    Sskv_series={}
+    print()
+    print('Preparing to read in Sskv data. Layers for which Sskv data is required are: '+', '.join(map(str,all_layers_needing_sskv_data))+'.')
+    if len(all_layers_needing_sskv_data) >=0:
+        try:
+            os.mkdir('%s/input_data' % outdestination)
+        except FileExistsError:
+            pass
+        sskv_data_files=read_parameter('sskv_data_files',str,len(all_layers_needing_sskv_data),paramfilelines)
+        sskv_data=copy.deepcopy(sskv_data_files)
+        for aquifer in all_layers_needing_sskv_data:
+            fileloc=sskv_data_files[aquifer]
+            print('\tFile for %s specified as %s. Looking for file.' % (aquifer,fileloc))
+            if os.path.isfile(fileloc):
+                print('\t\tFile %s exists. Storing copy in output folder.' % fileloc)
+                print('\t\tReading in sskv time series.')
+                copy2(fileloc,'%s/input_data/%s' % (outdestination,fileloc.split('/')[-1]))
+                try:
+                    data_tmp=pd.read_csv(fileloc,parse_dates=[0])
+                except Exception:
+                    print('\t\tReading sskv data error: terminal. Input file does not seem to be valid csv format. Format expected is two columns, date then measurement. Date should be "dd-MMM-YYYY".')
+                    sys.exit(1)
+                
+                try:
+                    dates=date2num(data_tmp.iloc[:,0].values)
+                except Exception:
+                    print("\t\tPandas couldn't parse the date. Going to try treating the date as a float. If it's not, things may fail from hereon.")
+                    dates=np.array([float(ting) for ting in data_tmp.iloc[:,0].values])
+                    if time_unit=='years':
+                        dates=365*dates
+                        
+                data_tmp=data_tmp.iloc[:,1].values
+                sskv_data[aquifer]=np.array([dates,data_tmp]).T
+                print('\t\tSuccessfully read in. Sskv data for %s printing now.' % aquifer)
+                print(sskv_data[aquifer])
+#                dt_headseries[aquifer] = np.diff(head_data[aquifer][:,0])[0]
+            else:
+                print('\t\tReading sskv data error: terminal. File %s not found.' % fileloc)
+                sys.exit(1)
+            
+        print('\tReading sskv data complete.')
+    else:
+        print('\tNo aquifers requiring sskv data; skipping reading sskv data.')
+
+# Now clip head data
 starttimes = [np.min(head_data[aquifer][:,0]) for aquifer in all_aquifers_needing_head_data]
-print(starttimes)
 starttime = np.max(starttimes)
 endtimes = [np.max(head_data[aquifer][:,0]) for aquifer in all_aquifers_needing_head_data]
 endtime = np.min(endtimes)
-
-
-
-
 print('')
 print('CLIPPING HEAD TIMESERIES TO HAVE CONSISTENT START/END DATES ACROSS AQUIFERS.')
 print('\tLatest startdate found is %s and earliest end date is %s. These will be used as model start/end times.' % (num2date(starttime).strftime('%d-%b-%Y'),num2date(endtime).strftime('%d-%b-%Y')))
 # Clip to have common starting date
-print('Clipping input series to model starttime.')
+
 if MODE=='resume':
     starttime = date2num(resume_date)
     print('\tHead startdate is resume date; clipping series accordingly to start at %s.' % resume_date.strftime('%d-%b-%Y'))
-
 
 for aquifer in all_aquifers_needing_head_data:
     idx_to_keep = ((head_data[aquifer][:,0]>=starttime) & (head_data[aquifer][:,0]<=endtime)) 
     datesnew = head_data[aquifer][:,0][idx_to_keep]
     datanew = head_data[aquifer][:,1][idx_to_keep]
     head_data[aquifer]=np.array([datesnew,datanew]).T
-print('Clipping done.')
+print('\tHead clipping done.')
+
+# Now, if needed, clip sskv data...
+if sskv_type =='prescribed-temporal':
+    print('CLIPPING SSKV TIMESERIES TO HAVE CONSISTENT START/END DATES ACROSS AQUIFERS.')
+    for aquifer in all_layers_needing_sskv_data:
+        idx_to_keep_tmp = ((sskv_data[aquifer][:,0]>=starttime) & (sskv_data[aquifer][:,0]<=endtime)) 
+        datesnew = sskv_data[aquifer][:,0][idx_to_keep_tmp]
+        datanew = sskv_data[aquifer][:,1][idx_to_keep_tmp]
+        sskv_data[aquifer]=np.array([datesnew,datanew]).T
+        clay_Ssv[aquifer] = datanew
+    print('\tSskv clipping done.')
 
 if MODE=='resume':
     for aquifer in all_aquifers_needing_head_data:
@@ -610,7 +664,7 @@ if len(layers_requiring_solving)>=0:
 
             # At this point, calculate the timestep to give a CTL condition just greater than 0.5
             # Assume it will only be the elastic that matters.
-            if clay_Sse[layer] < clay_Ssv[layer]:
+            if clay_Sse[layer] < np.min(clay_Ssv[layer]):
                 print('\t\t\tFinding a good timestep at which to solve...')
                 k_tmp = vertical_conductivity[layer]/clay_Sse[layer] 
                 dt_optimal = CTL_value * dz_tmp**2 / k_tmp # I must pick a timestep equal to or smaller than this
@@ -745,9 +799,22 @@ if len(layers_requiring_solving)>=0:
             if groundwater_flow_solver_type[layer] == 'singlevalue':
                 hmat_tmp=solve_head_equation_singlevalue(dt_master[layer],t_in,dz_clays[layer],z_tmp,np.vstack((top_head_tmp[::spacing_top,1],top_head_tmp[::spacing_bot,1])),initial_condition_tmp,vertical_conductivity[layer]/(clay_Ssk[layer]+compressibility_of_water))
             elif groundwater_flow_solver_type[layer] == 'elastic-inelastic':
-                t1_start = process_time() 
-                # hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_master[layer],t_interp_new,dz_clays[layer],z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp))
-                hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_tmp,t_in,dz_tmp,z_tmp,np.vstack((top_head_tmp[:,1],bot_head_tmp[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]) 
+                t1_start = process_time()
+                
+                # Prepare k_elastic and k_inelastic
+                if sskv_type=='constant':
+                    k_inelastic_tmp = vertical_conductivity[layer]/(clay_Ssv[layer]*np.ones(len(t_in)))
+                elif sskv_type=='prescribed-temporal':
+                    t_aquifer_tmp_sskv=sskv_data[layer][:,0]
+                    f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
+                    sskv_aquifer_tmp_interpolated = np.array(f_tmp(t_in)).T
+                    k_inelastic_tmp = vertical_conductivity[layer]/(sskv_aquifer_tmp_interpolated)
+                else:
+                    print("\tSskv-type only works for 'constant' and 'prescribed-temporal' at the moment -ABORTING.")
+                    sys.exit(1)
+                k_elastic_tmp =  vertical_conductivity[layer]/(clay_Sse[layer]*np.ones(len(t_in)))           
+
+                hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_tmp,t_in,dz_tmp,z_tmp,np.vstack((top_head_tmp[:,1],bot_head_tmp[:,1])),initial_condition_tmp,k_elastic_tmp,k_inelastic_tmp,overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]) 
                 t1_stop = process_time() 
                 print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
 
@@ -760,10 +827,7 @@ if len(layers_requiring_solving)>=0:
                     if gmt:
                         print('\t\t\tInelastic flag gwflow has more than 3 million entries; saving as signed char.')
                         inelastic_flag_tmp.astype(np.byte).tofile('%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')))
-                        print('\t\t\t\tConverting to netCDF format. Command is:')
-                        #cmd_tmp="gmt xyz2grd %s/head_outputs/%sinelastic_flag_GWFLOW -G%s/head_outputs/%sinelastic_flag_GWFLOW.nb -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLc" % (outdestination, layer.replace(' ','_'),outdestination, layer.replace(' ','_'),len(t_gwflow[layer]),n_z,np.min(t_gwflow[layer]),np.max(t_gwflow[layer]),np.min(Z[layer]),np.max(Z[layer]))
-                        #print(cmd_tmp)
-                        #subprocess.call(cmd_tmp,shell=True)
+                        print('\t\t\t\tConverting to netCDF format.')
                         
                         pygmt.xyz2grd(data='%s/head_outputs/%sinelastic_flag_GWFLOW' % (outdestination, layer.replace(' ','_')),outgrid='%s/head_outputs/%sinelastic_flag_GWFLOW.nb' % (outdestination, layer.replace(' ','_')),spacing='%i+n/%i+n' % (len(t_gwflow[layer]),n_z),region=[str(np.min(t_gwflow[layer]))+'t',str(np.max(t_gwflow[layer]))+'t',np.min(Z[layer]),np.max(Z[layer])],convention='TLc')
                         
@@ -868,7 +932,7 @@ if len(layers_requiring_solving)>=0:
 
                     # At this point, calculate the timestep to give a CTL condition just greater than the CTL value.
                     # Assume it will only be the elastic that matters.
-                    if clay_Sse[layer] < clay_Ssv[layer]:
+                    if clay_Sse[layer] < np.min(clay_Ssv[layer]): # NOTE: np.min works because it can accept a single float, whereas just min cannot. Do not change to min.
                         print('\t\t\tFinding a good timestep at which to solve...')
                         k_tmp = vertical_conductivity[layer]/clay_Sse[layer] 
                         dt_optimal = CTL_value * dz_tmp**2 / k_tmp # I must pick a timestep equal to or smaller than this
@@ -908,10 +972,6 @@ if len(layers_requiring_solving)>=0:
                     if dt_tmp > max_solver_dt:
                         max_solver_dt = dt_tmp                        
     
-                    # B_tmp =  (max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp
-                    # if not B_tmp.is_integer():
-                    #     print("\t\tIF THIS ISN'T A WHOLE NUMBER, written as a float, YOU MAY BE IN TROUBLE! WARNING!" )
-                    #     print((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp)
                     t_interp_new = np.linspace(min(t_aquifer_tmp),min(t_aquifer_tmp) + int((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp) * dt_tmp ,num=int((max(t_aquifer_tmp)-min(t_aquifer_tmp))/ dt_tmp)+1)
                     f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp,h_aquifer_tmp) # linear interpolation of input head
                     h_aquifer_tmp_interpolated = np.array([t_interp_new,f_tmp(t_interp_new)]).T
@@ -1000,12 +1060,24 @@ if len(layers_requiring_solving)>=0:
                             else:
                                 overburden_data_tmp = overburden_data
    
-                            #overburden_data_tmp = np.zeros_like(t_interp_new)
                     else:
                         overburden_data_tmp=[0]
 
+                    # Prepare k_elastic and k_inelastic
+                    if sskv_type=='constant':
+                        k_inelastic_tmp = vertical_conductivity[layer]/(clay_Ssv[layer]*np.ones(len(t_interp_new)))
+                    elif sskv_type=='prescribed-temporal':
+                        t_aquifer_tmp_sskv=sskv_data[layer][:,0]
+                        f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
+                        sskv_aquifer_tmp_interpolated = np.array(f_tmp(t_interp_new)).T
+                        k_inelastic_tmp = vertical_conductivity[layer]/(sskv_aquifer_tmp_interpolated)
+                    else:
+                        print("\tSskv-type only works for 'constant' and 'prescribed-temporal' at the moment -ABORTING.")
+                        sys.exit(1)
+                    k_elastic_tmp =  vertical_conductivity[layer]/(clay_Sse[layer]*np.ones(len(t_interp_new)))           
+
                     t1_start = process_time() 
-                    hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_tmp,t_interp_new,dz_tmp,z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,vertical_conductivity[layer]/clay_Sse[layer],vertical_conductivity[layer]/clay_Ssv[layer],overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]['%.2f clays' % thickness])
+                    hmat_tmp,inelastic_flag_tmp=solve_head_equation_elasticinelastic(dt_tmp,t_interp_new,dz_tmp,z_tmp,np.vstack((h_aquifer_tmp_interpolated[:,1],h_aquifer_tmp_interpolated[:,1])),initial_condition_tmp,k_elastic_tmp,k_inelastic_tmp,overburdenstress=overburden_stress_gwflow,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp),preset_initial_maxstress=preset_initial_maxstress,initial_maxstress=-initial_maxstress[layer]['%.2f clays' % thickness]) 
                     t1_stop = process_time() 
                     print("\t\t\tElapsed time in seconds:",  t1_stop-t1_start)  
                     head_series[layer]['%.2f clays' % thickness]=hmat_tmp
@@ -1071,7 +1143,7 @@ if len(layers_requiring_solving)>=0:
                                 overburden_tmp_tosave.astype(np.single).tofile('%s/%s_%sclay_overburden_stress' % (outdestination, layer.replace(' ','_'), thickness)) 
                                 if gmt:
                                     print('\t\t\t\tConverting to netCDF format. Command is:')
-                                    cmd_tmp="gmt xyz2grd %s/%s_%sclay_overburden_stress -G%s/%s_%sclay_overburden_stress.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays'] % thickness),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
+                                    cmd_tmp="gmt xyz2grd %s/%s_%sclay_overburden_stress -G%s/%s_%sclay_overburden_stress.nc -I%i+n/%i+n -R%.3ft/%.3ft/%.3f/%.3f -ZTLf" % (outdestination, layer.replace(' ','_'),thickness,outdestination, layer.replace(' ','_'),'%.2f' % thickness,len(t_gwflow[layer]['%.2f clays' % thickness]),n_z,np.min(t_gwflow[layer]['%.2f clays' % thickness]),np.max(t_gwflow[layer]['%.2f clays' % thickness]),np.min(Z[layer]['%.2f clays' % thickness]),np.max(Z[layer]['%.2f clays' % thickness]))
                         
                                     print(cmd_tmp)
                                     subprocess.call(cmd_tmp,shell=True)
@@ -1212,10 +1284,6 @@ print()
 solving_compaction_start = process_time()
 time.sleep(internal_time_delay)
 
-#deformation_series={}
-#deformation_series_elastic={}
-#deformation_series_inelastic={}
-#deformation_series_sand={}
 deformation={}
 db={}
 deformation_OUTPUT={}
@@ -1264,9 +1332,9 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
                     
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][:,np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer]['%.2f clays' % thickness],t_total_tmp)],endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
                 else:
-                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness])
+                    deformation[layer]['total_%.2f clays' % thickness],inelastic_flag_compaction[layer]['elastic_%.2f clays' % thickness]=subsidence_solver_aquitard_elasticinelastic(head_series[layer]['%.2f clays' % thickness][np.where(np.isin(head_series[layer]['%.2f clays' % thickness],t_total_tmp))],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]['%.2f clays' % thickness]),n_z,endnodes=compaction_solver_debug_include_endnodes,preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer]['%.2f clays' % thickness],sskv_type=sskv_type)
                 deformation[layer]['total_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['total_%.2f clays' % thickness] 
                 # deformation[layer]['elastic_%.2f clays' % thickness] = interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
                 # deformation[layer]['inelastic_%.2f clays' % thickness]= interbeds_distributions[layer][thickness] * deformation[layer]['elastic_%.2f clays' % thickness]
@@ -1313,11 +1381,11 @@ for layer in layer_names:
                     else:
                         overburden_data_tmp = overburden_data
 
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,unconfined=unconfined_tmp,overburden=overburden_stress_compaction,overburden_data=1/(rho_w * g) * np.array(overburden_data_tmp)[np.isin(t_gwflow[layer],t_total_tmp)],preset_initial_maxstress=preset_initial_maxstress,ic_maxstress=initial_maxstress[layer],sskv_type=sskv_type)
                     deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])
 
                 else:
-                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer])
+                    totdeftmp,inelastic_flag_compaction[layer]=subsidence_solver_aquitard_elasticinelastic(head_series[layer][:,np.isin(t_gwflow[layer],t_total_tmp)],(clay_Sse[layer]-compressibility_of_water),(clay_Ssv[layer]-compressibility_of_water),np.max(Z[layer]),n_z,preset_initial_maxstress=preset_initial_maxstress,ic_precons=initial_maxstress[layer],sskv_type=sskv_type)
                     deformation[layer]['total'] = np.array([t_total_tmp,totdeftmp])          
 
 if MODE=='Normal': # If we are resuming, we do not scale layer thicknesses by default.
