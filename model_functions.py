@@ -26,9 +26,9 @@ import glob
 
 ### Define parameter default values. We will then read and overwrite any from the parameter file.
 
-Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False,'resume_date':False,'layer_thickness_types':True,'compaction_solver_compressibility_type':False,'save_s':True,'initial_stress_type':False,'initial_stress_offset':False,'initial_stress_offset_unit':True,'n_z':True,'CTL_value':True,'initial_stress_paststepdrop_size':False,'initial_stress_paststepdrop_time':False,'maxdt':True} # Define which variables have pre-defined defaults
+Defaults_Dictionary={'internal_time_delay':True,'overwrite':True,'run_name':False,'output_folder':False,'no_layers':True,'layer_names':True,'layer_types':True,'layer_thicknesses':True,'layer_compaction_switch':True,'interbeds_switch':True,'interbeds_type':False,'clay_Ssk_type':False,'clay_Ssk':False,'sand_Ssk':True,'compressibility_of_water':True,'dz_clays':True,'dt_gwaterflow':True,'create_output_head_video':True,'overburden_stress_gwflow':True,'overburden_stress_compaction':True,'rho_w':True,'g':True,'specific_yield':True,'save_effective_stress':True,'time_unit':True,'compaction_solver_debug_include_endnodes':True,'save_internal_compaction':True,'mode':True,'resume_directory':False,'resume_date':False,'layer_thickness_types':True,'compaction_solver_compressibility_type':False,'save_s':True,'initial_stress_type':False,'initial_stress_offset':False,'initial_stress_offset_unit':True,'n_z':True,'CTL_value':True,'initial_stress_paststepdrop_size':False,'initial_stress_paststepdrop_time':False,'maxdt':True,'sskv_type':True} # Define which variables have pre-defined defaults
 
-Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False,'save_internal_compaction':False,'mode':'Normal','layer_thickness_types':'constant','save_s':False,'initial_stress_offset_unit':'stress','n_z':12,'CTL_value':0.5,'maxdt':2**10}
+Default_Values={'internal_time_delay':0.5,'overwrite':False,'no_layers':2,'layer_names':['Upper Aquifer', 'Lower Aquifer'],'layer_types':{'Upper Aquifer': 'Aquifer', 'Lower Aquifer': 'Aquifer'},'layer_thicknesses':{'Upper Aquifer': 100.0,'Lower Aquifer': 100.0},'layer_compaction_switch':{'Upper Aquifer': True, 'Lower Aquifer': True},'interbeds_switch':{'Upper Aquifer': False, 'Lower Aquifer': False},'sand_Ssk':1,'compressibility_of_water':4.4e-10,'dz_clays':0.3,'dt_gwaterflow':1,'create_output_head_video':False,'overburden_stress_gwflow':False,'overburden_stress_compaction':False,'rho_w':1000,'g':9.81,'specific_yield':0.2,'save_effective_stress':False,'time_unit':'days','compaction_solver_debug_include_endnodes':False,'save_internal_compaction':False,'mode':'Normal','layer_thickness_types':'constant','save_s':False,'initial_stress_offset_unit':'stress','n_z':12,'CTL_value':0.5,'maxdt':2**10,'sskv_type':'constant'}
 
 
 class Logger(object):
@@ -146,6 +146,8 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
         - t is the array of times over which to solve (t = np.array([t0, t1, t2, t3, ..., tn]). Entries to t should be equally spaced with spacing dt. 
         - preset_initial_maxstress: BOOL flag to indicate whether the initial stress condition and the preconsolidation stress are equivalent.
         - initial_condition_maxstress: FLOAT ARRAY: Only used if preset_initial_maxstress is false, in which case it gives the initial stress value above which inelastic behaviour will occur. Useful if you are resuming a model run.
+        - k refers to the ratio Kv/Ssk; note it takes a different value for elastic and inelastic. These should be arrays of the same lentth (in the time direction!) as bc. 
+
     '''
     
     print ( '' )
@@ -169,9 +171,11 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
         h_precons[:,0]=initial_maxstress
     inelastic_flag = np.zeros ( ( len(x), len(t) ) ) 
 
-    cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence 
-    cfl_inelastic = k_inelastic * dt / dx / dx # This is the coefficient that determines convergence 
+    max_cfl_elastic = np.max(k_elastic) * dt / dx / dx # This is the coefficient that determines convergence 
+    max_cfl_inelastic = np.max(k_inelastic) * dt / dx / dx # This is the coefficient that determines convergence 
 
+    cfl_elastic = k_elastic * dt / dx / dx # This is the coefficient that determines convergence (time varying)
+    cfl_inelastic = k_inelastic * dt / dx / dx # This is the coefficient that determines convergence (time varying)))
 
 
     
@@ -181,12 +185,12 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
     print ( '\t\t\t  Number of T values = %d' % ( len(t) ) )
     print ( '\t\t\t  T interval is [%f,%f]' % ( min(t), max(t) ) )
     print ( '\t\t\t  T spacing is %f' % ( dt ) )
-    print ( '\t\t\t  Elastic K = %g' % ( k_elastic ) )
-    print ( '\t\t\t  Inelastic K = %g' % ( k_inelastic ) )
-    print ( '\t\t\t  CFL elastic coefficient = %g' % ( cfl_elastic ) )
-    print ( '\t\t\t  CFL inelastic coefficient = %g' % ( cfl_inelastic ) )
+    print ( '\t\t\t  Range of elastic K = %g %g' % ( min(k_elastic),max(k_elastic) ) )
+    print ( '\t\t\t  Range of inelastic K = %g %g' % ( min(k_inelastic),max(k_inelastic) ) )
+    print ( '\t\t\t  Max CFL elastic coefficient = %g' % ( max_cfl_elastic ) )
+    print ( '\t\t\t  Max CFL inelastic coefficient = %g' % ( max_cfl_inelastic ) )
     
-    if ( 0.5 <= max(cfl_elastic,cfl_inelastic) ):
+    if ( 0.5 <= max(max_cfl_elastic,max_cfl_inelastic) ):
         print ( '\t\t\tFD1D_HEAT_EXPLICIT_CFL - Potentially Fatal Warning!' )
         print ( '\t\t\t  CFL condition failed.' )
         print ( '\t\t\t  0.5 <= K * dT / dX / dX = %f' % max(cfl_elastic,cfl_inelastic))
@@ -210,13 +214,10 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
                 l = c - 1
                 r = c + 1
                 if inelastic_flag[c,j-1]:
-                    h_new[c] = h[c] + cfl_inelastic * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
-                    #print(dt * overburden_data[j])
-#                    h_new[c] = h[c] + cfl * ( h[l] - 2.0 * h[c] + h[r] ) + dt * f[c] This is the forcing version
+                    h_new[c] = h[c] + cfl_inelastic[j] * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
 
                 elif not inelastic_flag[c,j-1]:
-                    h_new[c] = h[c] + cfl_elastic * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
-                    #print(dt * overburden_data[j])
+                    h_new[c] = h[c] + cfl_elastic[j] * ( h[l] - 2.0 * h[c] + h[r] ) + (overburden_data[j] - overburden_data[j-1])
 
                 else:
                     print('Uh oh! Neither inelastic or elastic..something went wrong.')
@@ -236,9 +237,6 @@ def solve_head_equation_elasticinelastic(dt,t,dx,x,bc,ic,k_elastic,k_inelastic,o
             if j == len(t)-3:
                 if h[i] - overburden_data[j] < h_precons[i,j]:
                     inelastic_flag[i,j] =1
-
-#        if j <= len(t)-3:
-#            h_precons[:,j+1] = np.min(hmat[:,:j+1],axis=1)
 
     print(' ')
     print('\t\t\t SOLVER COMPLETE')
@@ -354,7 +352,7 @@ def read_parameter_layerthickness_multitype(name,paramfilelines,printlots=True):
           print('\t%s=%s' % (name,par_out))
       return par_out
 
-def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_initial_maxstress=False,ic_maxstress=[]):
+def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,overburden=False,unconfined=False,overburden_data=0,debuglevel=0,endnodes=False,preset_initial_maxstress=False,ic_maxstress=[],sskv_type='constant'):
     ''' TESTn is a temporary variable, referring to the number of midpoints done. If you start with 20 nodes and TESTn=1, you integrate over 20 nodes. If TESTn=2 you intergrate over 40 nodes, and so on. It can be used to reduce error from using the Riemann sum. NOTE AS OF Apr 2022, this no longer works.'''
     print('Running subsidence solver. Overburden=%s, unconfined=%s.' % (overburden,unconfined))
     if overburden:
@@ -363,7 +361,6 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
         else:
             print(' \t\t\tSOLVING WITH OVERBURDEN STRESS INCLUDED;  ')
             print('\t\t\tThis aquifer is unconfined. ')
-            print(overburden_data)
 
     print('Aquitard solver is done at midpoints. Applying linear interpolation to hmat.')
     if not endnodes:
@@ -372,10 +369,6 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
             if np.shape(hmat)[1] >= 20: # if there are more than 20 to do, then print the progress bar
                 if i % (int(np.shape(hmat)[1]/20)) == 0:
                     printProgressBar(i,np.shape(hmat)[1])
-            # if len(hmat[:,i]) != len( 0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz)):
-            #     print('ERROR: hmat is not the same length as 0.001*np.arange(0,1000*np.shape(hmat)[0]*dz,1000*dz). If dz_clays is not a multiple of the layer thickness, you may need to give it to more significant figures for this to work.')
-            #     print(0.000000001*np.arange(0,1000000000*np.shape(hmat)[0]*dz,1000000000*dz))
-            #     sys.exit(1)
             a = scipy.interpolate.interp1d(np.linspace(0,b0,n_z),hmat[:,i],kind='linear')
 #            print(np.arange(0,np.shape(hmat)[0]*dz,dz))
 ##            print(np.shape(hmat_interp)[0])
@@ -446,37 +439,31 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
     
     inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
 
-    # print('doing db')
-    # db = [dz*( (inelastic_flag_midpoints[:,i] * Sskv * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + ~inelastic_flag_midpoints[:,i] * Sske * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    # print('doing ds')
-    # ds = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    # print('doing ds elastic')
-    # ds_elastic = [dz*(np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
-    # print('doing ds inelastic')
-    # ds_inelastic = [dz*( np.dot(inelastic_flag_midpoints[:,i] * Sskv, stress_midpoints[:,i+1] - stress_midpoints[:,i]))  for i in range(np.shape(stress_midpoints)[1]-1)]
-
-    # s = np.zeros(np.shape(hmat)[1])
-    # s_elastic = np.zeros(np.shape(hmat)[1])
-    # s_inelastic = np.zeros(np.shape(hmat)[1])
-
-    # print('\tIntegrating deformation over time.')
-    # for i in range(1,np.shape(hmat)[1]):
-    #     if i % (int(np.shape(hmat)[1]/20)) == 0:
-    #         printProgressBar(i,np.shape(hmat)[1]-1)
-    #     s[i] = s[i-1]-ds[i-1]
-    #     s_elastic[i] = s_elastic[i-1]-ds_elastic[i-1]
-    #     s_inelastic[i] = s_inelastic[i-1]-ds_inelastic[i-1]
-
-    b = np.zeros(np.shape(hmat)[1])
-    for ti in range(1,np.shape(hmat)[1]):
-        if np.shape(hmat)[1] >= 20: # do a progress bar only if more than 20 timesteps
-            if ti % (int(np.shape(hmat)[1]/20)) == 0:
-                printProgressBar(ti,np.shape(hmat)[1]-1)
-        b[ti] = b0/(n_z-1) * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
     
-    b = -1 * np.array(b)
+    if sskv_type == 'prescribed-temporal':
+        print('Prescribed-temporal sskv_type: using slower solver with variable sskv.')
+        print('doing ds')
+        ds = [b0/(n_z-1) *( np.dot(inelastic_flag_midpoints[:,i] * Sskv[i], stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
+        b = np.zeros(np.shape(hmat)[1])
 
-#    return db,s,s_elastic,s_inelastic,inelastic_flag_midpoints
+        print('\tIntegrating deformation over time.')
+        for i in range(1,np.shape(hmat)[1]):
+            if i % (int(np.shape(hmat)[1]/20)) == 0:
+                printProgressBar(i,np.shape(hmat)[1]-1)
+            b[i] = b[i-1]-ds[i-1]
+
+    # Much faster version possible if sskv_type is constant
+    elif sskv_type =='constant':
+        print('Constant sskv_type: using faster solver with cst sskv.')
+        b = np.zeros(np.shape(hmat)[1])
+        for ti in range(1,np.shape(hmat)[1]):
+            if np.shape(hmat)[1] >= 20: # do a progress bar only if more than 20 timesteps
+                if ti % (int(np.shape(hmat)[1]/20)) == 0:
+                    printProgressBar(ti,np.shape(hmat)[1]-1)
+            b[ti] = b0/(n_z-1) * ( Sskv * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints_precons[:,0]) - Sske * np.sum(stress_midpoints_precons[:,ti] - stress_midpoints[:,ti]))
+        
+        b = -1 * np.array(b)
+
     return b,inelastic_flag_midpoints
 
 def create_head_video_elasticinelastic(hmat,z,inelastic_flag,dates_str,outputfolder,layer,delt=100,startyear=None,endyear=None,datelabels='year'):
