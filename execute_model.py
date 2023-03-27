@@ -1334,7 +1334,7 @@ for layer in layer_names:
                         
                     # Prepare sskv
                     if sskv_type=='constant':
-                        sskv_inelastic_tmp = (clay_Ssv[layer]-compressibility_of_water)*np.ones(len(t_total_tmp))
+                        sskv_inelastic_tmp = clay_Ssv[layer]-compressibility_of_water
                     elif sskv_type=='prescribed-temporal':
                         t_aquifer_tmp_sskv=sskv_data[layer][:,0]
                         f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
@@ -1391,7 +1391,7 @@ for layer in layer_names:
 
                     # Prepare sskv
                     if sskv_type=='constant':
-                        sskv_inelastic_tmp = (clay_Ssv[layer]-compressibility_of_water)*np.ones(len(t_total_tmp))
+                        sskv_inelastic_tmp = clay_Ssv[layer]-compressibility_of_water
                     elif sskv_type=='prescribed-temporal':
                         t_aquifer_tmp_sskv=sskv_data[layer][:,0]
                         f_tmp = scipy.interpolate.interp1d(t_aquifer_tmp_sskv,sskv_data[layer][:,1]) # linear interpolation of input sskv
