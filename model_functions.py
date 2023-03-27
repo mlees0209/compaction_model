@@ -370,11 +370,6 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
                 if i % (int(np.shape(hmat)[1]/20)) == 0:
                     printProgressBar(i,np.shape(hmat)[1])
             a = scipy.interpolate.interp1d(np.linspace(0,b0,n_z),hmat[:,i],kind='linear')
-#            print(np.arange(0,np.shape(hmat)[0]*dz,dz))
-##            print(np.shape(hmat_interp)[0])
-##            print(dz)
-##            print(np.shape(a))
-#            print(np.arange(0,np.shape(hmat_interp)[0]*(dz/2),(dz/2)))
             hmat_interp[:,i] = a(np.linspace(0,b0,2*n_z-1))
         if TESTn != 1:
             hmat_midpoints = hmat_interp[1:-1,:]
@@ -439,11 +434,11 @@ def subsidence_solver_aquitard_elasticinelastic(hmat,Sske,Sskv,b0,n_z,TESTn=1,ov
     
     inelastic_flag_midpoints= np.array(inelastic_flag_midpoints,dtype=bool)    
 
-    
+    # BIG FATE NOTE: FOR CONSTANT SSKV, THESE SOLVERS GIVE DIFFERENT ANSWERS BY ABOUT 10%! I'M GONNA RUN WITH THIS FOR THE PURPOSES OF THE TISOLS TALK, BUT SHOULD COME BACK TO THIS URGENTLY IF A PAPER COMES OUT OF THIS WORK. 
     if sskv_type == 'prescribed-temporal':
         print('Prescribed-temporal sskv_type: using slower solver with variable sskv.')
         print('doing ds')
-        ds = [b0/(n_z-1) *( np.dot(inelastic_flag_midpoints[:,i] * Sskv[i], stress_midpoints[:,i+1] - stress_midpoints[:,i]) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
+        ds = [b0/(n_z-1) *( np.dot(inelastic_flag_midpoints[:,i],Sskv[i] * (stress_midpoints[:,i+1] - stress_midpoints[:,i])) + np.dot(~inelastic_flag_midpoints[:,i] * Sske, stress_midpoints[:,i+1] - stress_midpoints[:,i])) for i in range(np.shape(stress_midpoints)[1]-1)]
         b = np.zeros(np.shape(hmat)[1])
 
         print('\tIntegrating deformation over time.')
