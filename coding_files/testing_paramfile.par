@@ -1,0 +1,54 @@
+### MODEL INPUT PARAMETER FILE ###
+# This example parameter file shows how the various options were selected for runs used for the paper. Another parameter file, EXAMPLE_paramfileRESUME.par shows the options selected for a resume run, used to calculate deferred subsidence. General rules for inputs are: avoid blankspaces wherever possible, where multiple inputs are required for a single variable use a comma to separate, and where different values apply for different layers, use the format: "LAYERNAME1:VALUE1,LAYERNAME2:VALUE2". For variables requiring a binary true/false type value, I should have coded it up so that either strings "True" or "False" work, or equally "1" or "0".
+
+## Admin
+run_name=Testing_run # This is the directory name which the run will be saved under.
+output_folder=test_output
+overwrite=True # If the run_name directory already exists in the output_folder, do you want to overwrite? If true, you still have to manually confirm overwrite.
+
+## Hydrostratigraphy; choose the model layers, thicknesses, etc.
+no_layers=3 # This is the number of layers in your model
+layer_names=Upper Aquifer,Corcoran Clay,Lower Aquifer1 # These are the names of the layers in your model, which also define the stratigraphic order of the layers, the first named layer being the topmost.
+layer_types=Upper Aquifer:Aquifer,Corcoran Clay:Aquitard,Lower Aquifer1:Aquifer # For each named layer, give whether it is an aquifer or aquitard.
+layer_thickness_types=Upper Aquifer:constant,Corcoran Clay:constant,Lower Aquifer1:step_changes # For each named layer, choose the thickness type. Options are constant (thickness does not vary with time) and step_changes (thickness varies with time as must be specified in layer_thicknesses variable).
+layer_thicknesses=Upper Aquifer:50,Corcoran Clay:25,Lower Aquifer1:{pre-1965:210,1965-:250} # Choose the thicknesses of each layer. If layer_thickness_types for a layer is step_changes, give the thickness in the following format: LAYERNAME:{pre-FIRSTCHANGE:T0,FIRSTCHANGE-SECONDCHANGE:T1,SECONDCHANGE-:T2}. 
+layer_compaction_switch=Upper Aquifer: 1,Corcoran Clay: 1,Lower Aquifer1: 1 # For each named layer, specify whether it can compact. NOTE: defaults do not work for this variable, please select manually.
+interbeds_switch=Upper Aquifer: 1,Lower Aquifer1: 1 # For each layer with layer_types=Aquifer, specify whether the layer will contain interbedded clays. 
+interbeds_distributions=Lower Aquifer1:{5:4.2,7:8.4},Upper Aquifer:{3:3,9:2} # For each layer with interbeds_switch=1, give the interbeds distribution. Format is {THICKNESS:NUMBER,THICKNESS2:NUMBER,THICKNESS3:NUMBER,...}.
+
+## Input head and, if needed, sskv time series
+head_data_files=Upper Aquifer:coding_test_head1.csv,Lower Aquifer1:coding_test_head2.csv # specify the path to the input head files. See Doc.pdf for description of accepted input formats.
+sskv_data_files=Upper Aquifer:coding_test_sskv1.csv,Lower Aquifer1:coding_test_sskv1.csv,Corcoran Clay:coding_test_sskv1.csv
+
+
+## Options for solving the effective stress governing equation
+groundwater_flow_solver_type=Upper Aquifer:elastic-inelastic,Corcoran Clay:elastic-inelastic,Lower Aquifer1:elastic-inelastic # This can either be 'singlevalue' or 'elastic-inelastic'. It should be the latter in the vast majority of cases, which means that Sskv and Sske vary depending on stress history. Singlevalue means to solve with a single, constant value of Ssk.
+overburden_stress_gwflow=True # True or False whether you want to consider overburden stress in the groundwater flow solution. If true, overburden stress is computed using head in the uppermost aquifer layer; if false, overburden stress is assumed constant throughout.
+initial_stress_type=Upper Aquifer:initial_constant,Corcoran Clay:initial_equilibrium,Lower Aquifer1:initial_equilibrium # This controls what we do with the initial stress in the clay layers. It can be 'initial_equilibrium', in which case the initial stress in the clays is the initial stress which would be obtained if the clays were fully equilibrated with the aquifer(s)' initial head(s), or 'initial_constant' in which case the initial stress in the clays is a constant values, either the initial aquifer stress for interbeds or the average of the bounding aquifer heads in the case of a confining layer.
+initial_stress_offset=Upper Aquifer:10,Lower Aquifer1:0 # This is the offset for the initial stress in the interbeds. Only to be set for aquifers. 
+initial_stress_offset_unit=head # can be head or stress. Head is converted to stress by sigma = rho * g * h
+
+
+## Options for solving the compaction equations
+compaction_solver_compressibility_type=Corcoran Clay:elastic-inelastic # This is a legacy variable, which does nothing; keep it.
+overburden_stress_compaction =True # True or False as to whether you want to consider overburden stress in the compaction solver flow solution. 
+maxdt=32
+CTL_value=0.4
+n_z=32
+
+## Hydrologic parameters
+sskv_type=prescribed-temporal
+clay_Sse=Upper Aquifer:1.2e-5,Corcoran Clay:1.2e-5,Lower Aquifer1:1.2e-5 # Set the values for Sse in clays, in units of m-1. Note that Sske is automatically computed as Sse - compressibility_of_water. 
+clay_Ssv=Upper Aquifer:1.8e-3,Corcoran Clay:1.8e-3,Lower Aquifer1:1.8e-3 # Set the values for Ssv in clays, in units of m-1. Note that Sskv is automatically computed as Sse - compressibility_of_water. 
+sand_Sse=Upper Aquifer:3.3e-6,Lower Aquifer1:3.3e-6  # Sse for each compacting aquifer layer, for the sand matrix. Note that Sske is automatically computed as Sse - compressibility_of_water. 
+#sand_Ssk=Lower Aquifer1:0,Lower Aquifer:0,Upper Aquifer:0 # Singlevalue Ssk for each compacting layer; only used if compaction or groundwater flow equations are solved using 'singlevalue').
+compressibility_of_water=1.5e-6 # This should correctly be named Ssw, as it refers to the specific storage due to compressibility of water. Units m-1. For values, you can use REFERENCE: Faunt 2009 P175; Freeze and Cherry p52 (multiply by rho g n); Smith et al 2017 (P3). This value is needed to convert Sse and Sskv into Sske and Sskv respectively.
+vertical_conductivity=Upper Aquifer:2.5e-6,Corcoran Clay:5.0e-8,Lower Aquifer1:2.5e-6 # This is the vertical hydraulic conductivity within clay layers, in units of m day-1. 
+
+
+## Output options; options regarding which outputs should be computed and saved. These were all set to "False" for the simulations, as they were mostly used for debug purposes.
+
+save_effective_stress=True # should effective stress be saved? Can result in large files if True.
+save_internal_compaction=False # Not sure what this does; keep it as False.
+save_output_head_timeseries=True # Should head at all points within the clay layers be outputted?
+create_output_head_video=Upper Aquifer:False,Corcoran Clay:False,Lower Aquifer1:False # Should a video of output head evolution be saved? 
