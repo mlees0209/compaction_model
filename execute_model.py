@@ -987,9 +987,8 @@ if len(layers_requiring_solving)>=0:
                         preset_initial_maxstress=False
                         
                         # Check if sskv is variable - if it is, take the initial value for the Hoffman initial condition.
-                        if sskv_type == 'temporal-prescribed':
-                            ssv_hoffman_tmp = clay_Ssv[layer][0]
-                            print(ssv_hoffman_tmp)
+                        if sskv_type == 'prescribed-temporal':
+                            ssv_hoffman_tmp = clay_Ssv[layer][0] 
                         else:
                             ssv_hoffman_tmp = clay_Ssv[layer]
 
