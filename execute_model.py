@@ -985,7 +985,14 @@ if len(layers_requiring_solving)>=0:
                     elif initial_stress_type[layer]=='past_stepdrop':
                         print('\t\tInitial stress condition is past_stepdrop; calculating initial stress accordingly.')
                         preset_initial_maxstress=False
-                        initial_condition_tmp = hoffman_subsidence(initial_stress_paststepdrop_time[layer],thickness,h_aquifer_tmp[0] + initial_stress_paststepdrop_size[layer],-initial_stress_paststepdrop_size[layer],clay_Ssv[layer],vertical_conductivity[layer],n_z=n_z)
+                        
+                        # Check if sskv is variable - if it is, take the initial value for the Hoffman initial condition.
+                        if sskv_type == 'temporal-prescribed':
+                            ssv_hoffman_tmp = clay_Ssv[layer][0]
+                        else:
+                            ssv_hoffman_tmp = clay_Ssv[layer]
+
+                        initial_condition_tmp = hoffman_subsidence(initial_stress_paststepdrop_time[layer],thickness,h_aquifer_tmp[0] + initial_stress_paststepdrop_size[layer],-initial_stress_paststepdrop_size[layer],ssv_hoffman_tmp,vertical_conductivity[layer],n_z=n_z)
                         initial_maxstress[layer]['%.2f clays' % thickness]=np.array([])
                         print('Initial condition precalculated to be ',initial_condition_tmp)
                     if MODE=='resume':
